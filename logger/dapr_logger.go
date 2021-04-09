@@ -66,11 +66,14 @@ func (l *daprLogger) EnableJSONOutput(enabled bool) {
 	l.logger.Logger.SetFormatter(formatter)
 }
 
-// SetApplication sets app_id and version fields in log. Default value is empty string
-func (l *daprLogger) SetApplication(id, version string) {
-	l.logger = l.logger.
-		WithField(logFieldAppID, id).
-		WithField(logFieldDaprVer, version)
+// SetAppID sets app_id field in the log. Default value is empty string
+func (l *daprLogger) SetAppID(id string) {
+	l.logger = l.logger.WithField(logFieldAppID, id)
+}
+
+// SetDaprVersion sets the dapr version field in the log.
+func (l *daprLogger) SetDaprVersion(version string) {
+	l.logger = l.logger.WithField(logFieldDaprVer, version)
 }
 
 func toLogrusLevel(lvl LogLevel) logrus.Level {

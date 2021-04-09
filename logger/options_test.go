@@ -23,7 +23,8 @@ func TestOptions(t *testing.T) {
 		o := DefaultOptions()
 		assert.Equal(t, undefinedAppID, o.appID)
 
-		o.SetApplication("dapr-app", "1.2.3")
+		o.SetAppID("dapr-app")
+		o.SetDaprVerson("1.2.3")
 		assert.Equal(t, "dapr-app", o.appID)
 		assert.Equal(t, "1.2.3", o.version)
 	})

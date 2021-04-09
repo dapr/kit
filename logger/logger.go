@@ -56,8 +56,10 @@ type Logger interface {
 	// EnableJSONOutput enables JSON formatted output log
 	EnableJSONOutput(enabled bool)
 
-	// SetApplication sets dapr_id and verison fields in the log. Default value is empty string
-	SetApplication(id, version string)
+	// SetAppID sets dapr_id field in the log. Default value is empty string
+	SetAppID(id string)
+	// SetDaprVersion sets the dapr version field in the log.
+	SetDaprVersion(version string)
 	// SetOutputLevel sets log output level
 	SetOutputLevel(outputLevel LogLevel)
 

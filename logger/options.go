@@ -39,9 +39,13 @@ func (o *Options) SetOutputLevel(outputLevel string) error {
 	return nil
 }
 
-// SetApplication sets Dapr ID and Version
-func (o *Options) SetApplication(id, version string) {
+// SetAppID sets Application ID
+func (o *Options) SetAppID(id string) {
 	o.appID = id
+}
+
+// SetDaprVersion sets Dapr Version
+func (o *Options) SetDaprVerson(version string) {
 	o.version = version
 }
 
@@ -83,7 +87,10 @@ func ApplyOptionsToLoggers(options *Options) error {
 		v.EnableJSONOutput(options.JSONFormatEnabled)
 
 		if options.appID != undefinedAppID {
-			v.SetApplication(options.appID, options.version)
+			v.SetAppID(options.appID)
+		}
+		if options.version != "" {
+			v.SetDaprVersion(options.version)
 		}
 	}
 
