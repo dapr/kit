@@ -139,7 +139,7 @@ func TestJSONLoggerFields(t *testing.T) {
 
 			b, _ := buf.ReadBytes('\n')
 			var o map[string]interface{}
-			json.Unmarshal(b, &o)
+			assert.NoError(t, json.Unmarshal(b, &o))
 
 			// assert
 			assert.Equal(t, tt.appID, o[logFieldAppID])
@@ -169,7 +169,7 @@ func TestWithTypeFields(t *testing.T) {
 
 	b, _ := buf.ReadBytes('\n')
 	var o map[string]interface{}
-	json.Unmarshal(b, &o)
+	assert.NoError(t, json.Unmarshal(b, &o))
 
 	assert.Equalf(t, LogTypeRequest, o[logFieldType], "new logger must be %s type", LogTypeRequest)
 
@@ -177,7 +177,7 @@ func TestWithTypeFields(t *testing.T) {
 	testLogger.Info("testLogger with log LogType")
 
 	b, _ = buf.ReadBytes('\n')
-	json.Unmarshal(b, &o)
+	assert.NoError(t, json.Unmarshal(b, &o))
 
 	assert.Equalf(t, LogTypeLog, o[logFieldType], "testLogger must be %s type", LogTypeLog)
 }
