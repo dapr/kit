@@ -51,6 +51,7 @@ func (l *daprLogger) EnableJSONOutput(enabled bool) {
 		logFieldScope:    l.logger.Data[logFieldScope],
 		logFieldType:     LogTypeLog,
 		logFieldInstance: hostname,
+		logFieldDaprVer:  DaprVersion,
 	}
 
 	if enabled {
