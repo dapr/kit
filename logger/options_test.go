@@ -24,9 +24,7 @@ func TestOptions(t *testing.T) {
 		assert.Equal(t, undefinedAppID, o.appID)
 
 		o.SetAppID("dapr-app")
-		o.SetDaprVerson("1.2.3")
 		assert.Equal(t, "dapr-app", o.appID)
-		assert.Equal(t, "1.2.3", o.version)
 	})
 
 	t.Run("attaching log related cmd flags", func(t *testing.T) {

@@ -20,9 +20,6 @@ type Options struct {
 	// appID is the unique id of Dapr Application
 	appID string
 
-	// version is the application version
-	version string
-
 	// JSONFormatEnabled is the flag to enable JSON formatted log
 	JSONFormatEnabled bool
 
@@ -42,11 +39,6 @@ func (o *Options) SetOutputLevel(outputLevel string) error {
 // SetAppID sets Application ID
 func (o *Options) SetAppID(id string) {
 	o.appID = id
-}
-
-// SetDaprVersion sets Dapr Version
-func (o *Options) SetDaprVerson(version string) {
-	o.version = version
 }
 
 // AttachCmdFlags attaches log options to command flags
@@ -88,9 +80,6 @@ func ApplyOptionsToLoggers(options *Options) error {
 
 		if options.appID != undefinedAppID {
 			v.SetAppID(options.appID)
-		}
-		if options.version != "" {
-			v.SetDaprVersion(options.version)
 		}
 	}
 

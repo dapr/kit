@@ -58,8 +58,6 @@ type Logger interface {
 
 	// SetAppID sets dapr_id field in the log. Default value is empty string
 	SetAppID(id string)
-	// SetDaprVersion sets the dapr version field in the log.
-	SetDaprVersion(version string)
 	// SetOutputLevel sets log output level
 	SetOutputLevel(outputLevel LogLevel)
 

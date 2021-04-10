@@ -47,7 +47,6 @@ func TestJSONLoggerFields(t *testing.T) {
 		outputLevel LogLevel
 		level       string
 		appID       string
-		version     string
 		message     string
 		instance    string
 		fn          func(*daprLogger, string)
@@ -57,7 +56,6 @@ func TestJSONLoggerFields(t *testing.T) {
 			InfoLevel,
 			"info",
 			"dapr_app",
-			"1.2.3",
 			"King Dapr",
 			"dapr-pod",
 			func(l *daprLogger, msg string) {
@@ -69,7 +67,6 @@ func TestJSONLoggerFields(t *testing.T) {
 			InfoLevel,
 			"info",
 			"dapr_app",
-			"1.2.3",
 			"King Dapr",
 			"dapr-pod",
 			func(l *daprLogger, msg string) {
@@ -81,7 +78,6 @@ func TestJSONLoggerFields(t *testing.T) {
 			DebugLevel,
 			"debug",
 			"dapr_app",
-			"1.2.3",
 			"King Dapr",
 			"dapr-pod",
 			func(l *daprLogger, msg string) {
@@ -93,7 +89,6 @@ func TestJSONLoggerFields(t *testing.T) {
 			DebugLevel,
 			"debug",
 			"dapr_app",
-			"1.2.3",
 			"King Dapr",
 			"dapr-pod",
 			func(l *daprLogger, msg string) {
@@ -105,7 +100,6 @@ func TestJSONLoggerFields(t *testing.T) {
 			InfoLevel,
 			"error",
 			"dapr_app",
-			"1.2.3",
 			"King Dapr",
 			"dapr-pod",
 			func(l *daprLogger, msg string) {
@@ -117,7 +111,6 @@ func TestJSONLoggerFields(t *testing.T) {
 			InfoLevel,
 			"error",
 			"dapr_app",
-			"1.2.3",
 			"King Dapr",
 			"dapr-pod",
 			func(l *daprLogger, msg string) {
@@ -132,7 +125,7 @@ func TestJSONLoggerFields(t *testing.T) {
 			testLogger := getTestLogger(&buf)
 			testLogger.EnableJSONOutput(true)
 			testLogger.SetAppID(tt.appID)
-			testLogger.SetDaprVersion(tt.version)
+			DaprVersion = tt.appID
 			testLogger.SetOutputLevel(tt.outputLevel)
 			testLogger.logger.Data[logFieldInstance] = tt.instance
 
@@ -144,7 +137,6 @@ func TestJSONLoggerFields(t *testing.T) {
 
 			// assert
 			assert.Equal(t, tt.appID, o[logFieldAppID])
-			assert.Equal(t, tt.version, o[logFieldDaprVer])
 			assert.Equal(t, tt.instance, o[logFieldInstance])
 			assert.Equal(t, tt.level, o[logFieldLevel])
 			assert.Equal(t, LogTypeLog, o[logFieldType])
@@ -161,7 +153,6 @@ func TestWithTypeFields(t *testing.T) {
 	testLogger := getTestLogger(&buf)
 	testLogger.EnableJSONOutput(true)
 	testLogger.SetAppID("dapr_app")
-	testLogger.SetDaprVersion("1.2.3")
 	testLogger.SetOutputLevel(InfoLevel)
 
 	// WithLogType will return new Logger with request log type

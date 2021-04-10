@@ -15,6 +15,8 @@ type daprLogger struct {
 	logger *logrus.Entry
 }
 
+var DaprVersion string = "unknown"
+
 func newDaprLogger(name string) *daprLogger {
 	newLogger := logrus.New()
 	newLogger.SetOutput(os.Stdout)
@@ -69,11 +71,6 @@ func (l *daprLogger) EnableJSONOutput(enabled bool) {
 // SetAppID sets app_id field in the log. Default value is empty string
 func (l *daprLogger) SetAppID(id string) {
 	l.logger = l.logger.WithField(logFieldAppID, id)
-}
-
-// SetDaprVersion sets the dapr version field in the log.
-func (l *daprLogger) SetDaprVersion(version string) {
-	l.logger = l.logger.WithField(logFieldDaprVer, version)
 }
 
 func toLogrusLevel(lvl LogLevel) logrus.Level {
