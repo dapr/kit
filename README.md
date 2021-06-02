@@ -1,6 +1,6 @@
 # kit
 
-Shared utility code for Dapr runtime
+Shared utility code for Dapr runtime.
 
 ## Code of Conduct
 
