@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/dapr/kit/retry"
@@ -125,14 +126,46 @@ func TestDecode(t *testing.T) {
 					assert.Equal(t, tc.err, err.Error())
 				}
 			} else {
+				b := actual.NewBackOff()
 				config := retry.DefaultConfig()
 				if tc.overrides != nil {
 					tc.overrides(&config)
 				}
 				assert.Equal(t, config, actual, "unexpected decoded configuration")
+				if actual.Policy == retry.PolicyConstant {
+					_, ok := b.(*backoff.ConstantBackOff)
+					assert.True(t, ok)
+				} else if actual.Policy == retry.PolicyExponential {
+					_, ok := b.(*backoff.ExponentialBackOff)
+					assert.True(t, ok)
+				}
 			}
 		})
 	}
+}
+
+func TestRetryNotifyRecoverNoetries(t *testing.T) {
+	config := retry.DefaultConfigWithNoRetry()
+	config.Duration = 1
+
+	var operationCalls, notifyCalls, recoveryCalls int
+
+	b := config.NewBackOff()
+	err := retry.NotifyRecover(func() error {
+		operationCalls++
+
+		return errRetry
+	}, b, func(err error, d time.Duration) {
+		notifyCalls++
+	}, func() {
+		recoveryCalls++
+	})
+
+	assert.Error(t, err)
+	assert.Equal(t, errRetry, err)
+	assert.Equal(t, 1, operationCalls)
+	assert.Equal(t, 0, notifyCalls)
+	assert.Equal(t, 0, recoveryCalls)
 }
 
 func TestRetryNotifyRecoverMaxRetries(t *testing.T) {
@@ -190,26 +223,28 @@ func TestRetryNotifyRecoverRecovery(t *testing.T) {
 
 func TestRetryNotifyRecoverCancel(t *testing.T) {
 	config := retry.DefaultConfig()
-	config.Policy = retry.PolicyExponential
-	config.InitialInterval = 10 * time.Millisecond
+	config.Policy = retry.PolicyConstant
+	config.Duration = 1 * time.Minute
 
 	var notifyCalls, recoveryCalls int
 
 	ctx, cancel := context.WithCancel(context.Background())
 	b := config.NewBackOffWithContext(ctx)
 	errC := make(chan error, 1)
+	startedC := make(chan struct{}, 100)
 
 	go func() {
 		errC <- retry.NotifyRecover(func() error {
 			return errRetry
 		}, b, func(err error, d time.Duration) {
 			notifyCalls++
+			startedC <- struct{}{}
 		}, func() {
 			recoveryCalls++
 		})
 	}()
 
-	time.Sleep(1 * time.Second)
+	<-startedC
 	cancel()
 
 	err := <-errC
