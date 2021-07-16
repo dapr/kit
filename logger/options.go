@@ -15,7 +15,7 @@ const (
 	undefinedAppID     = ""
 )
 
-// Options defines the sets of options for Dapr logging
+// Options defines the sets of options for Dapr logging.
 type Options struct {
 	// appID is the unique id of Dapr Application
 	appID string
@@ -27,7 +27,7 @@ type Options struct {
 	OutputLevel string
 }
 
-// SetOutputLevel sets the log output level
+// SetOutputLevel sets the log output level.
 func (o *Options) SetOutputLevel(outputLevel string) error {
 	if toLogLevel(outputLevel) == UndefinedLevel {
 		return errors.Errorf("undefined Log Output Level: %s", outputLevel)
@@ -36,12 +36,12 @@ func (o *Options) SetOutputLevel(outputLevel string) error {
 	return nil
 }
 
-// SetAppID sets Application ID
+// SetAppID sets Application ID.
 func (o *Options) SetAppID(id string) {
 	o.appID = id
 }
 
-// AttachCmdFlags attaches log options to command flags
+// AttachCmdFlags attaches log options to command flags.
 func (o *Options) AttachCmdFlags(
 	stringVar func(p *string, name string, value string, usage string),
 	boolVar func(p *bool, name string, value bool, usage string)) {
@@ -61,7 +61,7 @@ func (o *Options) AttachCmdFlags(
 	}
 }
 
-// DefaultOptions returns default values of Options
+// DefaultOptions returns default values of Options.
 func DefaultOptions() Options {
 	return Options{
 		JSONFormatEnabled: defaultJSONOutput,
@@ -70,7 +70,7 @@ func DefaultOptions() Options {
 	}
 }
 
-// ApplyOptionsToLoggers applys options to all registered loggers
+// ApplyOptionsToLoggers applys options to all registered loggers.
 func ApplyOptionsToLoggers(options *Options) error {
 	internalLoggers := getLoggers()
 
