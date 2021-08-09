@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	// LogTypeLog is normal log type
+	// LogTypeLog is normal log type.
 	LogTypeLog = "log"
-	// LogTypeRequest is Request log type
+	// LogTypeRequest is Request log type.
 	LogTypeRequest = "request"
 
-	// Field names that defines Dapr log schema
+	// Field names that defines Dapr log schema.
 	logFieldTimeStamp = "time"
 	logFieldLevel     = "level"
 	logFieldType      = "type"
@@ -27,31 +27,33 @@ const (
 	logFieldAppID     = "app_id"
 )
 
-// LogLevel is Dapr Logger Level type
+// LogLevel is Dapr Logger Level type.
 type LogLevel string
 
 const (
-	// DebugLevel has verbose message
+	// DebugLevel has verbose message.
 	DebugLevel LogLevel = "debug"
-	// InfoLevel is default log level
+	// InfoLevel is default log level.
 	InfoLevel LogLevel = "info"
-	// WarnLevel is for logging messages about possible issues
+	// WarnLevel is for logging messages about possible issues.
 	WarnLevel LogLevel = "warn"
-	// ErrorLevel is for logging errors
+	// ErrorLevel is for logging errors.
 	ErrorLevel LogLevel = "error"
 	// FatalLevel is for logging fatal messages. The system shuts down after logging the message.
 	FatalLevel LogLevel = "fatal"
 
-	// UndefinedLevel is for undefined log level
+	// UndefinedLevel is for undefined log level.
 	UndefinedLevel LogLevel = "undefined"
 )
 
 // globalLoggers is the collection of Dapr Logger that is shared globally.
 // TODO: User will disable or enable logger on demand.
-var globalLoggers = map[string]Logger{}
-var globalLoggersLock = sync.RWMutex{}
+var (
+	globalLoggers     = map[string]Logger{}
+	globalLoggersLock = sync.RWMutex{}
+)
 
-// Logger includes the logging api sets
+// Logger includes the logging api sets.
 type Logger interface {
 	// EnableJSONOutput enables JSON formatted output log
 	EnableJSONOutput(enabled bool)
@@ -86,7 +88,7 @@ type Logger interface {
 	Fatalf(format string, args ...interface{})
 }
 
-// toLogLevel converts to LogLevel
+// toLogLevel converts to LogLevel.
 func toLogLevel(level string) LogLevel {
 	switch strings.ToLower(level) {
 	case "debug":

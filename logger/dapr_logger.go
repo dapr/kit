@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// daprLogger is the implemention for logrus
+// daprLogger is the implemention for logrus.
 type daprLogger struct {
 	// name is the name of logger that is published to log as a scope
 	name string
@@ -34,7 +34,7 @@ func newDaprLogger(name string) *daprLogger {
 	return dl
 }
 
-// EnableJSONOutput enables JSON formatted output log
+// EnableJSONOutput enables JSON formatted output log.
 func (l *daprLogger) EnableJSONOutput(enabled bool) {
 	var formatter logrus.Formatter
 
@@ -69,7 +69,7 @@ func (l *daprLogger) EnableJSONOutput(enabled bool) {
 	l.logger.Logger.SetFormatter(formatter)
 }
 
-// SetAppID sets app_id field in the log. Default value is empty string
+// SetAppID sets app_id field in the log. Default value is empty string.
 func (l *daprLogger) SetAppID(id string) {
 	l.logger = l.logger.WithField(logFieldAppID, id)
 }
@@ -80,12 +80,12 @@ func toLogrusLevel(lvl LogLevel) logrus.Level {
 	return l
 }
 
-// SetOutputLevel sets log output level
+// SetOutputLevel sets log output level.
 func (l *daprLogger) SetOutputLevel(outputLevel LogLevel) {
 	l.logger.Logger.SetLevel(toLogrusLevel(outputLevel))
 }
 
-// WithLogType specify the log_type field in log. Default value is LogTypeLog
+// WithLogType specify the log_type field in log. Default value is LogTypeLog.
 func (l *daprLogger) WithLogType(logType string) Logger {
 	return &daprLogger{
 		name:   l.name,
