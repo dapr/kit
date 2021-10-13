@@ -25,6 +25,7 @@ const (
 	logFieldInstance  = "instance"
 	logFieldDaprVer   = "ver"
 	logFieldAppID     = "app_id"
+	logFieldTrace     = "id"
 )
 
 // LogLevel is Dapr Logger Level type.

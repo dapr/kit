@@ -175,6 +175,19 @@ func TestWithTypeFields(t *testing.T) {
 	assert.Equalf(t, LogTypeLog, o[logFieldType], "testLogger must be %s type", LogTypeLog)
 }
 
+func TestWithTrace(t *testing.T) {
+	t.Run("dapr log traceid output", func(t *testing.T) {
+		var buf bytes.Buffer
+		id := "dd6a7c5a06b14f8aa02fdecb4f4ed480"
+		testLogger := getTestLogger(&buf)
+		testLogger.EnableJSONOutput(true)
+		log := testLogger.WithTrace(id)
+		log.Info("log output")
+		b, _ := buf.ReadBytes('\n')
+		assert.Contains(t, string(b), id, "output log contains trace id")
+	})
+}
+
 func TestToLogrusLevel(t *testing.T) {
 	t.Run("Dapr DebugLevel to Logrus.DebugLevel", func(t *testing.T) {
 		assert.Equal(t, logrus.DebugLevel, toLogrusLevel(DebugLevel))

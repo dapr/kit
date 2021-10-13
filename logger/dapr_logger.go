@@ -93,6 +93,13 @@ func (l *daprLogger) WithLogType(logType string) Logger {
 	}
 }
 
+func (l *daprLogger) WithTrace(id string) Logger {
+	return &daprLogger{
+		name:   l.name,
+		logger: l.logger.WithField(logFieldTrace, id),
+	}
+}
+
 // Info logs a message at level Info.
 func (l *daprLogger) Info(args ...interface{}) {
 	l.logger.Log(logrus.InfoLevel, args...)
