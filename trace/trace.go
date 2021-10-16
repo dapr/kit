@@ -132,7 +132,6 @@ func GetSpanContext(ctx context.Context) trace.SpanContext {
 			binV := md[tracebinMetadata][0]
 			sc, _ = propagation.FromBinary([]byte(binV))
 		}
-
 	}
 	return sc
 }
