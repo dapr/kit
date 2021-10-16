@@ -5,8 +5,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/dapr/kit/trace"
 	"github.com/sirupsen/logrus"
+
+	"github.com/dapr/kit/trace"
 )
 
 // daprLogger is the implemention for logrus.

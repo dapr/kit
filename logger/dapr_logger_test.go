@@ -9,11 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dapr/kit/trace"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"go.opencensus.io/trace/propagation"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/dapr/kit/trace"
 )
 
 const fakeLoggerName = "fakeLogger"
