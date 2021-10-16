@@ -6,6 +6,7 @@
 package logger
 
 import (
+	"context"
 	"strings"
 	"sync"
 )
@@ -66,6 +67,11 @@ type Logger interface {
 
 	// WithLogType specify the log_type field in log. Default value is LogTypeLog
 	WithLogType(logType string) Logger
+
+	// WithTrace write trace id to log.
+	WithTrace(id string) Logger
+	// WithContext write context infos to log.
+	WithContext(ctx context.Context) Logger
 
 	// Info logs a message at level Info.
 	Info(args ...interface{})

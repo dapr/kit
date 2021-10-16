@@ -2,14 +2,18 @@ package logger
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/dapr/kit/trace"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"go.opencensus.io/trace/propagation"
+	"google.golang.org/grpc/metadata"
 )
 
 const fakeLoggerName = "fakeLogger"
@@ -185,6 +189,35 @@ func TestWithTrace(t *testing.T) {
 		log.Info("log output")
 		b, _ := buf.ReadBytes('\n')
 		assert.Contains(t, string(b), id, "output log contains trace id")
+	})
+}
+
+func TestWithTraceFromContext(t *testing.T) {
+	testTraceParent := "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+	testSpanContext, _ := trace.SpanContextFromW3CString(testTraceParent)
+	testTraceBinary := propagation.Binary(testSpanContext)
+	ctx := context.Background()
+	t.Run("dapr log traceid output from incoming context", func(t *testing.T) {
+		var buf bytes.Buffer
+		traceid := "4bf92f3577b34da6a3ce929d0e0e4736"
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs("grpc-trace-bin", string(testTraceBinary)))
+		testLogger := getTestLogger(&buf)
+		testLogger.EnableJSONOutput(true)
+		log := testLogger.WithContext(ctx)
+		log.Info("log output from incoming")
+		b, _ := buf.ReadBytes('\n')
+		assert.Contains(t, string(b), traceid, "output log contains trace id")
+	})
+	t.Run("dapr log traceid output from outcoming context", func(t *testing.T) {
+		var buf bytes.Buffer
+		traceid := "4bf92f3577b34da6a3ce929d0e0e4736"
+		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("grpc-trace-bin", string(testTraceBinary)))
+		testLogger := getTestLogger(&buf)
+		testLogger.EnableJSONOutput(true)
+		log := testLogger.WithContext(ctx)
+		log.Info("log output from outcoming")
+		b, _ := buf.ReadBytes('\n')
+		assert.Contains(t, string(b), traceid, "output log contains trace id")
 	})
 }
 
