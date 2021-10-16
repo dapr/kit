@@ -116,14 +116,15 @@ func StateFromW3CString(h string) *tracestate.Tracestate {
 }
 
 // GetSpanContext get span context.
-func GetSpanContext(ctx context.Context) (sc trace.SpanContext) {
+func GetSpanContext(ctx context.Context) trace.SpanContext {
 	var (
 		md metadata.MD
+		sc trace.SpanContext
 		ok bool
 	)
 	if md, ok = metadata.FromIncomingContext(ctx); !ok {
 		if md, ok = metadata.FromOutgoingContext(ctx); !ok {
-			return
+			return sc
 		}
 	}
 	if md != nil {
@@ -133,5 +134,5 @@ func GetSpanContext(ctx context.Context) (sc trace.SpanContext) {
 		}
 
 	}
-	return
+	return sc
 }

@@ -124,7 +124,6 @@ func (l *daprLogger) withTraceFromContext() {
 	}
 	sc := trace.GetSpanContext(l.ctx)
 	l.logger = l.logger.WithField(logFieldTrace, sc.TraceID.String())
-	return
 }
 
 // Info logs a message at level Info.
