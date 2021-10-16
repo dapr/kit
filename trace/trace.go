@@ -13,14 +13,11 @@ import (
 )
 
 // We have leveraged the code from opencensus-go plugin to adhere the w3c trace context.
-// Reference : https://github.com/census-instrumentation/opencensus-go/blob/master/plugin/  ochttp/propagation/tracecontext/propagation.go
+// Reference : https://github.com/census-instrumentation/opencensus-go/blob/master/plugin/ochttp/propagation/tracecontext/propagation.go.
 const (
-	supportedVersion  = 0
-	maxVersion        = 254
-	maxTracestateLen  = 512
-	traceparentHeader = "traceparent"
-	tracestateHeader  = "tracestate"
-	// tracebinMetadata trace key for grpc protocol
+	maxVersion       = 254
+	maxTracestateLen = 512
+	// tracebinMetadata trace key for grpc protocol.
 	tracebinMetadata = "grpc-trace-bin"
 	trimOWSRegexFmt  = `^[\x09\x20]*(.*[^\x20\x09])[\x09\x20]*$`
 )
@@ -85,15 +82,15 @@ func SpanContextFromW3CString(h string) (sc trace.SpanContext, ok bool) {
 	return sc, true
 }
 
-// TraceStateFromW3CString extracts a span tracestate from given string which got earlier from TraceStateFromW3CString format.
-func TraceStateFromW3CString(h string) *tracestate.Tracestate {
+// StateFromW3CString extracts a span tracestate from given string which got earlier from StateFromW3CString format.
+func StateFromW3CString(h string) *tracestate.Tracestate {
 	if h == "" {
 		return nil
 	}
 
 	entries := make([]tracestate.Entry, 0, len(h))
 	pairs := strings.Split(h, ",")
-	hdrLenWithoutOWS := len(pairs) - 1 // Number of commas
+	hdrLenWithoutOWS := len(pairs) - 1 // Number of commas.
 	for _, pair := range pairs {
 		matches := trimOWSRegExp.FindStringSubmatch(pair)
 		if matches == nil {
