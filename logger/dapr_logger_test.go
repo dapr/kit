@@ -220,6 +220,21 @@ func TestWithTraceFromContext(t *testing.T) {
 		b, _ := buf.ReadBytes('\n')
 		assert.Contains(t, string(b), traceid, "output log contains trace id")
 	})
+	t.Run("dapr log to using the same traceid", func(t *testing.T) {
+		var buf bytes.Buffer
+		traceid := "4bf92f3577b34da6a3ce929d0e0e4736"
+		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("grpc-trace-bin", string(testTraceBinary)))
+		testLogger := getTestLogger(&buf)
+		testLogger.EnableJSONOutput(true)
+		log := testLogger.WithContext(ctx)
+		log.Info("log output from outcoming")
+		b, _ := buf.ReadBytes('\n')
+		assert.Contains(t, string(b), traceid, "output log contains trace id")
+		buf.Reset()
+		log.Error("log output from outcoming by the same traceid")
+		b, _ = buf.ReadBytes('\n')
+		assert.Contains(t, string(b), traceid, "output log contains trace id")
+	})
 }
 
 func TestToLogrusLevel(t *testing.T) {

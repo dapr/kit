@@ -1,12 +1,14 @@
 package trace
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"regexp"
 	"strings"
 
 	"go.opencensus.io/trace"
+	itrace "go.opencensus.io/trace"
 	"go.opencensus.io/trace/propagation"
 	"go.opencensus.io/trace/tracestate"
 	"google.golang.org/grpc/metadata"
@@ -134,4 +136,11 @@ func GetSpanContext(ctx context.Context) trace.SpanContext {
 		}
 	}
 	return sc
+}
+
+var nilTraceID itrace.TraceID
+
+// IsValid check traceid valid.
+func IsValid(id itrace.TraceID) bool {
+	return !bytes.Equal(id[:], nilTraceID[:])
 }

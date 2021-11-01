@@ -3,6 +3,7 @@ package logger
 import (
 	"context"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -15,8 +16,10 @@ type daprLogger struct {
 	// name is the name of logger that is published to log as a scope
 	name string
 	// loger is the instance of logrus logger
-	logger *logrus.Entry
-	ctx    context.Context
+	logger  *logrus.Entry
+	ctx     context.Context
+	traceid string
+	sync.Mutex
 }
 
 var (
@@ -122,8 +125,19 @@ func (l *daprLogger) withTraceFromContext() {
 	if l.ctx == nil {
 		return
 	}
+	// traceid already exist.
+	if l.traceid != "" {
+		return
+	}
+	l.Lock()
+	defer l.Unlock()
 	sc := trace.GetSpanContext(l.ctx)
+	// check trace invalid
+	if !trace.IsValid(sc.TraceID) {
+		return
+	}
 	l.logger = l.logger.WithField(logFieldTrace, sc.TraceID.String())
+	l.traceid = sc.TraceID.String()
 }
 
 // Info logs a message at level Info.
