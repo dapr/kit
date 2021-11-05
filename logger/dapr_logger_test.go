@@ -258,19 +258,3 @@ func TestToLogrusLevel(t *testing.T) {
 		assert.Equal(t, logrus.FatalLevel, toLogrusLevel(FatalLevel))
 	})
 }
-
-func TestToLogrusFileOutput(t *testing.T) {
-	t.Run("Dapr file output", func(t *testing.T) {
-		filename := "./runtime.log"
-		logger := newDaprLogger("daprd.runtime")
-		logger.SetFileOutput(WithFilename(filename))
-		logger.Info("start daprd.runtime...")
-		logger.Info("running daprd.runtime...")
-		logger.Info("stop daprd.runtime...")
-		_, err := os.Stat(filename)
-		assert.Equal(t, nil, err)
-		os.Remove(filename)
-		_, err = os.Stat(filename)
-		assert.Equal(t, true, os.IsNotExist(err))
-	})
-}
