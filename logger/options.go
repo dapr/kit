@@ -16,7 +16,7 @@ const (
 	defaultPath        = "/var/log/daprd/runtime.log"
 	undefinedAppID     = ""
 
-	// default file option
+	// default file option.
 	defaultMaxSize    = 100
 	defaultMaxBackups = 3
 	defaultMaxAge     = 5
@@ -94,7 +94,6 @@ func (o *Options) AttachCmdFlagsExtend(
 			defaultPath,
 			"Option is a log storage file path (default `/var/log/daprd/runtime.log`)")
 	}
-	return
 }
 
 // DefaultOptions returns default values of Options.
@@ -135,7 +134,7 @@ func ApplyOptionsToLoggers(options *Options) error {
 	return nil
 }
 
-// FileOptions add file storage options
+// FileOptions add file storage options.
 type FileOptions struct {
 	Filename   string `json:"filename"`
 	MaxSize    int    `json:"maxsize"` // unit: megabytes
@@ -144,11 +143,11 @@ type FileOptions struct {
 	Compress   bool   `json:"compress"`
 }
 
-// CreateFileOptions create file options
+// CreateFileOptions create file options.
 func CreateFileOptions(opt ...OptionFunc) *FileOptions {
 	fileOption := &FileOptions{
 		Filename:   defaultPath,
-		MaxSize:    defaultMaxAge,
+		MaxSize:    defaultMaxSize,
 		MaxBackups: defaultMaxBackups,
 		MaxAge:     defaultMaxAge,
 		Compress:   defaultCompress,
@@ -180,7 +179,6 @@ func WithMaxSize(maxsize int) OptionFunc {
 func WithMaxBackups(maxbackups int) OptionFunc {
 	return func(f *FileOptions) {
 		f.MaxBackups = maxbackups
-
 	}
 }
 
