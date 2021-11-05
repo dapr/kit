@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/natefinch/lumberjack"
 	"github.com/sirupsen/logrus"
 
 	"github.com/dapr/kit/trace"
@@ -101,6 +102,17 @@ func (l *daprLogger) WithLogType(logType string) Logger {
 		name:   l.name,
 		logger: l.logger.WithField(logFieldType, logType),
 	}
+}
+
+func (l *daprLogger) SetFileOutput(opt ...OptionFunc) {
+	option := CreateFileOptions(opt...)
+	l.logger.Logger.SetOutput(&lumberjack.Logger{
+		Filename:   option.Filename,
+		MaxSize:    option.MaxSize,
+		MaxBackups: option.MaxBackups,
+		MaxAge:     option.MaxAge,
+		Compress:   option.Compress,
+	})
 }
 
 // WithTrace write trace id to log.

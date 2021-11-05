@@ -64,6 +64,8 @@ type Logger interface {
 	SetAppID(id string)
 	// SetOutputLevel sets log output level
 	SetOutputLevel(outputLevel LogLevel)
+	// SetFileOutput set log file output.
+	SetFileOutput(opt ...OptionFunc)
 
 	// WithLogType specify the log_type field in log. Default value is LogTypeLog
 	WithLogType(logType string) Logger
