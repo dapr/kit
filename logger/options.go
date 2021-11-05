@@ -25,16 +25,16 @@ const (
 
 // Options defines the sets of options for Dapr logging.
 type Options struct {
-	// appID is the unique id of Dapr Application
+	// appID is the unique id of Dapr Application.
 	appID string
 
-	// JSONFormatEnabled is the flag to enable JSON formatted log
+	// JSONFormatEnabled is the flag to enable JSON formatted log.
 	JSONFormatEnabled bool
 
-	// OutputLevel is the level of logging
+	// OutputLevel is the level of logging.
 	OutputLevel string
 
-	// Output is the type of logging
+	// Output is the type of logging.
 	Output string
 
 	// Path is the path of logging, such as file.
@@ -158,38 +158,38 @@ func CreateFileOptions(opt ...OptionFunc) *FileOptions {
 	return fileOption
 }
 
-// OptionFunc function option
+// OptionFunc function option.
 type OptionFunc func(*FileOptions)
 
-// WithFilename set log filename
+// WithFilename set log filename.
 func WithFilename(filename string) OptionFunc {
 	return func(f *FileOptions) {
 		f.Filename = filename
 	}
 }
 
-// WithMaxSize set file maxsize
+// WithMaxSize set file maxsize.
 func WithMaxSize(maxsize int) OptionFunc {
 	return func(f *FileOptions) {
 		f.MaxSize = maxsize
 	}
 }
 
-// WithMaxBackups set file max backups
+// WithMaxBackups set file max backups.
 func WithMaxBackups(maxbackups int) OptionFunc {
 	return func(f *FileOptions) {
 		f.MaxBackups = maxbackups
 	}
 }
 
-// WithMaxAge set file max age
+// WithMaxAge set file max age.
 func WithMaxAge(maxage int) OptionFunc {
 	return func(f *FileOptions) {
 		f.MaxAge = maxage
 	}
 }
 
-// WithCompress set file if it is compress
+// WithCompress set file if it is compress.
 func WithCompress(compress bool) OptionFunc {
 	return func(f *FileOptions) {
 		f.Compress = compress
