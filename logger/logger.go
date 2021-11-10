@@ -6,7 +6,6 @@
 package logger
 
 import (
-	"context"
 	"strings"
 	"sync"
 )
@@ -64,14 +63,16 @@ type Logger interface {
 	SetAppID(id string)
 	// SetOutputLevel sets log output level
 	SetOutputLevel(outputLevel LogLevel)
+	// SetFileOutput set log file output.
+	SetFileOutput(opt ...OptionFunc)
 
 	// WithLogType specify the log_type field in log. Default value is LogTypeLog
 	WithLogType(logType string) Logger
 
-	// WithTrace write trace id to log.
-	WithTrace(id string) Logger
-	// WithContext write context infos to log.
-	WithContext(ctx context.Context) Logger
+	// WithField set a kv to log.
+	WithField(key string, value interface{}) Logger
+	// WithFields set multi kvs to log.
+	WithFields(fields map[string]interface{}) Logger
 
 	// Info logs a message at level Info.
 	Info(args ...interface{})

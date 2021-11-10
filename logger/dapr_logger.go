@@ -1,14 +1,11 @@
 package logger
 
 import (
-	"context"
 	"os"
-	"sync"
 	"time"
 
+	"github.com/natefinch/lumberjack"
 	"github.com/sirupsen/logrus"
-
-	"github.com/dapr/kit/trace"
 )
 
 // daprLogger is the implemention for logrus.
@@ -16,10 +13,7 @@ type daprLogger struct {
 	// name is the name of logger that is published to log as a scope
 	name string
 	// loger is the instance of logrus logger
-	logger  *logrus.Entry
-	ctx     context.Context
-	traceid string
-	sync.Mutex
+	logger *logrus.Entry
 }
 
 var (
@@ -95,6 +89,18 @@ func (l *daprLogger) SetOutputLevel(outputLevel LogLevel) {
 	l.logger.Logger.SetLevel(toLogrusLevel(outputLevel))
 }
 
+// SetFileOutput set log file options.
+func (l *daprLogger) SetFileOutput(opt ...OptionFunc) {
+	option := CreateFileOptions(opt...)
+	l.logger.Logger.SetOutput(&lumberjack.Logger{
+		Filename:   option.Filename,
+		MaxSize:    option.MaxSize,
+		MaxBackups: option.MaxBackups,
+		MaxAge:     option.MaxAge,
+		Compress:   option.Compress,
+	})
+}
+
 // WithLogType specify the log_type field in log. Default value is LogTypeLog.
 func (l *daprLogger) WithLogType(logType string) Logger {
 	return &daprLogger{
@@ -103,99 +109,68 @@ func (l *daprLogger) WithLogType(logType string) Logger {
 	}
 }
 
-// WithTrace write trace id to log.
-func (l *daprLogger) WithTrace(id string) Logger {
+// WithField set a kv to log.
+func (l *daprLogger) WithField(key string, value interface{}) Logger {
 	return &daprLogger{
 		name:   l.name,
-		logger: l.logger.WithField(logFieldTrace, id),
+		logger: l.logger.WithField(key, value),
 	}
 }
 
-// WithContext write context infos to log.
-func (l *daprLogger) WithContext(ctx context.Context) Logger {
+// WithFields set multi kvs to log.
+func (l *daprLogger) WithFields(fields map[string]interface{}) Logger {
 	return &daprLogger{
 		name:   l.name,
-		logger: l.logger,
-		ctx:    ctx,
+		logger: l.logger.WithFields(fields),
 	}
-}
-
-// withTraceFromContext add trace id to log by context.
-func (l *daprLogger) withTraceFromContext() {
-	if l.ctx == nil {
-		return
-	}
-	// traceid already exist.
-	if l.traceid != "" {
-		return
-	}
-	l.Lock()
-	defer l.Unlock()
-	sc := trace.GetSpanContext(l.ctx)
-	// check trace invalid
-	if !trace.IsValid(sc.TraceID) {
-		return
-	}
-	l.logger = l.logger.WithField(logFieldTrace, sc.TraceID.String())
-	l.traceid = sc.TraceID.String()
 }
 
 // Info logs a message at level Info.
 func (l *daprLogger) Info(args ...interface{}) {
-	l.withTraceFromContext()
 	l.logger.Log(logrus.InfoLevel, args...)
 }
 
 // Infof logs a message at level Info.
 func (l *daprLogger) Infof(format string, args ...interface{}) {
-	l.withTraceFromContext()
 	l.logger.Logf(logrus.InfoLevel, format, args...)
 }
 
 // Debug logs a message at level Debug.
 func (l *daprLogger) Debug(args ...interface{}) {
-	l.withTraceFromContext()
 	l.logger.Log(logrus.DebugLevel, args...)
 }
 
 // Debugf logs a message at level Debug.
 func (l *daprLogger) Debugf(format string, args ...interface{}) {
-	l.withTraceFromContext()
 	l.logger.Logf(logrus.DebugLevel, format, args...)
 }
 
 // Warn logs a message at level Warn.
 func (l *daprLogger) Warn(args ...interface{}) {
-	l.withTraceFromContext()
 	l.logger.Log(logrus.WarnLevel, args...)
 }
 
 // Warnf logs a message at level Warn.
 func (l *daprLogger) Warnf(format string, args ...interface{}) {
-	l.withTraceFromContext()
 	l.logger.Logf(logrus.WarnLevel, format, args...)
 }
 
 // Error logs a message at level Error.
 func (l *daprLogger) Error(args ...interface{}) {
-	l.withTraceFromContext()
 	l.logger.Log(logrus.ErrorLevel, args...)
 }
 
 // Errorf logs a message at level Error.
 func (l *daprLogger) Errorf(format string, args ...interface{}) {
-	l.withTraceFromContext()
 	l.logger.Logf(logrus.ErrorLevel, format, args...)
 }
 
 // Fatal logs a message at level Fatal then the process will exit with status set to 1.
 func (l *daprLogger) Fatal(args ...interface{}) {
-	l.withTraceFromContext()
 	l.logger.Fatal(args...)
 }
 
 // Fatalf logs a message at level Fatal then the process will exit with status set to 1.
 func (l *daprLogger) Fatalf(format string, args ...interface{}) {
-	l.withTraceFromContext()
 	l.logger.Fatalf(format, args...)
 }

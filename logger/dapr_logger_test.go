@@ -2,7 +2,6 @@ package logger
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
 	"os"
@@ -11,10 +10,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"go.opencensus.io/trace/propagation"
-	"google.golang.org/grpc/metadata"
-
-	"github.com/dapr/kit/trace"
 )
 
 const fakeLoggerName = "fakeLogger"
@@ -178,63 +173,6 @@ func TestWithTypeFields(t *testing.T) {
 	assert.NoError(t, json.Unmarshal(b, &o))
 
 	assert.Equalf(t, LogTypeLog, o[logFieldType], "testLogger must be %s type", LogTypeLog)
-}
-
-func TestWithTrace(t *testing.T) {
-	t.Run("dapr log traceid output", func(t *testing.T) {
-		var buf bytes.Buffer
-		id := "dd6a7c5a06b14f8aa02fdecb4f4ed480"
-		testLogger := getTestLogger(&buf)
-		testLogger.EnableJSONOutput(true)
-		log := testLogger.WithTrace(id)
-		log.Info("log output")
-		b, _ := buf.ReadBytes('\n')
-		assert.Contains(t, string(b), id, "output log contains trace id")
-	})
-}
-
-func TestWithTraceFromContext(t *testing.T) {
-	testTraceParent := "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
-	testSpanContext, _ := trace.SpanContextFromW3CString(testTraceParent)
-	testTraceBinary := propagation.Binary(testSpanContext)
-	ctx := context.Background()
-	t.Run("dapr log traceid output from incoming context", func(t *testing.T) {
-		var buf bytes.Buffer
-		traceid := "4bf92f3577b34da6a3ce929d0e0e4736"
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs("grpc-trace-bin", string(testTraceBinary)))
-		testLogger := getTestLogger(&buf)
-		testLogger.EnableJSONOutput(true)
-		log := testLogger.WithContext(ctx)
-		log.Info("log output from incoming")
-		b, _ := buf.ReadBytes('\n')
-		assert.Contains(t, string(b), traceid, "output log contains trace id")
-	})
-	t.Run("dapr log traceid output from outcoming context", func(t *testing.T) {
-		var buf bytes.Buffer
-		traceid := "4bf92f3577b34da6a3ce929d0e0e4736"
-		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("grpc-trace-bin", string(testTraceBinary)))
-		testLogger := getTestLogger(&buf)
-		testLogger.EnableJSONOutput(true)
-		log := testLogger.WithContext(ctx)
-		log.Info("log output from outcoming")
-		b, _ := buf.ReadBytes('\n')
-		assert.Contains(t, string(b), traceid, "output log contains trace id")
-	})
-	t.Run("dapr log to using the same traceid", func(t *testing.T) {
-		var buf bytes.Buffer
-		traceid := "4bf92f3577b34da6a3ce929d0e0e4736"
-		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("grpc-trace-bin", string(testTraceBinary)))
-		testLogger := getTestLogger(&buf)
-		testLogger.EnableJSONOutput(true)
-		log := testLogger.WithContext(ctx)
-		log.Info("log output from outcoming")
-		b, _ := buf.ReadBytes('\n')
-		assert.Contains(t, string(b), traceid, "output log contains trace id")
-		buf.Reset()
-		log.Error("log output from outcoming by the same traceid")
-		b, _ = buf.ReadBytes('\n')
-		assert.Contains(t, string(b), traceid, "output log contains trace id")
-	})
 }
 
 func TestToLogrusLevel(t *testing.T) {
