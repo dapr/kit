@@ -16,7 +16,7 @@ const (
 	defaultPath        = "/var/log/daprd/runtime.log"
 	undefinedAppID     = ""
 
-	// default file option
+	// default file option.
 	defaultMaxSize    = 100
 	defaultMaxBackups = 3
 	defaultMaxAge     = 5
@@ -94,7 +94,6 @@ func (o *Options) AttachCmdFlagsExtend(
 			defaultPath,
 			"Option is a log storage file path (default `/var/log/daprd/runtime.log`)")
 	}
-	return
 }
 
 // DefaultOptions returns default values of Options.

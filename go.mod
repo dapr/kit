@@ -12,4 +12,5 @@ require (
 	github.com/stretchr/testify v1.7.0
 	go.opencensus.io v0.23.0
 	google.golang.org/grpc v1.41.0
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
