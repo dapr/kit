@@ -6,8 +6,11 @@
 package logger
 
 import (
+	"context"
 	"strings"
 	"sync"
+
+	"github.com/dapr/kit/trace"
 )
 
 const (
@@ -25,6 +28,7 @@ const (
 	logFieldInstance  = "instance"
 	logFieldDaprVer   = "ver"
 	logFieldAppID     = "app_id"
+	logFieldTraceID   = "trace_id"
 )
 
 // LogLevel is Dapr Logger Level type.
@@ -138,4 +142,16 @@ func getLoggers() map[string]Logger {
 	}
 
 	return l
+}
+
+// LoggerWithContext is a helper function.
+func LoggerWithContext(ctx context.Context, log Logger) Logger {
+	sc := trace.GetSpanContext(ctx)
+	// check trace invalid
+	if trace.IsValid(sc.TraceID) {
+		return log.WithField(logFieldTraceID, sc.TraceID.String())
+	}
+
+	// Return the unchanged logger
+	return log
 }

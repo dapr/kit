@@ -20,7 +20,7 @@ const (
 	defaultMaxSize    = 100
 	defaultMaxBackups = 3
 	defaultMaxAge     = 5
-	defaultCompress   = true
+	defaultCompress   = false
 )
 
 // Options defines the sets of options for Dapr logging.
@@ -143,8 +143,8 @@ type FileOptions struct {
 	Compress   bool   `json:"compress"`
 }
 
-// CreateFileOptions create file options.
-func CreateFileOptions(opt ...OptionFunc) *FileOptions {
+// DefaultFileOptions create file options.
+func DefaultFileOptions(opt ...OptionFunc) *FileOptions {
 	fileOption := &FileOptions{
 		Filename:   defaultPath,
 		MaxSize:    defaultMaxSize,

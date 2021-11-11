@@ -91,7 +91,7 @@ func (l *daprLogger) SetOutputLevel(outputLevel LogLevel) {
 
 // SetFileOutput set log file options.
 func (l *daprLogger) SetFileOutput(opt ...OptionFunc) {
-	option := CreateFileOptions(opt...)
+	option := DefaultFileOptions(opt...)
 	l.logger.Logger.SetOutput(&lumberjack.Logger{
 		Filename:   option.Filename,
 		MaxSize:    option.MaxSize,
