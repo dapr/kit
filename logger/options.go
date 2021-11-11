@@ -109,7 +109,7 @@ func DefaultOptions() Options {
 func ApplyOptionsToLoggers(options *Options) error {
 	internalLoggers := getLoggers()
 
-	// Apply formatting options first
+	// Apply formatting options first.
 	for _, v := range internalLoggers {
 		v.EnableJSONOutput(options.JSONFormatEnabled)
 
