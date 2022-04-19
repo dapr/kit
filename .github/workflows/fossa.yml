@@ -15,16 +15,12 @@ name: fossa
 on:
   push:
     branches:
-      - master
-      - release-*
-      - feature/*
+      - main
     tags:
       - v*
   pull_request:
     branches:
-      - master
-      - release-*
-      - feature/*
+      - main
   workflow_dispatch: {}
 jobs:
   fossa-scan:
