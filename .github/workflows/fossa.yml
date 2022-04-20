@@ -15,16 +15,12 @@ name: fossa
 on:
   push:
     branches:
-      - master
-      - release-*
-      - feature/*
+      - main
     tags:
       - v*
   pull_request:
     branches:
-      - master
-      - release-*
-      - feature/*
+      - main
   workflow_dispatch: {}
 jobs:
   fossa-scan:
@@ -37,12 +33,12 @@ jobs:
         uses: actions/checkout@v2
 
       - name: "Run FOSSA Scan"
-        uses: fossas/fossa-action@main # Use a specific version if locking is preferred
+        uses: fossas/fossa-action@v1.1.0 # Use a specific version if locking is preferred
         with:
           api-key: ${{ env.FOSSA_API_KEY }}
 
       - name: "Run FOSSA Test"
-        uses: fossas/fossa-action@main # Use a specific version if locking is preferred
+        uses: fossas/fossa-action@v1.1.0 # Use a specific version if locking is preferred
         with:
           api-key: ${{ env.FOSSA_API_KEY }}
           run-tests: true
