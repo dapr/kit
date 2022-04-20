@@ -17,18 +17,22 @@ import (
 	"os"
 	"time"
 
+	"github.com/natefinch/lumberjack"
 	"github.com/sirupsen/logrus"
 )
 
 // daprLogger is the implemention for logrus.
 type daprLogger struct {
-	// name is the name of logger that is published to log as a scope
+	// name is the name of logger that is published to log as a scope.
 	name string
-	// loger is the instance of logrus logger
+	// loger is the instance of logrus logger.
 	logger *logrus.Entry
 }
 
-var DaprVersion string = "unknown"
+var (
+	DaprVersion        = "unknown"
+	_           Logger = (*daprLogger)(nil)
+)
 
 func newDaprLogger(name string) *daprLogger {
 	newLogger := logrus.New()
@@ -88,7 +92,7 @@ func (l *daprLogger) SetAppID(id string) {
 }
 
 func toLogrusLevel(lvl LogLevel) logrus.Level {
-	// ignore error because it will never happens
+	// ignore error because it will never happens.
 	l, _ := logrus.ParseLevel(string(lvl))
 	return l
 }
@@ -98,11 +102,40 @@ func (l *daprLogger) SetOutputLevel(outputLevel LogLevel) {
 	l.logger.Logger.SetLevel(toLogrusLevel(outputLevel))
 }
 
+// SetFileOutput set log file options.
+func (l *daprLogger) SetFileOutput(opt ...OptionFunc) {
+	option := DefaultFileOptions(opt...)
+	l.logger.Logger.SetOutput(&lumberjack.Logger{
+		Filename:   option.Filename,
+		MaxSize:    option.MaxSize,
+		MaxBackups: option.MaxBackups,
+		MaxAge:     option.MaxAge,
+		Compress:   option.Compress,
+		LocalTime:  true,
+	})
+}
+
 // WithLogType specify the log_type field in log. Default value is LogTypeLog.
 func (l *daprLogger) WithLogType(logType string) Logger {
 	return &daprLogger{
 		name:   l.name,
 		logger: l.logger.WithField(logFieldType, logType),
+	}
+}
+
+// WithField set a kv to log.
+func (l *daprLogger) WithField(key string, value interface{}) Logger {
+	return &daprLogger{
+		name:   l.name,
+		logger: l.logger.WithField(key, value),
+	}
+}
+
+// WithFields set multi kvs to log.
+func (l *daprLogger) WithFields(fields map[string]interface{}) Logger {
+	return &daprLogger{
+		name:   l.name,
+		logger: l.logger.WithFields(fields),
 	}
 }
 
