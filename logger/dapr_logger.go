@@ -22,9 +22,9 @@ import (
 
 // daprLogger is the implemention for logrus.
 type daprLogger struct {
-	// name is the name of logger that is published to log as a scope
+	// name is the name of logger that is published to log as a scope.
 	name string
-	// loger is the instance of logrus logger
+	// loger is the instance of logrus logger.
 	logger *logrus.Entry
 }
 
@@ -88,7 +88,7 @@ func (l *daprLogger) SetAppID(id string) {
 }
 
 func toLogrusLevel(lvl LogLevel) logrus.Level {
-	// ignore error because it will never happens
+	// ignore error because it will never happens.
 	l, _ := logrus.ParseLevel(string(lvl))
 	return l
 }
