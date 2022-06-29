@@ -65,15 +65,15 @@ var (
 
 // Logger includes the logging api sets.
 type Logger interface {
-	// EnableJSONOutput enables JSON formatted output log
+	// EnableJSONOutput enables JSON formatted output log.
 	EnableJSONOutput(enabled bool)
 
-	// SetAppID sets dapr_id field in the log. Default value is empty string
+	// SetAppID sets dapr_id field in the log. Default value is empty string.
 	SetAppID(id string)
-	// SetOutputLevel sets log output level
+	// SetOutputLevel sets log output level.
 	SetOutputLevel(outputLevel LogLevel)
 
-	// WithLogType specify the log_type field in log. Default value is LogTypeLog
+	// WithLogType specify the log_type field in log. Default value is LogTypeLog.
 	WithLogType(logType string) Logger
 
 	// Info logs a message at level Info.
@@ -113,7 +113,7 @@ func toLogLevel(level string) LogLevel {
 		return FatalLevel
 	}
 
-	// unsupported log level by Dapr
+	// unsupported log level by Dapr.
 	return UndefinedLevel
 }
 

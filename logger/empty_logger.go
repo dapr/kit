@@ -8,7 +8,7 @@ func (e *emptyLogger) EnableJSONOutput(enabled bool) {}
 // SetAppID sets dapr_id field in the log. Default value is empty string.
 func (e *emptyLogger) SetAppID(id string) {}
 
-// SetOutputLevel sets log output level
+// SetOutputLevel sets log output level.
 func (e *emptyLogger) SetOutputLevel(outputLevel LogLevel) {}
 
 // WithLogType specify the log_type field in log. Default value is LogTypeLog.
