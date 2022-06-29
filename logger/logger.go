@@ -14,6 +14,7 @@ limitations under the License.
 package logger
 
 import (
+	"context"
 	"strings"
 	"sync"
 )
@@ -59,6 +60,7 @@ const (
 var (
 	globalLoggers     = map[string]Logger{}
 	globalLoggersLock = sync.RWMutex{}
+	emptyOpLogger     = &emptyLogger{}
 )
 
 // Logger includes the logging api sets.
@@ -127,6 +129,25 @@ func NewLogger(name string) Logger {
 	}
 
 	return logger
+}
+
+// contextKey is how we find Loggers in a context.Context.
+type contextKey struct{}
+
+// NewContext returns a new Context, derived from ctx, which carries the
+// provided Logger.
+func NewContext(ctx context.Context, logger Logger) context.Context {
+	return context.WithValue(ctx, contextKey{}, logger)
+}
+
+// FromContextOrDiscard returns a Logger from ctx.  If no Logger is found, this
+// returns a Logger that discards all log messages.
+func FromContextOrDefault(ctx context.Context) Logger {
+	if v, ok := ctx.Value(contextKey{}).(Logger); ok {
+		return v
+	}
+
+	return emptyOpLogger
 }
 
 func getLoggers() map[string]Logger {
