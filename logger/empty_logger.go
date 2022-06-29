@@ -2,16 +2,16 @@ package logger
 
 type emptyLogger struct{}
 
-// EnableJSONOutput enables JSON formatted output log
+// EnableJSONOutput enables JSON formatted output log.
 func (e *emptyLogger) EnableJSONOutput(enabled bool) {}
 
-// SetAppID sets dapr_id field in the log. Default value is empty string
+// SetAppID sets dapr_id field in the log. Default value is empty string.
 func (e *emptyLogger) SetAppID(id string) {}
 
 // SetOutputLevel sets log output level
 func (e *emptyLogger) SetOutputLevel(outputLevel LogLevel) {}
 
-// WithLogType specify the log_type field in log. Default value is LogTypeLog
+// WithLogType specify the log_type field in log. Default value is LogTypeLog.
 func (e *emptyLogger) WithLogType(logType string) Logger {
 	return nil
 }
