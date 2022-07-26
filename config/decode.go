@@ -58,10 +58,7 @@ func Decode(input interface{}, output interface{}) error {
 }
 
 // nolint:cyclop
-func decodeString(
-	f reflect.Type,
-	t reflect.Type,
-	data interface{}) (interface{}, error) {
+func decodeString(f reflect.Type, t reflect.Type, data any) (any, error) {
 	if t.Kind() == reflect.String && f.Kind() != reflect.String {
 		return fmt.Sprintf("%v", data), nil
 	}
@@ -78,7 +75,7 @@ func decodeString(
 		return nil, errors.Errorf("expected string: got %s", reflect.TypeOf(data))
 	}
 
-	var result interface{}
+	var result any
 	var decoder StringDecoder
 
 	if t.Implements(typeStringDecoder) {

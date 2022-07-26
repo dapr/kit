@@ -52,7 +52,8 @@ func (o *Options) SetAppID(id string) {
 // AttachCmdFlags attaches log options to command flags.
 func (o *Options) AttachCmdFlags(
 	stringVar func(p *string, name string, value string, usage string),
-	boolVar func(p *bool, name string, value bool, usage string)) {
+	boolVar func(p *bool, name string, value bool, usage string),
+) {
 	if stringVar != nil {
 		stringVar(
 			&o.OutputLevel,
