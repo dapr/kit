@@ -20,10 +20,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/agrea/ptr"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/dapr/kit/config"
+	"github.com/dapr/kit/ptr"
 )
 
 type testConfig struct { // nolint: maligned
@@ -94,37 +94,37 @@ func TestDecode(t *testing.T) {
 	tests := map[string]interface{}{
 		"primitive values": map[string]interface{}{
 			"int":         -9999,
-			"intPtr":      ptr.Int(-9999),
+			"intPtr":      ptr.Of(-9999),
 			"int64":       -1234,
-			"int64Ptr":    ptr.Int64(-12345),
+			"int64Ptr":    ptr.Of(-12345),
 			"int32":       -5678,
-			"int32Ptr":    ptr.Int64(-5678),
+			"int32Ptr":    ptr.Of(-5678),
 			"int16":       -9012,
-			"int16Ptr":    ptr.Int32(-9012),
+			"int16Ptr":    ptr.Of(-9012),
 			"int8":        -128,
-			"int8Ptr":     ptr.Int8(-128),
+			"int8Ptr":     ptr.Of(-128),
 			"uint":        9999,
-			"uintPtr":     ptr.Uint(9999),
+			"uintPtr":     ptr.Of(9999),
 			"uint64":      1234,
-			"uint64Ptr":   ptr.Uint64(1234),
+			"uint64Ptr":   ptr.Of(1234),
 			"uint32":      5678,
-			"uint32Ptr":   ptr.Uint64(5678),
+			"uint32Ptr":   ptr.Of(5678),
 			"uint16":      9012,
-			"uint16Ptr":   ptr.Uint64(9012),
+			"uint16Ptr":   ptr.Of(9012),
 			"byte":        255,
-			"bytePtr":     ptr.Byte(255),
+			"bytePtr":     ptr.Of(255),
 			"float64":     1234.5,
-			"float64Ptr":  ptr.Float64(1234.5),
+			"float64Ptr":  ptr.Of(1234.5),
 			"float32":     6789.5,
-			"float32Ptr":  ptr.Float64(6789.5),
+			"float32Ptr":  ptr.Of(6789.5),
 			"bool":        true,
-			"boolPtr":     ptr.Bool(true),
+			"boolPtr":     ptr.Of(true),
 			"duration":    5 * time.Second,
-			"durationPtr": durationPtr(5 * time.Second),
+			"durationPtr": ptr.Of(5 * time.Second),
 			"time":        timeVal,
-			"timePtr":     timePtr(timeVal),
+			"timePtr":     ptr.Of(timeVal),
 			"string":      1234,
-			"stringPtr":   ptr.String("1234"),
+			"stringPtr":   ptr.Of("1234"),
 			"decoded":     "unlimited",
 			"decodedPtr":  "unlimited",
 			"nested": map[string]interface{}{
@@ -288,18 +288,6 @@ func TestDecodeErrors(t *testing.T) {
 	}
 }
 
-func durationPtr(value time.Duration) *time.Duration {
-	return &value
-}
-
-func timePtr(value time.Time) *time.Time {
-	return &value
-}
-
-func decodedPtr(value Decoded) *Decoded {
-	return &value
-}
-
 func getTimeVal() time.Time {
 	timeVal, _ := time.Parse(time.RFC3339, "2021-01-02T15:04:05-07:00")
 
@@ -311,39 +299,39 @@ func getExpected() testConfig {
 
 	return testConfig{
 		Int:         -9999,
-		IntPtr:      ptr.Int(-9999),
+		IntPtr:      ptr.Of(-9999),
 		Int64:       -1234,
-		Int64Ptr:    ptr.Int64(-12345),
+		Int64Ptr:    ptr.Of(int64(-12345)),
 		Int32:       -5678,
-		Int32Ptr:    ptr.Int32(-5678),
+		Int32Ptr:    ptr.Of(int32(-5678)),
 		Int16:       -9012,
-		Int16Ptr:    ptr.Int16(-9012),
+		Int16Ptr:    ptr.Of(int16(-9012)),
 		Int8:        -128,
-		Int8Ptr:     ptr.Int8(-128),
+		Int8Ptr:     ptr.Of(int8(-128)),
 		Uint:        9999,
-		UintPtr:     ptr.Uint(9999),
+		UintPtr:     ptr.Of(uint(9999)),
 		Uint64:      1234,
-		Uint64Ptr:   ptr.Uint64(1234),
+		Uint64Ptr:   ptr.Of(uint64(1234)),
 		Uint32:      5678,
-		Uint32Ptr:   ptr.Uint32(5678),
+		Uint32Ptr:   ptr.Of(uint32(5678)),
 		Uint16:      9012,
-		Uint16Ptr:   ptr.Uint16(9012),
+		Uint16Ptr:   ptr.Of(uint16(9012)),
 		Byte:        255,
-		BytePtr:     ptr.Byte(255),
+		BytePtr:     ptr.Of(byte(255)),
 		Float64:     1234.5,
-		Float64Ptr:  ptr.Float64(1234.5),
+		Float64Ptr:  ptr.Of(1234.5),
 		Float32:     6789.5,
-		Float32Ptr:  ptr.Float32(6789.5),
+		Float32Ptr:  ptr.Of(float32(6789.5)),
 		Bool:        true,
-		BoolPtr:     ptr.Bool(true),
+		BoolPtr:     ptr.Of(true),
 		Duration:    5 * time.Second,
-		DurationPtr: durationPtr(5 * time.Second),
+		DurationPtr: ptr.Of(5 * time.Second),
 		Time:        timeVal,
-		TimePtr:     timePtr(timeVal),
+		TimePtr:     ptr.Of(timeVal),
 		String:      "1234",
-		StringPtr:   ptr.String("1234"),
+		StringPtr:   ptr.Of("1234"),
 		Decoded:     -1,
-		DecodedPtr:  decodedPtr(-1),
+		DecodedPtr:  ptr.Of(Decoded(-1)),
 		Nested: nested{
 			Integer: 1234,
 			String:  "5678",

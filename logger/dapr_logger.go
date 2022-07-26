@@ -28,7 +28,7 @@ type daprLogger struct {
 	logger *logrus.Entry
 }
 
-var DaprVersion string = "unknown"
+var DaprVersion = "unknown"
 
 func newDaprLogger(name string) *daprLogger {
 	newLogger := logrus.New()

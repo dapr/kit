@@ -247,7 +247,29 @@ linters:
     - exhaustive
     - noctx
     - gci
-issues:
-  exclude:
-    # staticcheck
-    - 'SA1019: package github.com/golang/protobuf/proto is deprecated: Use the "google.golang.org/protobuf/proto" package instead'
+    - golint
+    - tparallel
+    - paralleltest
+    - wrapcheck
+    - tagliatelle
+    - ireturn
+    - exhaustivestruct
+    - errchkjson
+    - contextcheck
+    - gomoddirectives
+    - godot
+    - cyclop
+    - varnamelen
+    - gosec
+    - errorlint
+    - forcetypeassert
+    - ifshort
+    - maintidx
+    - nilnil
+    - predeclared
+    - tenv
+    - thelper
+    - wastedassign
+    - containedctx
+    - gosimple
+    - forbidigo
