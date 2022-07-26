@@ -15,10 +15,10 @@ limitations under the License.
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-package to
+package ptr
 
-// Ptr returns a pointer to the provided value.
-func Ptr[T any](v T) *T {
+// Of returns a pointer to the provided value.
+func Of[T any](v T) *T {
 	return &v
 }
 
@@ -26,7 +26,7 @@ func Ptr[T any](v T) *T {
 func SliceOfPtrs[T any](vv ...T) []*T {
 	slc := make([]*T, len(vv))
 	for i := range vv {
-		slc[i] = Ptr(vv[i])
+		slc[i] = Of(vv[i])
 	}
 	return slc
 }

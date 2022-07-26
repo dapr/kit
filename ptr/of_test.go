@@ -15,7 +15,7 @@ limitations under the License.
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-package to
+package ptr
 
 import (
 	"testing"
@@ -23,7 +23,7 @@ import (
 
 func TestPtr(t *testing.T) {
 	b := true
-	pb := Ptr(b)
+	pb := Of(b)
 	if pb == nil {
 		t.Fatal("unexpected nil conversion")
 	}
