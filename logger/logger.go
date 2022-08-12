@@ -14,6 +14,7 @@ limitations under the License.
 package logger
 
 import (
+	"io"
 	"strings"
 	"sync"
 )
@@ -65,6 +66,9 @@ var (
 type Logger interface {
 	// EnableJSONOutput enables JSON formatted output log
 	EnableJSONOutput(enabled bool)
+
+	// Writes log messages to the specified io.Writer instead of stdout.
+	SetOuput(output io.Writer)
 
 	// SetAppID sets dapr_id field in the log. Default value is empty string
 	SetAppID(id string)

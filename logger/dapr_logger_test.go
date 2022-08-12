@@ -34,6 +34,20 @@ func getTestLogger(buf io.Writer) *daprLogger {
 	return l
 }
 
+func TestCustomOutputDestination(t *testing.T) {
+	var buf bytes.Buffer
+	l := newDaprLogger(fakeLoggerName)
+	l.SetOuput(&buf)
+	l.EnableJSONOutput(true)
+	l.SetAppID("dapr_app")
+	l.SetOutputLevel(InfoLevel)
+	l.Info("testLogger with log LogType")
+	b, _ := buf.ReadBytes('\n')
+	var o map[string]interface{}
+	assert.NoError(t, json.Unmarshal(b, &o))
+	assert.Equal(t, LogTypeLog, o[logFieldType])
+}
+
 func TestEnableJSON(t *testing.T) {
 	var buf bytes.Buffer
 	testLogger := getTestLogger(&buf)

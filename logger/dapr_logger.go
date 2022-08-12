@@ -14,6 +14,7 @@ limitations under the License.
 package logger
 
 import (
+	"io"
 	"os"
 	"time"
 
@@ -104,6 +105,10 @@ func (l *daprLogger) WithLogType(logType string) Logger {
 		name:   l.name,
 		logger: l.logger.WithField(logFieldType, logType),
 	}
+}
+
+func (l *daprLogger) SetOuput(output io.Writer) {
+	l.logger.Logger.SetOutput(output)
 }
 
 // Info logs a message at level Info.
