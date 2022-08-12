@@ -68,7 +68,7 @@ type Logger interface {
 	EnableJSONOutput(enabled bool)
 
 	// Writes log messages to the specified io.Writer instead of stdout.
-	SetOuput(output io.Writer)
+	SetOutput(output io.Writer)
 
 	// SetAppID sets dapr_id field in the log. Default value is empty string
 	SetAppID(id string)

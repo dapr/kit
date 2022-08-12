@@ -37,7 +37,7 @@ func getTestLogger(buf io.Writer) *daprLogger {
 func TestCustomOutputDestination(t *testing.T) {
 	var buf bytes.Buffer
 	l := newDaprLogger(fakeLoggerName)
-	l.SetOuput(&buf)
+	l.SetOutput(&buf)
 	l.EnableJSONOutput(true)
 	l.SetAppID("dapr_app")
 	l.SetOutputLevel(InfoLevel)

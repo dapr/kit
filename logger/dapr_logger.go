@@ -107,7 +107,7 @@ func (l *daprLogger) WithLogType(logType string) Logger {
 	}
 }
 
-func (l *daprLogger) SetOuput(output io.Writer) {
+func (l *daprLogger) SetOutput(output io.Writer) {
 	l.logger.Logger.SetOutput(output)
 }
 
