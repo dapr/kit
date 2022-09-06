@@ -30,7 +30,7 @@ func Traceparent(sc trace.SpanContext) string {
 		flags)
 }
 
-// TraceID 从context读取traceid
+// TraceID get traceid from context.
 func TraceID(ctx context.Context) string {
 	sc := trace.SpanContextFromContext(ctx)
 	if sc.HasTraceID() {

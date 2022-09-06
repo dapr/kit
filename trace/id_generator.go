@@ -21,9 +21,11 @@ func init() {
 			propagation.Baggage{}))
 }
 
-var idGenerator *randomIDGenerator
-var _ trace.IDGenerator = &randomIDGenerator{}
-var idOnce sync.Once
+var (
+	idGenerator *randomIDGenerator
+	_           trace.IDGenerator = &randomIDGenerator{}
+	idOnce      sync.Once
+)
 
 type randomIDGenerator struct {
 	sync.Mutex

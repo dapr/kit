@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/dapr/kit/trace"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -39,7 +40,8 @@ func newDaprLogger(name string) *daprLogger {
 	newLogger.SetOutput(os.Stdout)
 
 	dl := &daprLogger{
-		name: name,
+		name:         name,
+		traceEnabled: defaultTraceEnabled,
 		logger: newLogger.WithFields(logrus.Fields{
 			logFieldScope: name,
 			logFieldType:  LogTypeLog,
@@ -110,8 +112,9 @@ func (l *daprLogger) SetOutputLevel(outputLevel LogLevel) {
 // WithLogType specify the log_type field in log. Default value is LogTypeLog.
 func (l *daprLogger) WithLogType(logType string) Logger {
 	return &daprLogger{
-		name:   l.name,
-		logger: l.logger.WithField(logFieldType, logType),
+		name:         l.name,
+		traceEnabled: defaultTraceEnabled,
+		logger:       l.logger.WithField(logFieldType, logType),
 	}
 }
 

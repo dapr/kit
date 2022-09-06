@@ -94,7 +94,8 @@ func SpanContextFromHTTP(h http.Header) trace.SpanContext {
 	traceparent := h.Get(traceparentHeader)
 	tracestate := h.Get(tracestateHeader)
 	if len(traceparent) > 0 {
-		return NewSpanContextFromTrace(string(traceparent), string(tracestate))
+		return NewSpanContextFromTrace(traceparent, tracestate)
 	}
+
 	return trace.SpanContext{}
 }
