@@ -84,8 +84,8 @@ type Logger interface {
 	Infof(format string, args ...interface{})
 	// InfoWithContext logs a message and context (traceid...) at level Info.
 	InfoWithContext(ctx context.Context, args ...interface{})
-	// InfofWithContext logs a message and context (traceid...) at level Info.
-	InfofWithContext(ctx context.Context, format string, args ...interface{})
+	// InfoWithContextf logs a message and context (traceid...) at level Info.
+	InfoWithContextf(ctx context.Context, format string, args ...interface{})
 
 	// Debug logs a message at level Debug.
 	Debug(args ...interface{})
@@ -93,8 +93,8 @@ type Logger interface {
 	Debugf(format string, args ...interface{})
 	// DebugWithContext logs a message and context (traceid...) at level Debug.
 	DebugWithContext(ctx context.Context, args ...interface{})
-	// DebugfWithContext logs a message and context (traceid...) at level Debug.
-	DebugfWithContext(ctx context.Context, format string, args ...interface{})
+	// DebugWithContextf logs a message and context (traceid...) at level Debug.
+	DebugWithContextf(ctx context.Context, format string, args ...interface{})
 
 	// Warn logs a message at level Warn.
 	Warn(args ...interface{})
@@ -102,8 +102,8 @@ type Logger interface {
 	Warnf(format string, args ...interface{})
 	// WarnWithContext logs a message and context (tarceid...) at level Warn.
 	WarnWithContext(ctx context.Context, args ...interface{})
-	// WarnfWithContext logs a message and context (tarceid...) at level Warn.
-	WarnfWithContext(ctx context.Context, format string, args ...interface{})
+	// WarnWithContextf logs a message and context (tarceid...) at level Warn.
+	WarnWithContextf(ctx context.Context, format string, args ...interface{})
 
 	// Error logs a message at level Error.
 	Error(args ...interface{})
@@ -111,8 +111,8 @@ type Logger interface {
 	Errorf(format string, args ...interface{})
 	// ErrorWithContext logs a message and context (traceid...) at level Error.
 	ErrorWithContext(ctx context.Context, args ...interface{})
-	// ErrorfWithContext logs a message and context (traceid...) at level Error.
-	ErrorfWithContext(ctx context.Context, format string, args ...interface{})
+	// ErrorWithContextf logs a message and context (traceid...) at level Error.
+	ErrorWithContextf(ctx context.Context, format string, args ...interface{})
 
 	// Fatal logs a message at level Fatal then the process will exit with status set to 1.
 	Fatal(args ...interface{})
@@ -120,8 +120,8 @@ type Logger interface {
 	Fatalf(format string, args ...interface{})
 	// FatalWithContext logs a message and context (traceid...) at level Fatal then the process will exit with status set to 1.
 	FatalWithContext(ctx context.Context, format string, args ...interface{})
-	// FatalfWithContext logs a message and context (traceid...) at level Fatal then the process will exit with status set to 1.
-	FatalfWithContext(ctx context.Context, format string, args ...interface{})
+	// FatalWithContextf logs a message and context (traceid...) at level Fatal then the process will exit with status set to 1.
+	FatalWithContextf(ctx context.Context, format string, args ...interface{})
 }
 
 // toLogLevel converts to LogLevel.

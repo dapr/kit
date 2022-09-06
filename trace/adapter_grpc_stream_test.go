@@ -32,7 +32,7 @@ func TestGRPCStream(t *testing.T) {
 
 	gpb.RegisterEchoServer(s, &gStreamServer{})
 	go func() {
-		if err := s.Serve(lis); err != nil {
+		if err = s.Serve(lis); err != nil {
 			t.Error("serve", err.Error())
 		}
 	}()
@@ -117,7 +117,7 @@ func clientStreamWithMetadata(t *testing.T, c gpb.EchoClient, message string) {
 	}
 
 	in := gpb.EchoRequest{Message: message}
-	if err := strm.Send(&in); err != nil {
+	if err = strm.Send(&in); err != nil {
 		t.Error("clientSend", err.Error())
 		return
 	}
@@ -147,7 +147,7 @@ func bidirectionalWithMetadata(t *testing.T, c gpb.EchoClient, message string) {
 	}
 
 	in := gpb.EchoRequest{Message: message}
-	if err := strm.Send(&in); err != nil {
+	if err = strm.Send(&in); err != nil {
 		t.Error("clientSend", err.Error())
 		return
 	}

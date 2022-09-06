@@ -39,7 +39,7 @@ func TestGrpc(t *testing.T) {
 	gpb.RegisterGreeterServer(s, &testServer{})
 
 	go func() {
-		if err := s.Serve(lis); err != nil {
+		if err = s.Serve(lis); err != nil {
 			t.Errorf("failed to serve: %v", err)
 		}
 	}()
