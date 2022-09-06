@@ -209,7 +209,7 @@ func (l *daprLogger) Fatalf(format string, args ...interface{}) {
 }
 
 // FatalWithContext logs a message and context (traceid...) at level Fatal then the process will exit with status set to 1.
-func (l *daprLogger) FatalWithContext(ctx context.Context, format string, args ...interface{}) {
+func (l *daprLogger) FatalWithContext(ctx context.Context, args ...interface{}) {
 	l.print(ctx, logrus.FatalLevel, args...)
 }
 

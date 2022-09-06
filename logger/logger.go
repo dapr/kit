@@ -119,7 +119,7 @@ type Logger interface {
 	// Fatalf logs a message at level Fatal then the process will exit with status set to 1.
 	Fatalf(format string, args ...interface{})
 	// FatalWithContext logs a message and context (traceid...) at level Fatal then the process will exit with status set to 1.
-	FatalWithContext(ctx context.Context, format string, args ...interface{})
+	FatalWithContext(ctx context.Context, args ...interface{})
 	// FatalWithContextf logs a message and context (traceid...) at level Fatal then the process will exit with status set to 1.
 	FatalWithContextf(ctx context.Context, format string, args ...interface{})
 }
