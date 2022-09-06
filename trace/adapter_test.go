@@ -80,7 +80,7 @@ type testServer struct {
 
 // SayHello implements helloworld.GreeterServer
 func (s *testServer) SayHello(ctx context.Context, in *gpb.HelloRequest) (*gpb.HelloReply, error) {
-	traceID := TraceID(ctx)
+	traceID := ID(ctx)
 	log.Printf("Received: %s, %s", in.GetName(), traceID)
 	return &gpb.HelloReply{Message: traceID}, nil
 }

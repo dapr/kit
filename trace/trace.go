@@ -30,8 +30,8 @@ func Traceparent(sc trace.SpanContext) string {
 		flags)
 }
 
-// TraceID get traceid from context.
-func TraceID(ctx context.Context) string {
+// ID get traceid from context.
+func ID(ctx context.Context) string {
 	sc := trace.SpanContextFromContext(ctx)
 	if sc.HasTraceID() {
 		return sc.TraceID().String()

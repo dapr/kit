@@ -171,13 +171,13 @@ type gStreamServer struct {
 }
 
 func (s *gStreamServer) UnaryEcho(ctx context.Context, in *gpb.EchoRequest) (*gpb.EchoResponse, error) {
-	traceID := TraceID(ctx)
+	traceID := ID(ctx)
 	log.Printf("received: %s %s \n", in.Message, traceID)
 	return &gpb.EchoResponse{Message: traceID}, nil
 }
 
 func (s *gStreamServer) ServerStreamingEcho(in *gpb.EchoRequest, stream gpb.Echo_ServerStreamingEchoServer) error {
-	traceID := TraceID(stream.Context())
+	traceID := ID(stream.Context())
 	log.Printf("received: %s %s \n", in.Message, traceID)
 
 	if err := stream.Send(&gpb.EchoResponse{Message: traceID}); err != nil {
@@ -195,7 +195,7 @@ func (s *gStreamServer) ClientStreamingEcho(stream gpb.Echo_ClientStreamingEchoS
 		return nil
 	}
 
-	traceID := TraceID(stream.Context())
+	traceID := ID(stream.Context())
 	log.Printf("received: %s %s \n", in.Message, traceID)
 
 	if err := stream.SendAndClose(&gpb.EchoResponse{Message: traceID}); err != nil {
@@ -213,7 +213,7 @@ func (s *gStreamServer) BidirectionalStreamingEcho(stream gpb.Echo_Bidirectional
 		return nil
 	}
 
-	traceID := TraceID(stream.Context())
+	traceID := ID(stream.Context())
 	log.Printf("received: %s %s \n", in.Message, traceID)
 
 	if err := stream.Send(&gpb.EchoResponse{Message: traceID}); err != nil {

@@ -221,7 +221,7 @@ func (l *daprLogger) FatalWithContextf(ctx context.Context, format string, args 
 func (l *daprLogger) print(ctx context.Context, level logrus.Level, args ...interface{}) {
 	var id string
 	if l.traceEnabled {
-		id = trace.TraceID(ctx)
+		id = trace.ID(ctx)
 	}
 
 	if id != "" {
@@ -234,7 +234,7 @@ func (l *daprLogger) print(ctx context.Context, level logrus.Level, args ...inte
 func (l *daprLogger) printf(ctx context.Context, level logrus.Level, format string, args ...interface{}) {
 	var id string
 	if l.traceEnabled {
-		id = trace.TraceID(ctx)
+		id = trace.ID(ctx)
 	}
 
 	if id != "" {
