@@ -58,6 +58,13 @@ func TestOptions(t *testing.T) {
 		assert.True(t, logLevelAsserted)
 		assert.True(t, logAsJSONAsserted)
 	})
+
+	t.Run("set dapr trace enabled", func(t *testing.T) {
+		o := DefaultOptions()
+		assert.Equal(t, defaultTraceEnabled, o.TraceEnabled)
+		o.SetTraceEnabled(true)
+		assert.Equal(t, !defaultTraceEnabled, o.TraceEnabled)
+	})
 }
 
 func TestApplyOptionsToLoggers(t *testing.T) {

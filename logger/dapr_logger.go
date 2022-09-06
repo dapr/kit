@@ -14,9 +14,11 @@ limitations under the License.
 package logger
 
 import (
+	"context"
 	"os"
 	"time"
 
+	"github.com/dapr/kit/trace"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,6 +26,8 @@ import (
 type daprLogger struct {
 	// name is the name of logger that is published to log as a scope
 	name string
+	// traceEnabled is the flag to enable trace.
+	traceEnabled bool
 	// loger is the instance of logrus logger
 	logger *logrus.Entry
 }
@@ -87,6 +91,11 @@ func (l *daprLogger) SetAppID(id string) {
 	l.logger = l.logger.WithField(logFieldAppID, id)
 }
 
+// SetTraceEnabled sets trace enabled for dapr logger.
+func (l *daprLogger) SetTraceEnabled(enabled bool) {
+	l.traceEnabled = enabled
+}
+
 func toLogrusLevel(lvl LogLevel) logrus.Level {
 	// ignore error because it will never happens
 	l, _ := logrus.ParseLevel(string(lvl))
@@ -108,50 +117,126 @@ func (l *daprLogger) WithLogType(logType string) Logger {
 
 // Info logs a message at level Info.
 func (l *daprLogger) Info(args ...interface{}) {
-	l.logger.Log(logrus.InfoLevel, args...)
+	l.print(nil, logrus.InfoLevel, args...)
 }
 
 // Infof logs a message at level Info.
 func (l *daprLogger) Infof(format string, args ...interface{}) {
-	l.logger.Logf(logrus.InfoLevel, format, args...)
+	l.printf(nil, logrus.InfoLevel, format, args...)
+}
+
+// InfoWithContext logs a message and context (traceid...)at level Info.
+func (l *daprLogger) InfoWithContext(ctx context.Context, args ...interface{}) {
+	l.print(ctx, logrus.InfoLevel, args...)
+}
+
+// InfofWithContext logs a message and context (traceid...)at level Info.
+func (l *daprLogger) InfofWithContext(ctx context.Context, format string, args ...interface{}) {
+	l.printf(ctx, logrus.InfoLevel, format, args...)
 }
 
 // Debug logs a message at level Debug.
 func (l *daprLogger) Debug(args ...interface{}) {
-	l.logger.Log(logrus.DebugLevel, args...)
+	l.print(nil, logrus.DebugLevel, args...)
 }
 
 // Debugf logs a message at level Debug.
 func (l *daprLogger) Debugf(format string, args ...interface{}) {
-	l.logger.Logf(logrus.DebugLevel, format, args...)
+	l.printf(nil, logrus.DebugLevel, format, args...)
+}
+
+// DebugWithContext logs a message and context (traceid...) at level Debug.
+func (l *daprLogger) DebugWithContext(ctx context.Context, args ...interface{}) {
+	l.print(ctx, logrus.DebugLevel, args...)
+}
+
+// DebugfWithContext logs a message and context (traceid...) at level Debug.
+func (l *daprLogger) DebugfWithContext(ctx context.Context, format string, args ...interface{}) {
+	l.printf(ctx, logrus.DebugLevel, format, args...)
 }
 
 // Warn logs a message at level Warn.
 func (l *daprLogger) Warn(args ...interface{}) {
-	l.logger.Log(logrus.WarnLevel, args...)
+	l.print(nil, logrus.WarnLevel, args...)
 }
 
 // Warnf logs a message at level Warn.
 func (l *daprLogger) Warnf(format string, args ...interface{}) {
-	l.logger.Logf(logrus.WarnLevel, format, args...)
+	l.printf(nil, logrus.WarnLevel, format, args...)
+}
+
+// WarnWithContext logs a message and context (tarceid...) at level Warn.
+func (l *daprLogger) WarnWithContext(ctx context.Context, args ...interface{}) {
+	l.print(ctx, logrus.WarnLevel, args...)
+}
+
+// WarnfWithContext logs a message and context (tarceid...) at level Warn.
+func (l *daprLogger) WarnfWithContext(ctx context.Context, format string, args ...interface{}) {
+	l.printf(ctx, logrus.WarnLevel, format, args...)
 }
 
 // Error logs a message at level Error.
 func (l *daprLogger) Error(args ...interface{}) {
-	l.logger.Log(logrus.ErrorLevel, args...)
+	l.print(nil, logrus.ErrorLevel, args...)
 }
 
 // Errorf logs a message at level Error.
 func (l *daprLogger) Errorf(format string, args ...interface{}) {
-	l.logger.Logf(logrus.ErrorLevel, format, args...)
+	l.printf(nil, logrus.ErrorLevel, format, args...)
+}
+
+// ErrorWithContext logs a message and context (traceid...) at level Error.
+func (l *daprLogger) ErrorWithContext(ctx context.Context, args ...interface{}) {
+	l.print(ctx, logrus.ErrorLevel, args...)
+}
+
+// ErrorfWithContext logs a message and context (traceid...) at level Error.
+func (l *daprLogger) ErrorfWithContext(ctx context.Context, format string, args ...interface{}) {
+	l.printf(ctx, logrus.ErrorLevel, format, args...)
 }
 
 // Fatal logs a message at level Fatal then the process will exit with status set to 1.
 func (l *daprLogger) Fatal(args ...interface{}) {
-	l.logger.Fatal(args...)
+	l.print(nil, logrus.FatalLevel, args...)
 }
 
 // Fatalf logs a message at level Fatal then the process will exit with status set to 1.
 func (l *daprLogger) Fatalf(format string, args ...interface{}) {
-	l.logger.Fatalf(format, args...)
+	l.printf(nil, logrus.FatalLevel, format, args...)
+}
+
+// FatalWithContext logs a message and context (traceid...) at level Fatal then the process will exit with status set to 1.
+func (l *daprLogger) FatalWithContext(ctx context.Context, format string, args ...interface{}) {
+	l.print(ctx, logrus.FatalLevel, args...)
+}
+
+// FatalfWithContext logs a message and context (traceid...) at level Fatal then the process will exit with status set to 1.
+func (l *daprLogger) FatalfWithContext(ctx context.Context, format string, args ...interface{}) {
+	l.printf(ctx, logrus.FatalLevel, format, args...)
+}
+
+func (l *daprLogger) print(ctx context.Context, level logrus.Level, args ...interface{}) {
+	var id string
+	if l.traceEnabled {
+		id = trace.TraceID(ctx)
+	}
+
+	if id != "" {
+		l.logger.WithField("id", id).Log(level, args...)
+	} else {
+		l.logger.Log(level, args...)
+	}
+}
+
+func (l *daprLogger) printf(ctx context.Context, level logrus.Level, format string, args ...interface{}) {
+	var id string
+	if l.traceEnabled {
+		id = trace.TraceID(ctx)
+	}
+
+	if id != "" {
+		l.logger.WithField("id", id).Logf(level, format, args...)
+	} else {
+		l.logger.Logf(level, format, args...)
+	}
 }

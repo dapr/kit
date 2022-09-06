@@ -15,12 +15,15 @@ package logger
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/dapr/kit/trace"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -52,6 +55,14 @@ func TestEnableJSON(t *testing.T) {
 	assert.Equal(t, "fakeLogger", testLogger.logger.Data[logFieldScope])
 	assert.Equal(t, LogTypeLog, testLogger.logger.Data[logFieldType])
 	assert.Equal(t, expectedHost, testLogger.logger.Data[logFieldInstance])
+}
+
+func TestTraceEnabled(t *testing.T) {
+	var buf bytes.Buffer
+	testLogger := getTestLogger(&buf)
+	assert.Equal(t, defaultTraceEnabled, testLogger.traceEnabled)
+	testLogger.SetTraceEnabled(true)
+	assert.Equal(t, !defaultTraceEnabled, testLogger.traceEnabled)
 }
 
 func TestJSONLoggerFields(t *testing.T) {
@@ -157,6 +168,81 @@ func TestJSONLoggerFields(t *testing.T) {
 			assert.Equal(t, tt.message, o[logFieldMessage])
 			_, err := time.Parse(time.RFC3339, o[logFieldTimeStamp].(string))
 			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestJSONLoggerFieldsWithSpanContext(t *testing.T) {
+	tests := []struct {
+		name         string
+		outputLevel  LogLevel
+		traceEnabled bool
+		level        string
+		appID        string
+		message      string
+		instance     string
+		ctx          context.Context
+		fn           func(*daprLogger, context.Context, string)
+	}{
+		{
+			"info()",
+			InfoLevel,
+			false,
+			"info",
+			"dapr_app",
+			"King Dapr",
+			"dapr-pod",
+			trace.SpanContextWithContext(context.Background()),
+			func(l *daprLogger, ctx context.Context, msg string) {
+				l.InfoWithContext(ctx, msg)
+			},
+		},
+		{
+			"info()",
+			InfoLevel,
+			true,
+			"info",
+			"dapr_app",
+			"King Dapr",
+			"dapr-pod",
+			trace.SpanContextWithContext(context.Background()),
+			func(l *daprLogger, ctx context.Context, msg string) {
+				l.InfoWithContext(ctx, msg)
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			testLogger := getTestLogger(&buf)
+			testLogger.EnableJSONOutput(true)
+			testLogger.SetAppID(tt.appID)
+			DaprVersion = tt.appID
+			testLogger.SetOutputLevel(tt.outputLevel)
+			testLogger.logger.Data[logFieldInstance] = tt.instance
+			testLogger.SetTraceEnabled(tt.traceEnabled)
+
+			tt.fn(testLogger, tt.ctx, tt.message)
+
+			b, _ := buf.ReadBytes('\n')
+			var o map[string]interface{}
+			assert.NoError(t, json.Unmarshal(b, &o))
+			fmt.Printf("line: %s", string(b))
+
+			// assert
+			assert.Equal(t, tt.appID, o[logFieldAppID])
+			assert.Equal(t, tt.instance, o[logFieldInstance])
+			assert.Equal(t, tt.level, o[logFieldLevel])
+			assert.Equal(t, LogTypeLog, o[logFieldType])
+			assert.Equal(t, fakeLoggerName, o[logFieldScope])
+			assert.Equal(t, tt.message, o[logFieldMessage])
+			_, err := time.Parse(time.RFC3339, o[logFieldTimeStamp].(string))
+			assert.NoError(t, err)
+			if tt.traceEnabled {
+				assert.NotEmpty(t, o[logFieldTraceID])
+			} else {
+				assert.Empty(t, o[logFieldTraceID])
+			}
 		})
 	}
 }

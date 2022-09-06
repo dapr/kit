@@ -14,6 +14,7 @@ limitations under the License.
 package logger
 
 import (
+	"context"
 	"strings"
 	"sync"
 )
@@ -33,6 +34,7 @@ const (
 	logFieldInstance  = "instance"
 	logFieldDaprVer   = "ver"
 	logFieldAppID     = "app_id"
+	logFieldTraceID   = "id"
 )
 
 // LogLevel is Dapr Logger Level type.
@@ -70,6 +72,8 @@ type Logger interface {
 	SetAppID(id string)
 	// SetOutputLevel sets log output level
 	SetOutputLevel(outputLevel LogLevel)
+	// SetTraceEnabled sets trace enabled.
+	SetTraceEnabled(enabled bool)
 
 	// WithLogType specify the log_type field in log. Default value is LogTypeLog
 	WithLogType(logType string) Logger
@@ -78,22 +82,46 @@ type Logger interface {
 	Info(args ...interface{})
 	// Infof logs a message at level Info.
 	Infof(format string, args ...interface{})
+	// InfoWithContext logs a message and context (traceid...) at level Info.
+	InfoWithContext(ctx context.Context, args ...interface{})
+	// InfofWithContext logs a message and context (traceid...) at level Info.
+	InfofWithContext(ctx context.Context, format string, args ...interface{})
+
 	// Debug logs a message at level Debug.
 	Debug(args ...interface{})
 	// Debugf logs a message at level Debug.
 	Debugf(format string, args ...interface{})
+	// DebugWithContext logs a message and context (traceid...) at level Debug.
+	DebugWithContext(ctx context.Context, args ...interface{})
+	// DebugfWithContext logs a message and context (traceid...) at level Debug.
+	DebugfWithContext(ctx context.Context, format string, args ...interface{})
+
 	// Warn logs a message at level Warn.
 	Warn(args ...interface{})
 	// Warnf logs a message at level Warn.
 	Warnf(format string, args ...interface{})
+	// WarnWithContext logs a message and context (tarceid...) at level Warn.
+	WarnWithContext(ctx context.Context, args ...interface{})
+	// WarnfWithContext logs a message and context (tarceid...) at level Warn.
+	WarnfWithContext(ctx context.Context, format string, args ...interface{})
+
 	// Error logs a message at level Error.
 	Error(args ...interface{})
 	// Errorf logs a message at level Error.
 	Errorf(format string, args ...interface{})
+	// ErrorWithContext logs a message and context (traceid...) at level Error.
+	ErrorWithContext(ctx context.Context, args ...interface{})
+	// ErrorfWithContext logs a message and context (traceid...) at level Error.
+	ErrorfWithContext(ctx context.Context, format string, args ...interface{})
+
 	// Fatal logs a message at level Fatal then the process will exit with status set to 1.
 	Fatal(args ...interface{})
 	// Fatalf logs a message at level Fatal then the process will exit with status set to 1.
 	Fatalf(format string, args ...interface{})
+	// FatalWithContext logs a message and context (traceid...) at level Fatal then the process will exit with status set to 1.
+	FatalWithContext(ctx context.Context, format string, args ...interface{})
+	// FatalfWithContext logs a message and context (traceid...) at level Fatal then the process will exit with status set to 1.
+	FatalfWithContext(ctx context.Context, format string, args ...interface{})
 }
 
 // toLogLevel converts to LogLevel.
