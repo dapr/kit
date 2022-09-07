@@ -16,9 +16,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// 以下测试为，单次请求/响应(unary)测试
-// 流式请求测试，请看 adapter_grpc_test.go、adapter_trcp_stream_test.go
-
 func spanContextWithContext(ctx context.Context) (context.Context, trace.SpanContext) {
 	sc := GenerateSpanContext()
 	return trace.ContextWithSpanContext(ctx, sc), sc
