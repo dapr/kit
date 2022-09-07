@@ -50,7 +50,6 @@ func SpanContextFromGrpc(ctx context.Context) trace.SpanContext {
 	if len(m2) > 0 {
 		tracestate = m2[0]
 	}
-	// 只保证traceparent读到
 	if len(traceparent) == 0 {
 		return trace.SpanContext{}
 	}
