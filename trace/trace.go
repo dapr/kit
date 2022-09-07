@@ -39,7 +39,7 @@ func ID(ctx context.Context) string {
 	return ""
 }
 
-// NewSpanContextFromTrace 构建新的span_context
+// NewSpanContextFromTrace creates span context.
 func NewSpanContextFromTrace(traceparent, tracestate string) trace.SpanContext {
 	matches := traceCtxRegExp.FindStringSubmatch(traceparent)
 
