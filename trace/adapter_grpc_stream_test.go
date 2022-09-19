@@ -2,7 +2,6 @@ package trace
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"testing"
@@ -13,7 +12,11 @@ import (
 	gpb "google.golang.org/grpc/examples/features/proto/echo"
 )
 
-const message = "hello world!"
+const (
+	waitMillisecond = 200
+	unit            = time.Millisecond
+	message         = "hello world!"
+)
 
 func TestGRPCStream(t *testing.T) {
 	const (
@@ -25,20 +28,21 @@ func TestGRPCStream(t *testing.T) {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	fmt.Printf("server listening at %v\n", lis.Addr())
+	log.Printf("server listening at %v\n", lis.Addr())
 
-	s := grpc.NewServer(grpc.UnaryInterceptor(GRPCServerUnaryInterceptor),
-		grpc.StreamInterceptor(GRPCServerStreamInterceptor))
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(GRPCServerUnaryInterceptor),
+		grpc.StreamInterceptor(GRPCServerStreamInterceptor),
+	)
 
-	gpb.RegisterEchoServer(s, &gStreamServer{})
+	gpb.RegisterEchoServer(s, &gRPCStreamServer{})
 	go func() {
 		if err = s.Serve(lis); err != nil {
 			t.Error("serve", err.Error())
 		}
 	}()
 
-	// ############# client #############
-	time.Sleep(2 * time.Second)
+	time.Sleep(waitMillisecond * unit)
 
 	conn, err := grpc.Dial(addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -53,13 +57,13 @@ func TestGRPCStream(t *testing.T) {
 	c := gpb.NewEchoClient(conn)
 
 	unaryCallWithMetadata(t, c, message)
-	time.Sleep(1 * time.Second)
+	time.Sleep(waitMillisecond * unit / 2)
 
 	serverStreamingWithMetadata(t, c, message)
-	time.Sleep(1 * time.Second)
+	time.Sleep(waitMillisecond * unit / 2)
 
 	clientStreamWithMetadata(t, c, message)
-	time.Sleep(1 * time.Second)
+	time.Sleep(waitMillisecond * unit / 2)
 
 	bidirectionalWithMetadata(t, c, message)
 }
@@ -166,17 +170,17 @@ func bidirectionalWithMetadata(t *testing.T, c gpb.EchoClient, message string) {
 	t.Log(out.Message, traceID)
 }
 
-type gStreamServer struct {
+type gRPCStreamServer struct {
 	gpb.UnimplementedEchoServer
 }
 
-func (s *gStreamServer) UnaryEcho(ctx context.Context, in *gpb.EchoRequest) (*gpb.EchoResponse, error) {
+func (s *gRPCStreamServer) UnaryEcho(ctx context.Context, in *gpb.EchoRequest) (*gpb.EchoResponse, error) {
 	traceID := ID(ctx)
 	log.Printf("received: %s %s \n", in.Message, traceID)
 	return &gpb.EchoResponse{Message: traceID}, nil
 }
 
-func (s *gStreamServer) ServerStreamingEcho(in *gpb.EchoRequest, stream gpb.Echo_ServerStreamingEchoServer) error {
+func (s *gRPCStreamServer) ServerStreamingEcho(in *gpb.EchoRequest, stream gpb.Echo_ServerStreamingEchoServer) error {
 	traceID := ID(stream.Context())
 	log.Printf("received: %s %s \n", in.Message, traceID)
 
@@ -188,7 +192,7 @@ func (s *gStreamServer) ServerStreamingEcho(in *gpb.EchoRequest, stream gpb.Echo
 	return nil
 }
 
-func (s *gStreamServer) ClientStreamingEcho(stream gpb.Echo_ClientStreamingEchoServer) error {
+func (s *gRPCStreamServer) ClientStreamingEcho(stream gpb.Echo_ClientStreamingEchoServer) error {
 	in, err := stream.Recv()
 	if err != nil {
 		log.Println("recv error", err.Error())
@@ -206,7 +210,7 @@ func (s *gStreamServer) ClientStreamingEcho(stream gpb.Echo_ClientStreamingEchoS
 	return nil
 }
 
-func (s *gStreamServer) BidirectionalStreamingEcho(stream gpb.Echo_BidirectionalStreamingEchoServer) error {
+func (s *gRPCStreamServer) BidirectionalStreamingEcho(stream gpb.Echo_BidirectionalStreamingEchoServer) error {
 	in, err := stream.Recv()
 	if err != nil {
 		log.Println("recv error", err.Error())

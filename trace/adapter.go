@@ -47,11 +47,11 @@ func SpanContextFromGrpc(ctx context.Context) trace.SpanContext {
 	if len(m1) > 0 {
 		traceparent = m1[0]
 	}
-	if len(m2) > 0 {
-		tracestate = m2[0]
-	}
 	if len(traceparent) == 0 {
 		return trace.SpanContext{}
+	}
+	if len(m2) > 0 {
+		tracestate = m2[0]
 	}
 
 	return NewSpanContextFromTrace(traceparent, tracestate)
