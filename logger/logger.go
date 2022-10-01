@@ -78,6 +78,9 @@ type Logger interface {
 	// WithLogType specify the log_type field in log. Default value is LogTypeLog
 	WithLogType(logType string) Logger
 
+	// WithFields returns a logger with the added structured fields.
+	WithFields(fields map[string]any) Logger
+
 	// Info logs a message at level Info.
 	Info(args ...interface{})
 	// Infof logs a message at level Info.
