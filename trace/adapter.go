@@ -40,8 +40,8 @@ func SpanContextFromGrpc(ctx context.Context) trace.SpanContext {
 		return trace.SpanContext{}
 	}
 
-	m1 := md.Get(traceparentHeader)
-	m2 := md.Get(tracestateHeader)
+	m1 := md.Get(TraceparentHeader)
+	m2 := md.Get(TracestateHeader)
 
 	var traceparent, tracestate string
 	if len(m1) > 0 {
@@ -72,8 +72,8 @@ func GRPCClientStreamInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc 
 // SpanContextToGrpc writes span context to grpc outgoing metadata.
 func SpanContextToGrpc(ctx context.Context, sc trace.SpanContext) context.Context {
 	return metadata.AppendToOutgoingContext(ctx,
-		traceparentHeader, Traceparent(sc),
-		tracestateHeader, sc.TraceState().String(),
+		TraceparentHeader, Traceparent(sc),
+		TracestateHeader, sc.TraceState().String(),
 	)
 }
 
@@ -84,14 +84,14 @@ func SpanContextToHTTP(ctx context.Context, h http.Header) {
 		return
 	}
 
-	h.Set(traceparentHeader, Traceparent(sc))
-	h.Set(tracestateHeader, sc.TraceState().String())
+	h.Set(TraceparentHeader, Traceparent(sc))
+	h.Set(TracestateHeader, sc.TraceState().String())
 }
 
 // SpanContextFromHTTP get span context from http request.
 func SpanContextFromHTTP(h http.Header) trace.SpanContext {
-	traceparent := h.Get(traceparentHeader)
-	tracestate := h.Get(tracestateHeader)
+	traceparent := h.Get(TraceparentHeader)
+	tracestate := h.Get(TracestateHeader)
 	if len(traceparent) > 0 {
 		return NewSpanContextFromTrace(traceparent, tracestate)
 	}

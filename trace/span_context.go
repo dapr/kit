@@ -13,12 +13,14 @@ func GenerateSpanContext() trace.SpanContext {
 		TraceID: tid,
 		SpanID:  sid,
 	}
+
 	return trace.NewSpanContext(scc)
 }
 
 // SpanContextWithContext writes span context with context.
 func SpanContextWithContext(ctx context.Context) context.Context {
 	sc := GenerateSpanContext()
+
 	return trace.ContextWithSpanContext(ctx, sc)
 }
 
@@ -28,6 +30,7 @@ func SpanContextTo(ctx context.Context, to func(context.Context, trace.SpanConte
 	if !sc.IsValid() {
 		return ctx
 	}
+
 	return to(ctx, sc)
 }
 
