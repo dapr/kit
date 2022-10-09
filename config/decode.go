@@ -24,9 +24,9 @@ import (
 )
 
 var (
-	typeDuration      = reflect.TypeOf(time.Duration(5))             // nolint: gochecknoglobals
-	typeTime          = reflect.TypeOf(time.Time{})                  // nolint: gochecknoglobals
-	typeStringDecoder = reflect.TypeOf((*StringDecoder)(nil)).Elem() // nolint: gochecknoglobals
+	typeDuration      = reflect.TypeOf(time.Duration(5))             //nolint: gochecknoglobals
+	typeTime          = reflect.TypeOf(time.Time{})                  //nolint: gochecknoglobals
+	typeStringDecoder = reflect.TypeOf((*StringDecoder)(nil)).Elem() //nolint: gochecknoglobals
 )
 
 // StringDecoder is used as a way for custom types (or alias types) to
@@ -46,10 +46,11 @@ type StringDecoder interface {
 // Most of the heavy lifting is handled by the mapstructure library. A custom decoder is used to handle
 // decoding string values to the supported primitives.
 func Decode(input interface{}, output interface{}) error {
-	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{ // nolint:exhaustivestruct
-		Result:     output,
-		DecodeHook: decodeString,
-	})
+	decoder, err := mapstructure.NewDecoder(
+		&mapstructure.DecoderConfig{ //nolint: exhaustruct
+			Result:     output,
+			DecodeHook: decodeString,
+		})
 	if err != nil {
 		return err
 	}
@@ -57,7 +58,7 @@ func Decode(input interface{}, output interface{}) error {
 	return decoder.Decode(input)
 }
 
-// nolint:cyclop
+//nolint:cyclop
 func decodeString(f reflect.Type, t reflect.Type, data any) (any, error) {
 	if t.Kind() == reflect.String && f.Kind() != reflect.String {
 		return fmt.Sprintf("%v", data), nil
@@ -121,7 +122,7 @@ func decodeString(f reflect.Type, t reflect.Type, data any) (any, error) {
 		return t, invalidError(err, "time", dataString)
 	}
 
-	switch t.Kind() { // nolint: exhaustive
+	switch t.Kind() {
 	case reflect.Uint:
 		val, err := strconv.ParseUint(dataString, 10, 64)
 
