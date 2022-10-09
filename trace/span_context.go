@@ -9,12 +9,11 @@ import (
 // GenerateSpanContext generates span context.
 func GenerateSpanContext() trace.SpanContext {
 	tid, sid := DefaultIDGenerator().NewIDs(context.Background())
-	scc := trace.SpanContextConfig{
-		TraceID: tid,
-		SpanID:  sid,
-	}
+	scc := new(trace.SpanContextConfig)
+	scc.TraceID = tid
+	scc.SpanID = sid
 
-	return trace.NewSpanContext(scc)
+	return trace.NewSpanContext(*scc)
 }
 
 // SpanContextWithContext writes span context with context.

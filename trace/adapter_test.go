@@ -33,7 +33,7 @@ func TestGrpc(t *testing.T) {
 	}
 
 	s := grpc.NewServer(grpc.UnaryInterceptor(GRPCServerUnaryInterceptor))
-	gpb.RegisterGreeterServer(s, &testServer{})
+	gpb.RegisterGreeterServer(s, new(testServer))
 
 	go func() {
 		if err = s.Serve(lis); err != nil {

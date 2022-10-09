@@ -42,11 +42,12 @@ func ID(ctx context.Context) string {
 // NewSpanContextFromTrace generates span context.
 func NewSpanContextFromTrace(traceparent, tracestate string) trace.SpanContext {
 	sc := SpanContextFromW3CString(traceparent)
-	ts := TraceStateFromW3CString(tracestate)
+	ts := StateFromW3CString(tracestate)
 
 	return sc.WithTraceState(ts)
 }
 
+// SpanContextFromW3CString generates span context by traceparent.
 func SpanContextFromW3CString(traceparent string) trace.SpanContext {
 	matches := traceCtxRegExp.FindStringSubmatch(traceparent)
 
@@ -111,7 +112,8 @@ func SpanContextFromW3CString(traceparent string) trace.SpanContext {
 	return sc
 }
 
-func TraceStateFromW3CString(tracestate string) trace.TraceState {
+// StateFromW3CString generates tracestate.
+func StateFromW3CString(tracestate string) trace.TraceState {
 	if tracestate == "" {
 		return trace.TraceState{}
 	}

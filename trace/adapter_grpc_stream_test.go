@@ -35,7 +35,7 @@ func TestGRPCStream(t *testing.T) {
 		grpc.StreamInterceptor(GRPCServerStreamInterceptor),
 	)
 
-	gpb.RegisterEchoServer(s, &gRPCStreamServer{})
+	gpb.RegisterEchoServer(s, new(gRPCStreamServer))
 	go func() {
 		if err = s.Serve(lis); err != nil {
 			t.Error("serve", err.Error())

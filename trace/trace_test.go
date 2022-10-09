@@ -62,7 +62,7 @@ func TestSpanContextFromW3CString(t *testing.T) {
 	}
 }
 
-func TestTraceStateFromW3CString(t *testing.T) {
+func TestStateFromW3CString(t *testing.T) {
 	uts := []struct {
 		tracestate  string
 		expectedLen int
@@ -80,7 +80,7 @@ func TestTraceStateFromW3CString(t *testing.T) {
 		},
 	}
 	for _, ut := range uts {
-		ts := TraceStateFromW3CString(ut.tracestate)
+		ts := StateFromW3CString(ut.tracestate)
 		assert.Equalf(t, ut.expectedLen, ts.Len(), ut.desc)
 	}
 }

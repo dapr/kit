@@ -23,7 +23,7 @@ func init() {
 
 var (
 	idGenerator *randomIDGenerator
-	_           trace.IDGenerator = &randomIDGenerator{}
+	_           trace.IDGenerator = new(randomIDGenerator)
 	idOnce      sync.Once
 )
 
@@ -57,7 +57,7 @@ func (gen *randomIDGenerator) NewIDs(ctx context.Context) (apitrace.TraceID, api
 func DefaultIDGenerator() trace.IDGenerator {
 	idOnce.Do(
 		func() {
-			idGenerator = &randomIDGenerator{}
+			idGenerator = new(randomIDGenerator)
 			var rngSeed int64
 			_ = binary.Read(crand.Reader, binary.LittleEndian, &rngSeed)
 			idGenerator.randSource = rand.New(rand.NewSource(rngSeed))
