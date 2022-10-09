@@ -68,12 +68,12 @@ func (l *daprLogger) EnableJSONOutput(enabled bool) {
 	}
 
 	if enabled {
-		formatter = &logrus.JSONFormatter{
+		formatter = &logrus.JSONFormatter{ //nolint: exhaustruct
 			TimestampFormat: time.RFC3339Nano,
 			FieldMap:        fieldMap,
 		}
 	} else {
-		formatter = &logrus.TextFormatter{
+		formatter = &logrus.TextFormatter{ //nolint: exhaustruct
 			TimestampFormat: time.RFC3339Nano,
 			FieldMap:        fieldMap,
 		}

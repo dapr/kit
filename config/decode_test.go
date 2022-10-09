@@ -26,7 +26,7 @@ import (
 	"github.com/dapr/kit/ptr"
 )
 
-type testConfig struct { // nolint: maligned
+type testConfig struct { //nolint: maligned
 	Int         int            `mapstructure:"int"`
 	IntPtr      *int           `mapstructure:"intPtr"`
 	Int64       int64          `mapstructure:"int64"`
