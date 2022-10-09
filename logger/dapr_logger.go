@@ -106,6 +106,14 @@ func (l *daprLogger) WithLogType(logType string) Logger {
 	}
 }
 
+// WithFields returns a logger with the added structured fields.
+func (l *daprLogger) WithFields(fields map[string]any) Logger {
+	return &daprLogger{
+		name:   l.name,
+		logger: l.logger.WithFields(fields),
+	}
+}
+
 // Info logs a message at level Info.
 func (l *daprLogger) Info(args ...interface{}) {
 	l.logger.Log(logrus.InfoLevel, args...)

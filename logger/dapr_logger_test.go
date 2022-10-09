@@ -18,11 +18,14 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"regexp"
 	"testing"
 	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 )
 
 const fakeLoggerName = "fakeLogger"
@@ -175,7 +178,7 @@ func TestWithTypeFields(t *testing.T) {
 
 	b, _ := buf.ReadBytes('\n')
 	var o map[string]interface{}
-	assert.NoError(t, json.Unmarshal(b, &o))
+	require.NoError(t, json.Unmarshal(b, &o))
 
 	assert.Equalf(t, LogTypeRequest, o[logFieldType], "new logger must be %s type", LogTypeRequest)
 
@@ -183,9 +186,104 @@ func TestWithTypeFields(t *testing.T) {
 	testLogger.Info("testLogger with log LogType")
 
 	b, _ = buf.ReadBytes('\n')
-	assert.NoError(t, json.Unmarshal(b, &o))
+	maps.Clear(o)
+	require.NoError(t, json.Unmarshal(b, &o))
 
 	assert.Equalf(t, LogTypeLog, o[logFieldType], "testLogger must be %s type", LogTypeLog)
+}
+
+func TestWithFields(t *testing.T) {
+	t.Run("json", func(t *testing.T) {
+		var buf bytes.Buffer
+		testLogger := getTestLogger(&buf)
+		testLogger.EnableJSONOutput(true)
+		testLogger.SetAppID("dapr_app")
+		testLogger.SetOutputLevel(InfoLevel)
+
+		var o map[string]interface{}
+
+		// Test adding fields
+		testLogger.WithFields(map[string]any{
+			"answer": 42,
+			"hello":  "world",
+		}).Info("🙃")
+
+		b, _ := buf.ReadBytes('\n')
+		maps.Clear(o)
+		require.NoError(t, json.Unmarshal(b, &o))
+
+		assert.Equal(t, "🙃", o["msg"])
+		assert.Equal(t, "world", o["hello"])
+		assert.Equal(t, float64(42), o["answer"])
+
+		// Test with other fields
+		testLogger.WithFields(map[string]any{
+			"🤌": []string{"👍", "🚀"},
+		}).Info("🐶")
+
+		b, _ = buf.ReadBytes('\n')
+		maps.Clear(o)
+		require.NoError(t, json.Unmarshal(b, &o))
+
+		assert.Equal(t, "🐶", o["msg"])
+		assert.Len(t, o["🤌"], 2)
+		assert.Equal(t, "👍", (o["🤌"].([]any))[0])
+		assert.Equal(t, "🚀", (o["🤌"].([]any))[1])
+		assert.Empty(t, o["hello"])
+		assert.Empty(t, o["answer"])
+
+		// Log our via testLogger to ensure that testLogger still uses the default fields
+		testLogger.Info("🤔")
+
+		b, _ = buf.ReadBytes('\n')
+		maps.Clear(o)
+		require.NoError(t, json.Unmarshal(b, &o))
+
+		assert.Equal(t, "🤔", o["msg"])
+		assert.Empty(t, o["hello"])
+		assert.Empty(t, o["answer"])
+	})
+
+	t.Run("text", func(t *testing.T) {
+		var buf bytes.Buffer
+		testLogger := getTestLogger(&buf)
+		testLogger.EnableJSONOutput(false)
+		testLogger.SetAppID("dapr_app")
+		testLogger.SetOutputLevel(InfoLevel)
+
+		// Test adding fields
+		testLogger.WithFields(map[string]any{
+			"answer": 42,
+			"hello":  "world",
+		}).Info("🙃")
+
+		b, _ := buf.ReadBytes('\n')
+
+		assert.True(t, regexp.MustCompile(`(^| )msg="🙃"($| )`).Match(b))
+		assert.True(t, regexp.MustCompile(`(^| )answer=42($| )`).Match(b))
+		assert.True(t, regexp.MustCompile(`(^| )hello=world($| )`).Match(b))
+
+		// Test with other fields
+		testLogger.WithFields(map[string]any{
+			"🤌": []string{"👍", "🚀"},
+		}).Info("🐶")
+
+		b, _ = buf.ReadBytes('\n')
+
+		assert.True(t, regexp.MustCompile(`(^| )msg="🐶"($| )`).Match(b))
+		assert.True(t, regexp.MustCompile(`(^| )🤌=`).Match(b))
+		assert.False(t, regexp.MustCompile(`(^| )answer=`).Match(b))
+		assert.False(t, regexp.MustCompile(`(^| )hello=`).Match(b))
+
+		// Log our via testLogger to ensure that testLogger still uses the default fields
+		testLogger.Info("🤔")
+
+		b, _ = buf.ReadBytes('\n')
+
+		assert.True(t, regexp.MustCompile(`(^| )msg="🤔"($| )`).Match(b))
+		assert.False(t, regexp.MustCompile(`(^| )answer=`).Match(b))
+		assert.False(t, regexp.MustCompile(`(^| )hello=`).Match(b))
+	})
 }
 
 func TestToLogrusLevel(t *testing.T) {
