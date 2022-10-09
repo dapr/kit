@@ -16,6 +16,11 @@ func (e *emptyLogger) WithLogType(logType string) Logger {
 	return nil
 }
 
+// WithFields returns a logger with the added structured fields.
+func (e *emptyLogger) WithFields(fields map[string]any) Logger {
+	return nil
+}
+
 // Info logs a message at level Info.
 func (e *emptyLogger) Info(args ...interface{}) {}
 
