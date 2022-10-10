@@ -125,3 +125,19 @@ func StateFromW3CString(tracestate string) trace.TraceState {
 
 	return ts
 }
+
+// TraceparentToW3CString gets traceparent from spancontext.
+func TraceparentToW3CString(sc trace.SpanContext) string {
+	flags := sc.TraceFlags() & trace.FlagsSampled
+
+	return fmt.Sprintf("%.2x-%s-%s-%s",
+		supportedVersion,
+		sc.TraceID(),
+		sc.SpanID(),
+		flags)
+}
+
+// TraceStateToW3CString extracts the TraceState from given SpanContext and returns its string representation.
+func TraceStateToW3CString(sc trace.SpanContext) string {
+	return sc.TraceState().String()
+}
