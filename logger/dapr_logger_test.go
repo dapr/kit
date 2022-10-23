@@ -33,6 +33,7 @@ const fakeLoggerName = "fakeLogger"
 func getTestLogger(buf io.Writer) *daprLogger {
 	l := newDaprLogger(fakeLoggerName)
 	l.SetOutput(buf)
+	l.logger.Logger.ExitFunc = func(i int) {} // don't quit the test
 
 	return l
 }
@@ -160,6 +161,106 @@ func TestJSONLoggerFields(t *testing.T) {
 			assert.Equal(t, tt.message, o[logFieldMessage])
 			_, err := time.Parse(time.RFC3339, o[logFieldTimeStamp].(string))
 			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestOutputLevel(t *testing.T) {
+	tests := []struct {
+		outputLevel          LogLevel
+		expectedOutputLevels map[LogLevel]bool
+	}{
+		{
+			outputLevel: DebugLevel,
+			expectedOutputLevels: map[LogLevel]bool{
+				DebugLevel: true,
+				InfoLevel:  true,
+				WarnLevel:  true,
+				ErrorLevel: true,
+				FatalLevel: true,
+			},
+		},
+		{
+			outputLevel: InfoLevel,
+			expectedOutputLevels: map[LogLevel]bool{
+				DebugLevel: false,
+				InfoLevel:  true,
+				WarnLevel:  true,
+				ErrorLevel: true,
+				FatalLevel: true,
+			},
+		},
+		{
+			outputLevel: WarnLevel,
+			expectedOutputLevels: map[LogLevel]bool{
+				DebugLevel: false,
+				InfoLevel:  false,
+				WarnLevel:  true,
+				ErrorLevel: true,
+				FatalLevel: true,
+			},
+		},
+		{
+			outputLevel: ErrorLevel,
+			expectedOutputLevels: map[LogLevel]bool{
+				DebugLevel: false,
+				InfoLevel:  false,
+				WarnLevel:  false,
+				ErrorLevel: true,
+				FatalLevel: true,
+			},
+		},
+		{
+			outputLevel: FatalLevel,
+			expectedOutputLevels: map[LogLevel]bool{
+				DebugLevel: false,
+				InfoLevel:  false,
+				WarnLevel:  false,
+				ErrorLevel: false,
+				FatalLevel: true,
+			},
+		},
+		{
+			outputLevel: UndefinedLevel,
+			expectedOutputLevels: map[LogLevel]bool{
+				DebugLevel: false,
+				InfoLevel:  false,
+				WarnLevel:  false,
+				ErrorLevel: false,
+				FatalLevel: false,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.outputLevel), func(t *testing.T) {
+			for l, want := range tt.expectedOutputLevels {
+
+				var buf bytes.Buffer
+				testLogger := getTestLogger(&buf)
+				testLogger.SetOutputLevel(tt.outputLevel)
+
+				assert.Equal(t, want, testLogger.IsOutputLevelEnabled(l))
+
+				switch l {
+				case DebugLevel:
+					testLogger.Debug("")
+				case InfoLevel:
+					testLogger.Info("")
+				case WarnLevel:
+					testLogger.Warn("")
+				case ErrorLevel:
+					testLogger.Error("")
+				case FatalLevel:
+					testLogger.Fatal("")
+				}
+
+				if want {
+					assert.NotEmptyf(t, buf.Bytes(), "expected to log %v", l)
+				} else {
+					assert.Emptyf(t, buf.Bytes(), "expected to not log %v", l)
+				}
+			}
 		})
 	}
 }

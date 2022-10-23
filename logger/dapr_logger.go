@@ -89,7 +89,7 @@ func (l *daprLogger) SetAppID(id string) {
 }
 
 func toLogrusLevel(lvl LogLevel) logrus.Level {
-	// ignore error because it will never happens
+	// ignore error because it will never happen
 	l, _ := logrus.ParseLevel(string(lvl))
 	return l
 }
@@ -97,6 +97,11 @@ func toLogrusLevel(lvl LogLevel) logrus.Level {
 // SetOutputLevel sets log output level.
 func (l *daprLogger) SetOutputLevel(outputLevel LogLevel) {
 	l.logger.Logger.SetLevel(toLogrusLevel(outputLevel))
+}
+
+// IsOutputLevelEnabled returns true if the logger will output this LogLevel.
+func (l *daprLogger) IsOutputLevelEnabled(level LogLevel) bool {
+	return l.logger.Logger.IsLevelEnabled(toLogrusLevel(level))
 }
 
 // SetOutput sets the destination for the logs.
