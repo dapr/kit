@@ -14,6 +14,7 @@ limitations under the License.
 package logger
 
 import (
+	"io"
 	"strings"
 	"sync"
 )
@@ -70,6 +71,8 @@ type Logger interface {
 	SetAppID(id string)
 	// SetOutputLevel sets log output level
 	SetOutputLevel(outputLevel LogLevel)
+	// SetOutput sets the destination for the logs
+	SetOutput(dst io.Writer)
 
 	// WithLogType specify the log_type field in log. Default value is LogTypeLog
 	WithLogType(logType string) Logger
