@@ -15,6 +15,7 @@ package logger
 
 import (
 	"context"
+	"io"
 	"strings"
 	"sync"
 )
@@ -74,6 +75,8 @@ type Logger interface {
 	SetOutputLevel(outputLevel LogLevel)
 	// SetTraceEnabled sets trace enabled.
 	SetTraceEnabled(enabled bool)
+	// SetOutput sets the destination for the logs
+	SetOutput(dst io.Writer)
 
 	// WithLogType specify the log_type field in log. Default value is LogTypeLog
 	WithLogType(logType string) Logger

@@ -36,7 +36,7 @@ const fakeLoggerName = "fakeLogger"
 
 func getTestLogger(buf io.Writer) *daprLogger {
 	l := newDaprLogger(fakeLoggerName)
-	l.logger.Logger.SetOutput(buf)
+	l.SetOutput(buf)
 
 	return l
 }

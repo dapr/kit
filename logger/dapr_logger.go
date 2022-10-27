@@ -15,6 +15,7 @@ package logger
 
 import (
 	"context"
+	"io"
 	"os"
 	"time"
 
@@ -107,6 +108,11 @@ func toLogrusLevel(lvl LogLevel) logrus.Level {
 // SetOutputLevel sets log output level.
 func (l *daprLogger) SetOutputLevel(outputLevel LogLevel) {
 	l.logger.Logger.SetLevel(toLogrusLevel(outputLevel))
+}
+
+// SetOutput sets the destination for the logs.
+func (l *daprLogger) SetOutput(dst io.Writer) {
+	l.logger.Logger.SetOutput(dst)
 }
 
 // WithLogType specify the log_type field in log. Default value is LogTypeLog.
