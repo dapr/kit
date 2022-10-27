@@ -14,6 +14,7 @@ limitations under the License.
 package logger
 
 import (
+	"io"
 	"os"
 	"time"
 
@@ -68,12 +69,12 @@ func (l *daprLogger) EnableJSONOutput(enabled bool) {
 	}
 
 	if enabled {
-		formatter = &logrus.JSONFormatter{
+		formatter = &logrus.JSONFormatter{ //nolint: exhaustruct
 			TimestampFormat: time.RFC3339Nano,
 			FieldMap:        fieldMap,
 		}
 	} else {
-		formatter = &logrus.TextFormatter{
+		formatter = &logrus.TextFormatter{ //nolint: exhaustruct
 			TimestampFormat: time.RFC3339Nano,
 			FieldMap:        fieldMap,
 		}
@@ -96,6 +97,11 @@ func toLogrusLevel(lvl LogLevel) logrus.Level {
 // SetOutputLevel sets log output level.
 func (l *daprLogger) SetOutputLevel(outputLevel LogLevel) {
 	l.logger.Logger.SetLevel(toLogrusLevel(outputLevel))
+}
+
+// SetOutput sets the destination for the logs.
+func (l *daprLogger) SetOutput(dst io.Writer) {
+	l.logger.Logger.SetOutput(dst)
 }
 
 // WithLogType specify the log_type field in log. Default value is LogTypeLog.

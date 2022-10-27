@@ -1,5 +1,7 @@
 package logger
 
+import "io"
+
 type emptyLogger struct{}
 
 // EnableJSONOutput enables JSON formatted output log.
@@ -10,6 +12,9 @@ func (e *emptyLogger) SetAppID(id string) {}
 
 // SetOutputLevel sets log output level.
 func (e *emptyLogger) SetOutputLevel(outputLevel LogLevel) {}
+
+// SetOutput sets the destination for the logs
+func (e *emptyLogger) SetOutput(dst io.Writer) {}
 
 // WithLogType specify the log_type field in log. Default value is LogTypeLog.
 func (e *emptyLogger) WithLogType(logType string) Logger {
