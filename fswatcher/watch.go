@@ -39,6 +39,7 @@ func Watch(ctx context.Context, dir string, eventCh chan<- struct{}) error {
 					case batchCh <- struct{}{}:
 						go func() {
 							time.Sleep(500 * time.Millisecond)
+							<-batchCh
 							eventCh <- struct{}{}
 						}()
 					default:

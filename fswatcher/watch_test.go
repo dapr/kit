@@ -90,6 +90,33 @@ func TestWatch(t *testing.T) {
 			}
 		}()
 
+		// Touch the files
+		touchFile(baseDir, "file1")
+		touchFile(baseDir, "file2")
+		touchFile(baseDir, "file3")
+
+		// First message should be true
+		if !(<-statusCh) {
+			t.Fatalf("did not get event within 2 seconds")
+		}
+
+		// Second should be false
+		if <-statusCh {
+			t.Fatalf("got more than 1 change notification")
+		}
+
+		// Repeat
+		go func() {
+			for {
+				select {
+				case <-eventCh:
+					statusCh <- true
+				case <-time.After(2 * time.Second):
+					statusCh <- false
+					return
+				}
+			}
+		}()
 		touchFile(baseDir, "file1")
 		touchFile(baseDir, "file2")
 		touchFile(baseDir, "file3")
