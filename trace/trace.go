@@ -17,7 +17,7 @@ const (
 	TracestateHeader  = "tracestate"
 )
 
-// source from opentelmetry-go,  https://github.com/open-telemetry/opentelemetry-go/blob/main/propagation/trace_context.go#L44
+// source from opentelmetry-go, https://github.com/open-telemetry/opentelemetry-go/blob/main/propagation/trace_context.go#L44.
 var traceCtxRegExp = regexp.MustCompile("^(?P<version>[0-9a-f]{2})-(?P<traceID>[a-f0-9]{32})-(?P<spanID>[a-f0-9]{16})-(?P<traceFlags>[a-f0-9]{2})(?:-.*)?$")
 
 // Traceparent gets traceparent from spancontext.
@@ -48,6 +48,8 @@ func NewSpanContextFromTrace(traceparent, tracestate string) trace.SpanContext {
 	return sc.WithTraceState(ts)
 }
 
+// w3c reference: https://www.w3.org/TR/trace-context/#traceparent-header.
+// traceparent: 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01.
 // SpanContextFromW3CString generates span context by traceparent.
 func SpanContextFromW3CString(traceparent string) trace.SpanContext {
 	matches := traceCtxRegExp.FindStringSubmatch(traceparent)
@@ -76,10 +78,6 @@ func SpanContextFromW3CString(traceparent string) trace.SpanContext {
 		return trace.SpanContext{}
 	}
 
-	// 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01
-	// hex:
-	// len(traceid) = 32
-	// len(spanid) = 16
 	if len(matches[2]) != 32 {
 		return trace.SpanContext{}
 	}
