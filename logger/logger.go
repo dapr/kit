@@ -63,7 +63,7 @@ var (
 )
 
 // Logger includes the logging api sets.
-type Logger interface {
+type Logger interface { //nolint: interfacebloat
 	// EnableJSONOutput enables JSON formatted output log
 	EnableJSONOutput(enabled bool)
 

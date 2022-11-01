@@ -235,7 +235,6 @@ func TestOutputLevel(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(string(tt.outputLevel), func(t *testing.T) {
 			for l, want := range tt.expectedOutputLevels {
-
 				var buf bytes.Buffer
 				testLogger := getTestLogger(&buf)
 				testLogger.SetOutputLevel(tt.outputLevel)
