@@ -63,18 +63,22 @@ var (
 )
 
 // Logger includes the logging api sets.
-type Logger interface {
+type Logger interface { //nolint: interfacebloat
 	// EnableJSONOutput enables JSON formatted output log
 	EnableJSONOutput(enabled bool)
 
 	// SetAppID sets dapr_id field in the log. Default value is empty string
 	SetAppID(id string)
-	// SetOutputLevel sets log output level
+
+	// SetOutputLevel sets the log output level
 	SetOutputLevel(outputLevel LogLevel)
 	// SetOutput sets the destination for the logs
 	SetOutput(dst io.Writer)
 
-	// WithLogType specify the log_type field in log. Default value is LogTypeLog
+	// IsOutputLevelEnabled returns true if the logger will output this LogLevel.
+	IsOutputLevelEnabled(level LogLevel) bool
+
+	// WithLogType specifies the log_type field in log. Default value is LogTypeLog
 	WithLogType(logType string) Logger
 
 	// WithFields returns a logger with the added structured fields.
