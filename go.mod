@@ -1,6 +1,6 @@
 module github.com/dapr/kit
 
-go 1.18
+go 1.19
 
 require (
 	github.com/cenkalti/backoff/v4 v4.1.3
@@ -18,3 +18,6 @@ require (
 	golang.org/x/sys v0.1.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+// Temporary until https://github.com/cenkalti/backoff/pull/126 is merged
+replace github.com/cenkalti/backoff/v4 => github.com/ItalyPaleAle/backoff/v4 v4.2.0
