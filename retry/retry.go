@@ -16,6 +16,7 @@ package retry
 import (
 	"context"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -146,21 +147,38 @@ func (c *Config) NewBackOffWithContext(ctx context.Context) backoff.BackOff {
 // the operations fails the first time and `recovered` when it finally succeeds. This can be helpful in limiting
 // log messages to only the events that operators need to be alerted on.
 func NotifyRecover(operation backoff.Operation, b backoff.BackOff, notify backoff.Notify, recovered func()) error {
-	var notified bool
+	notified := atomic.Bool{}
 
 	return backoff.RetryNotify(func() error {
 		err := operation()
 
-		if err == nil && notified {
-			notified = false
+		if err == nil && notified.CompareAndSwap(true, false) {
 			recovered()
 		}
 
 		return err
 	}, b, func(err error, d time.Duration) {
-		if !notified {
+		if notified.CompareAndSwap(false, true) {
 			notify(err, d)
-			notified = true
+		}
+	})
+}
+
+// NotifyRecoverWithData is a variant of NotifyRecover that also returns data in addition to an error.
+func NotifyRecoverWithData[T any](operation backoff.OperationWithData[T], b backoff.BackOff, notify backoff.Notify, recovered func()) (T, error) {
+	notified := atomic.Bool{}
+
+	return backoff.RetryNotifyWithData(func() (T, error) {
+		res, err := operation()
+
+		if err == nil && notified.CompareAndSwap(true, false) {
+			recovered()
+		}
+
+		return res, err
+	}, b, func(err error, d time.Duration) {
+		if notified.CompareAndSwap(false, true) {
+			notify(err, d)
 		}
 	})
 }
