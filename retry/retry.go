@@ -15,6 +15,7 @@ package retry
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -54,8 +55,15 @@ type Config struct {
 	MaxRetries int64 `mapstructure:"maxRetries"`
 }
 
-// DefaultConfig represents the default configuration for a
-// `Config`.
+// String implements fmt.Stringer and is used for debugging.
+func (c Config) String() string {
+	return fmt.Sprintf(
+		"policy='%s' duration='%v' initialInterval='%v' randomizationFactor='%f' multiplier='%f' maxInterval='%v' maxElapsedTime='%v' maxRetries='%d'",
+		c.Policy, c.Duration, c.InitialInterval, c.RandomizationFactor, c.Multiplier, c.MaxInterval, c.MaxElapsedTime, c.MaxRetries,
+	)
+}
+
+// DefaultConfig represents the default configuration for a `Config`.
 func DefaultConfig() Config {
 	return Config{
 		Policy:              PolicyConstant,
@@ -193,6 +201,17 @@ func (p *PolicyType) DecodeString(value string) error {
 	default:
 		return errors.Errorf("unexpected back off policy type: %s", value)
 	}
-
 	return nil
+}
+
+// String implements fmt.Stringer and is used for debugging.
+func (p PolicyType) String() string {
+	switch p {
+	case PolicyConstant:
+		return "constant"
+	case PolicyExponential:
+		return "exponential"
+	default:
+		return ""
+	}
 }
