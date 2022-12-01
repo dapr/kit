@@ -3,6 +3,7 @@ module github.com/dapr/kit
 go 1.19
 
 require (
+	github.com/benbjohnson/clock v1.3.0
 	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/mitchellh/mapstructure v1.5.1-0.20220423185008-bf980b35cac4
