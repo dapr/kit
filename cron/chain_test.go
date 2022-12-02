@@ -1,7 +1,7 @@
 package cron
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"reflect"
 	"sync"
@@ -57,13 +57,13 @@ func TestChainRecover(t *testing.T) {
 	})
 
 	t.Run("Recovering JobWrapper recovers", func(t *testing.T) {
-		NewChain(Recover(PrintfLogger(log.New(ioutil.Discard, "", 0)))).
+		NewChain(Recover(PrintfLogger(log.New(io.Discard, "", 0)))).
 			Then(panickingJob).
 			Run()
 	})
 
 	t.Run("composed with the *IfStillRunning wrappers", func(t *testing.T) {
-		NewChain(Recover(PrintfLogger(log.New(ioutil.Discard, "", 0)))).
+		NewChain(Recover(PrintfLogger(log.New(io.Discard, "", 0)))).
 			Then(panickingJob).
 			Run()
 	})
@@ -99,7 +99,6 @@ func (j *countJob) Done() int {
 }
 
 func TestChainDelayIfStillRunning(t *testing.T) {
-
 	t.Run("runs immediately", func(t *testing.T) {
 		var j countJob
 		wrappedJob := NewChain(DelayIfStillRunning(DiscardLogger)).Then(&j)
@@ -115,7 +114,7 @@ func TestChainDelayIfStillRunning(t *testing.T) {
 		wrappedJob := NewChain(DelayIfStillRunning(DiscardLogger)).Then(&j)
 		go func() {
 			go wrappedJob.Run()
-			time.Sleep(10* time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 			go wrappedJob.Run()
 		}()
 		time.Sleep(100 * time.Millisecond) // Give both jobs 100 ms to complete.
@@ -149,11 +148,9 @@ func TestChainDelayIfStillRunning(t *testing.T) {
 			t.Error("expected both jobs done, got", started, done)
 		}
 	})
-
 }
 
 func TestChainSkipIfStillRunning(t *testing.T) {
-
 	t.Run("runs immediately", func(t *testing.T) {
 		var j countJob
 		wrappedJob := NewChain(SkipIfStillRunning(DiscardLogger)).Then(&j)
@@ -169,7 +166,7 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 		wrappedJob := NewChain(SkipIfStillRunning(DiscardLogger)).Then(&j)
 		go func() {
 			go wrappedJob.Run()
-			time.Sleep(10* time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 			go wrappedJob.Run()
 		}()
 		time.Sleep(100 * time.Millisecond) // Give both jobs 100ms to complete.
@@ -238,5 +235,4 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 			t.Error("expected both jobs executed once, got", done1, "and", done2)
 		}
 	})
-
 }
