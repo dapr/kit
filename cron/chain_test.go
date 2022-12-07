@@ -14,11 +14,10 @@ You can check the original license at:
 		https://github.com/robfig/cron/blob/master/LICENSE
 */
 
-//nolint
 package cron
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"reflect"
 	"sync"
@@ -74,13 +73,13 @@ func TestChainRecover(t *testing.T) {
 	})
 
 	t.Run("Recovering JobWrapper recovers", func(t *testing.T) {
-		NewChain(Recover(PrintfLogger(log.New(ioutil.Discard, "", 0)))).
+		NewChain(Recover(PrintfLogger(log.New(io.Discard, "", 0)))).
 			Then(panickingJob).
 			Run()
 	})
 
 	t.Run("composed with the *IfStillRunning wrappers", func(t *testing.T) {
-		NewChain(Recover(PrintfLogger(log.New(ioutil.Discard, "", 0)))).
+		NewChain(Recover(PrintfLogger(log.New(io.Discard, "", 0)))).
 			Then(panickingJob).
 			Run()
 	})
@@ -120,7 +119,7 @@ func TestChainDelayIfStillRunning(t *testing.T) {
 		var j countJob
 		wrappedJob := NewChain(DelayIfStillRunning(DiscardLogger)).Then(&j)
 		go wrappedJob.Run()
-		time.Sleep(2 * time.Millisecond) // Give the job 2ms to complete.
+		time.Sleep(50 * time.Millisecond) // Give the job 50 ms to complete.
 		if c := j.Done(); c != 1 {
 			t.Errorf("expected job run once, immediately, got %d", c)
 		}
@@ -131,10 +130,10 @@ func TestChainDelayIfStillRunning(t *testing.T) {
 		wrappedJob := NewChain(DelayIfStillRunning(DiscardLogger)).Then(&j)
 		go func() {
 			go wrappedJob.Run()
-			time.Sleep(time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 			go wrappedJob.Run()
 		}()
-		time.Sleep(3 * time.Millisecond) // Give both jobs 3ms to complete.
+		time.Sleep(100 * time.Millisecond) // Give both jobs 100 ms to complete.
 		if c := j.Done(); c != 2 {
 			t.Errorf("expected job run twice, immediately, got %d", c)
 		}
@@ -142,24 +141,24 @@ func TestChainDelayIfStillRunning(t *testing.T) {
 
 	t.Run("second run delayed if first not done", func(t *testing.T) {
 		var j countJob
-		j.delay = 10 * time.Millisecond
+		j.delay = 100 * time.Millisecond
 		wrappedJob := NewChain(DelayIfStillRunning(DiscardLogger)).Then(&j)
 		go func() {
 			go wrappedJob.Run()
-			time.Sleep(time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 			go wrappedJob.Run()
 		}()
 
-		// After 5ms, the first job is still in progress, and the second job was
+		// After 50 ms, the first job is still in progress, and the second job was
 		// run but should be waiting for it to finish.
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 		started, done := j.Started(), j.Done()
 		if started != 1 || done != 0 {
 			t.Error("expected first job started, but not finished, got", started, done)
 		}
 
 		// Verify that the second job completes.
-		time.Sleep(25 * time.Millisecond)
+		time.Sleep(200 * time.Millisecond)
 		started, done = j.Started(), j.Done()
 		if started != 2 || done != 2 {
 			t.Error("expected both jobs done, got", started, done)
@@ -172,7 +171,7 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 		var j countJob
 		wrappedJob := NewChain(SkipIfStillRunning(DiscardLogger)).Then(&j)
 		go wrappedJob.Run()
-		time.Sleep(2 * time.Millisecond) // Give the job 2ms to complete.
+		time.Sleep(50 * time.Millisecond) // Give the job 50ms to complete.
 		if c := j.Done(); c != 1 {
 			t.Errorf("expected job run once, immediately, got %d", c)
 		}
@@ -183,10 +182,10 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 		wrappedJob := NewChain(SkipIfStillRunning(DiscardLogger)).Then(&j)
 		go func() {
 			go wrappedJob.Run()
-			time.Sleep(time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 			go wrappedJob.Run()
 		}()
-		time.Sleep(3 * time.Millisecond) // Give both jobs 3ms to complete.
+		time.Sleep(100 * time.Millisecond) // Give both jobs 100ms to complete.
 		if c := j.Done(); c != 2 {
 			t.Errorf("expected job run twice, immediately, got %d", c)
 		}
@@ -194,24 +193,24 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 
 	t.Run("second run skipped if first not done", func(t *testing.T) {
 		var j countJob
-		j.delay = 10 * time.Millisecond
+		j.delay = 100 * time.Millisecond
 		wrappedJob := NewChain(SkipIfStillRunning(DiscardLogger)).Then(&j)
 		go func() {
 			go wrappedJob.Run()
-			time.Sleep(time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 			go wrappedJob.Run()
 		}()
 
-		// After 5ms, the first job is still in progress, and the second job was
+		// After 50ms, the first job is still in progress, and the second job was
 		// aleady skipped.
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 		started, done := j.Started(), j.Done()
 		if started != 1 || done != 0 {
 			t.Error("expected first job started, but not finished, got", started, done)
 		}
 
 		// Verify that the first job completes and second does not run.
-		time.Sleep(25 * time.Millisecond)
+		time.Sleep(200 * time.Millisecond)
 		started, done = j.Started(), j.Done()
 		if started != 1 || done != 1 {
 			t.Error("expected second job skipped, got", started, done)
