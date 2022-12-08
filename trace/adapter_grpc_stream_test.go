@@ -180,6 +180,7 @@ func (s *gRPCStreamServer) UnaryEcho(ctx context.Context, in *gpb.EchoRequest) (
 	return &gpb.EchoResponse{Message: traceID}, nil
 }
 
+//nolint:nosnakecase
 func (s *gRPCStreamServer) ServerStreamingEcho(in *gpb.EchoRequest, stream gpb.Echo_ServerStreamingEchoServer) error {
 	traceID := ID(stream.Context())
 	log.Printf("received: %s %s \n", in.Message, traceID)
@@ -192,6 +193,7 @@ func (s *gRPCStreamServer) ServerStreamingEcho(in *gpb.EchoRequest, stream gpb.E
 	return nil
 }
 
+//nolint:nosnakecase
 func (s *gRPCStreamServer) ClientStreamingEcho(stream gpb.Echo_ClientStreamingEchoServer) error {
 	in, err := stream.Recv()
 	if err != nil {
@@ -210,6 +212,7 @@ func (s *gRPCStreamServer) ClientStreamingEcho(stream gpb.Echo_ClientStreamingEc
 	return nil
 }
 
+//nolint:nosnakecase
 func (s *gRPCStreamServer) BidirectionalStreamingEcho(stream gpb.Echo_BidirectionalStreamingEchoServer) error {
 	in, err := stream.Recv()
 	if err != nil {
