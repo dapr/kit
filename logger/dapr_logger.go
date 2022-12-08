@@ -132,19 +132,20 @@ func (l *daprLogger) WithLogType(logType string) Logger {
 // WithFields returns a logger with the added structured fields.
 func (l *daprLogger) WithFields(fields map[string]any) Logger {
 	return &daprLogger{
-		name:   l.name,
-		logger: l.logger.WithFields(fields),
+		name:         l.name,
+		logger:       l.logger.WithFields(fields),
+		traceEnabled: l.traceEnabled,
 	}
 }
 
 // Info logs a message at level Info.
 func (l *daprLogger) Info(args ...interface{}) {
-	l.print(nil, logrus.InfoLevel, args...)
+	l.print(context.Background(), logrus.InfoLevel, args...)
 }
 
 // Infof logs a message at level Info.
 func (l *daprLogger) Infof(format string, args ...interface{}) {
-	l.printf(nil, logrus.InfoLevel, format, args...)
+	l.printf(context.Background(), logrus.InfoLevel, format, args...)
 }
 
 // InfoWithContext logs a message and context (traceid...)at level Info.
@@ -159,12 +160,12 @@ func (l *daprLogger) InfoWithContextf(ctx context.Context, format string, args .
 
 // Debug logs a message at level Debug.
 func (l *daprLogger) Debug(args ...interface{}) {
-	l.print(nil, logrus.DebugLevel, args...)
+	l.print(context.Background(), logrus.DebugLevel, args...)
 }
 
 // Debugf logs a message at level Debug.
 func (l *daprLogger) Debugf(format string, args ...interface{}) {
-	l.printf(nil, logrus.DebugLevel, format, args...)
+	l.printf(context.Background(), logrus.DebugLevel, format, args...)
 }
 
 // DebugWithContext logs a message and context (traceid...) at level Debug.
@@ -179,12 +180,12 @@ func (l *daprLogger) DebugWithContextf(ctx context.Context, format string, args 
 
 // Warn logs a message at level Warn.
 func (l *daprLogger) Warn(args ...interface{}) {
-	l.print(nil, logrus.WarnLevel, args...)
+	l.print(context.Background(), logrus.WarnLevel, args...)
 }
 
 // Warnf logs a message at level Warn.
 func (l *daprLogger) Warnf(format string, args ...interface{}) {
-	l.printf(nil, logrus.WarnLevel, format, args...)
+	l.printf(context.Background(), logrus.WarnLevel, format, args...)
 }
 
 // WarnWithContext logs a message and context (tarceid...) at level Warn.
@@ -199,12 +200,12 @@ func (l *daprLogger) WarnWithContextf(ctx context.Context, format string, args .
 
 // Error logs a message at level Error.
 func (l *daprLogger) Error(args ...interface{}) {
-	l.print(nil, logrus.ErrorLevel, args...)
+	l.print(context.Background(), logrus.ErrorLevel, args...)
 }
 
 // Errorf logs a message at level Error.
 func (l *daprLogger) Errorf(format string, args ...interface{}) {
-	l.printf(nil, logrus.ErrorLevel, format, args...)
+	l.printf(context.Background(), logrus.ErrorLevel, format, args...)
 }
 
 // ErrorWithContext logs a message and context (traceid...) at level Error.
@@ -219,12 +220,12 @@ func (l *daprLogger) ErrorWithContextf(ctx context.Context, format string, args 
 
 // Fatal logs a message at level Fatal then the process will exit with status set to 1.
 func (l *daprLogger) Fatal(args ...interface{}) {
-	l.print(nil, logrus.FatalLevel, args...)
+	l.print(context.Background(), logrus.FatalLevel, args...)
 }
 
 // Fatalf logs a message at level Fatal then the process will exit with status set to 1.
 func (l *daprLogger) Fatalf(format string, args ...interface{}) {
-	l.printf(nil, logrus.FatalLevel, format, args...)
+	l.printf(context.Background(), logrus.FatalLevel, format, args...)
 }
 
 // FatalWithContext logs a message and context (traceid...) at level Fatal then the process will exit with status set to 1.

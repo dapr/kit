@@ -72,6 +72,7 @@ func TestApplyOptionsToLoggers(t *testing.T) {
 		JSONFormatEnabled: true,
 		appID:             "dapr-app",
 		OutputLevel:       "debug",
+		TraceEnabled:      defaultTraceEnabled,
 	}
 
 	// Create two loggers

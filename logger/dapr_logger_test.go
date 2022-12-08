@@ -247,7 +247,6 @@ func TestJSONLoggerFieldsWithSpanContext(t *testing.T) {
 				assert.NotEmpty(t, o[logFieldTraceID])
 			} else {
 				assert.Empty(t, o[logFieldTraceID])
-
 			}
 		})
 	}
