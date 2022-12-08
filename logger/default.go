@@ -1,60 +1,75 @@
+/*
+Copyright 2022 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package logger
 
 import "io"
 
-type defaultLogger struct{}
+type nopLogger struct{}
 
 // EnableJSONOutput enables JSON formatted output log.
-func (d *defaultLogger) EnableJSONOutput(dnabled bool) {}
+func (n *nopLogger) EnableJSONOutput(dnabled bool) {}
 
-// SetAppID sets dapr_id field in the log. defaultLogger value is empty string.
-func (d *defaultLogger) SetAppID(id string) {}
+// SetAppID sets dapr_id field in the log. nopLogger value is empty string.
+func (n *nopLogger) SetAppID(id string) {}
 
 // SetOutputLevel sets log output level.
-func (d *defaultLogger) SetOutputLevel(outputLevel LogLevel) {}
+func (n *nopLogger) SetOutputLevel(outputLevel LogLevel) {}
 
 // SetOutput sets the destination for the logs
-func (d *defaultLogger) SetOutput(dst io.Writer) {}
+func (n *nopLogger) SetOutput(dst io.Writer) {}
 
 // IsOutputLevelEnabled returns true if the logger will output this LogLevel.
-func (d *defaultLogger) IsOutputLevelEnabled(level LogLevel) bool { return true }
+func (n *nopLogger) IsOutputLevelEnabled(level LogLevel) bool { return true }
 
-// WithLogType specify the log_type field in log. defaultLogger value is LogTypeLog.
-func (d *defaultLogger) WithLogType(logType string) Logger {
-	return nil
+// WithLogType specify the log_type field in log. nopLogger value is LogTypeLog.
+func (n *nopLogger) WithLogType(logType string) Logger {
+	return n
 }
 
 // WithFields returns a logger with the added structured fields.
-func (d *defaultLogger) WithFields(fields map[string]any) Logger {
-	return nil
+func (n *nopLogger) WithFields(fields map[string]any) Logger {
+	return n
 }
 
 // Info logs a message at level Info.
-func (d *defaultLogger) Info(args ...interface{}) {}
+func (n *nopLogger) Info(args ...interface{}) {}
 
 // Infof logs a message at level Info.
-func (d *defaultLogger) Infof(format string, args ...interface{}) {}
+func (n *nopLogger) Infof(format string, args ...interface{}) {}
 
 // Debug logs a message at level Debug.
-func (d *defaultLogger) Debug(args ...interface{}) {}
+func (n *nopLogger) Debug(args ...interface{}) {}
 
 // Debugf logs a message at level Debug.
-func (d *defaultLogger) Debugf(format string, args ...interface{}) {}
+func (n *nopLogger) Debugf(format string, args ...interface{}) {}
 
 // Warn logs a message at level Warn.
-func (d *defaultLogger) Warn(args ...interface{}) {}
+func (n *nopLogger) Warn(args ...interface{}) {}
 
 // Warnf logs a message at level Warn.
-func (d *defaultLogger) Warnf(format string, args ...interface{}) {}
+func (n *nopLogger) Warnf(format string, args ...interface{}) {}
 
 // Error logs a message at level Error.
-func (d *defaultLogger) Error(args ...interface{}) {}
+func (n *nopLogger) Error(args ...interface{}) {}
 
 // Errorf logs a message at level Error.
-func (d *defaultLogger) Errorf(format string, args ...interface{}) {}
+func (n *nopLogger) Errorf(format string, args ...interface{}) {}
 
 // Fatal logs a message at level Fatal then the process will exit with status set to 1.
-func (d *defaultLogger) Fatal(args ...interface{}) {}
+func (n *nopLogger) Fatal(args ...interface{}) {}
 
 // Fatalf logs a message at level Fatal then the process will exit with status set to 1.
-func (d *defaultLogger) Fatalf(format string, args ...interface{}) {}
+func (n *nopLogger) Fatalf(format string, args ...interface{}) {}
