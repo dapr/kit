@@ -83,7 +83,7 @@ func TestNewContext(t *testing.T) {
 
 		logger := FromContextOrDefault(ctx)
 		assert.NotNil(t, logger, "logger is not nil")
-		assert.Equal(t, logger, emptyOpLogger)
+		assert.Equal(t, logger, defaultOpLogger)
 	})
 
 	t.Run("input non-nil logger", func(t *testing.T) {
@@ -96,6 +96,6 @@ func TestNewContext(t *testing.T) {
 		logger2 := FromContextOrDefault(ctx)
 		assert.NotNil(t, logger2)
 		assert.Equal(t, logger2, logger)
-		assert.NotEqual(t, logger2, emptyOpLogger)
+		assert.NotEqual(t, logger2, defaultOpLogger)
 	})
 }

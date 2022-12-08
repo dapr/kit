@@ -64,7 +64,7 @@ const (
 var (
 	globalLoggers     = map[string]Logger{}
 	globalLoggersLock = sync.RWMutex{}
-	emptyOpLogger     = &emptyLogger{}
+	defaultOpLogger   = &defaultLogger{}
 )
 
 // Logger includes the logging api sets.
@@ -169,5 +169,5 @@ func FromContextOrDefault(ctx context.Context) Logger {
 		return v
 	}
 
-	return emptyOpLogger
+	return defaultOpLogger
 }
