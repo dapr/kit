@@ -15,7 +15,9 @@ package retry
 
 import (
 	"context"
+	"fmt"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -53,8 +55,15 @@ type Config struct {
 	MaxRetries int64 `mapstructure:"maxRetries"`
 }
 
-// DefaultConfig represents the default configuration for a
-// `Config`.
+// String implements fmt.Stringer and is used for debugging.
+func (c Config) String() string {
+	return fmt.Sprintf(
+		"policy='%s' duration='%v' initialInterval='%v' randomizationFactor='%f' multiplier='%f' maxInterval='%v' maxElapsedTime='%v' maxRetries='%d'",
+		c.Policy, c.Duration, c.InitialInterval, c.RandomizationFactor, c.Multiplier, c.MaxInterval, c.MaxElapsedTime, c.MaxRetries,
+	)
+}
+
+// DefaultConfig represents the default configuration for a `Config`.
 func DefaultConfig() Config {
 	return Config{
 		Policy:              PolicyConstant,
@@ -146,21 +155,38 @@ func (c *Config) NewBackOffWithContext(ctx context.Context) backoff.BackOff {
 // the operations fails the first time and `recovered` when it finally succeeds. This can be helpful in limiting
 // log messages to only the events that operators need to be alerted on.
 func NotifyRecover(operation backoff.Operation, b backoff.BackOff, notify backoff.Notify, recovered func()) error {
-	var notified bool
+	notified := atomic.Bool{}
 
 	return backoff.RetryNotify(func() error {
 		err := operation()
 
-		if err == nil && notified {
-			notified = false
+		if err == nil && notified.CompareAndSwap(true, false) {
 			recovered()
 		}
 
 		return err
 	}, b, func(err error, d time.Duration) {
-		if !notified {
+		if notified.CompareAndSwap(false, true) {
 			notify(err, d)
-			notified = true
+		}
+	})
+}
+
+// NotifyRecoverWithData is a variant of NotifyRecover that also returns data in addition to an error.
+func NotifyRecoverWithData[T any](operation backoff.OperationWithData[T], b backoff.BackOff, notify backoff.Notify, recovered func()) (T, error) {
+	notified := atomic.Bool{}
+
+	return backoff.RetryNotifyWithData(func() (T, error) {
+		res, err := operation()
+
+		if err == nil && notified.CompareAndSwap(true, false) {
+			recovered()
+		}
+
+		return res, err
+	}, b, func(err error, d time.Duration) {
+		if notified.CompareAndSwap(false, true) {
+			notify(err, d)
 		}
 	})
 }
@@ -175,6 +201,17 @@ func (p *PolicyType) DecodeString(value string) error {
 	default:
 		return errors.Errorf("unexpected back off policy type: %s", value)
 	}
-
 	return nil
+}
+
+// String implements fmt.Stringer and is used for debugging.
+func (p PolicyType) String() string {
+	switch p {
+	case PolicyConstant:
+		return "constant"
+	case PolicyExponential:
+		return "exponential"
+	default:
+		return ""
+	}
 }
