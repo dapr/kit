@@ -14,6 +14,7 @@ limitations under the License.
 package logger
 
 import (
+	"context"
 	"io"
 	"strings"
 	"sync"
@@ -35,6 +36,11 @@ const (
 	logFieldDaprVer   = "ver"
 	logFieldAppID     = "app_id"
 )
+
+type logContextKeyType struct{}
+
+// logContextKey is how we find Loggers in a context.Context
+var logContextKey = logContextKeyType{}
 
 // LogLevel is Dapr Logger Level type.
 type LogLevel string
@@ -60,6 +66,7 @@ const (
 var (
 	globalLoggers     = map[string]Logger{}
 	globalLoggersLock = sync.RWMutex{}
+	defaultOpLogger   = &nopLogger{}
 )
 
 // Logger includes the logging api sets.
@@ -149,4 +156,20 @@ func getLoggers() map[string]Logger {
 	}
 
 	return l
+}
+
+// NewContext returns a new Context, derived from ctx, which carries the
+// provided Logger.
+func NewContext(ctx context.Context, logger Logger) context.Context {
+	return context.WithValue(ctx, logContextKey, logger)
+}
+
+// FromContextOrDiscard returns a Logger from ctx.  If no Logger is found, this
+// returns a Logger that discards all log messages.
+func FromContextOrDefault(ctx context.Context) Logger {
+	if v, ok := ctx.Value(logContextKey).(Logger); ok {
+		return v
+	}
+
+	return defaultOpLogger
 }
