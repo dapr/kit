@@ -14,6 +14,7 @@ limitations under the License.
 package logger
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -72,5 +73,29 @@ func TestToLogLevel(t *testing.T) {
 
 	t.Run("undefined loglevel", func(t *testing.T) {
 		assert.Equal(t, UndefinedLevel, toLogLevel("undefined"))
+	})
+}
+
+func TestNewContext(t *testing.T) {
+	t.Run("input nil logger", func(t *testing.T) {
+		ctx := NewContext(context.Background(), nil)
+		assert.NotNil(t, ctx, "ctx is not nil")
+
+		logger := FromContextOrDefault(ctx)
+		assert.NotNil(t, logger, "logger is not nil")
+		assert.Equal(t, logger, defaultOpLogger)
+	})
+
+	t.Run("input non-nil logger", func(t *testing.T) {
+		testLoggerName := "dapr.test"
+		logger := NewLogger(testLoggerName)
+		assert.NotNil(t, logger)
+
+		ctx := NewContext(context.Background(), logger)
+		assert.NotNil(t, ctx, "ctx is not nil")
+		logger2 := FromContextOrDefault(ctx)
+		assert.NotNil(t, logger2)
+		assert.Equal(t, logger2, logger)
+		assert.NotEqual(t, logger2, defaultOpLogger)
 	})
 }
