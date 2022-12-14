@@ -15,7 +15,10 @@ limitations under the License.
 
 package logger
 
-import "io"
+import (
+	"context"
+	"io"
+)
 
 type nopLogger struct{}
 
@@ -27,6 +30,9 @@ func (n *nopLogger) SetAppID(id string) {}
 
 // SetOutputLevel sets log output level.
 func (n *nopLogger) SetOutputLevel(outputLevel LogLevel) {}
+
+// SetTraceEnabled sets trace enabled.
+func (n *nopLogger) SetTraceEnabled(enabled bool) {}
 
 // SetOutput sets the destination for the logs
 func (n *nopLogger) SetOutput(dst io.Writer) {}
@@ -50,11 +56,23 @@ func (n *nopLogger) Info(args ...interface{}) {}
 // Infof logs a message at level Info.
 func (n *nopLogger) Infof(format string, args ...interface{}) {}
 
+// InfoWithContext logs a message and context (traceid...) at level Info.
+func (n *nopLogger) InfoWithContext(ctx context.Context, args ...interface{}) {}
+
+// InfoWithContextf logs a message and context (traceid...) at level Info.
+func (n *nopLogger) InfoWithContextf(ctx context.Context, format string, args ...interface{}) {}
+
 // Debug logs a message at level Debug.
 func (n *nopLogger) Debug(args ...interface{}) {}
 
 // Debugf logs a message at level Debug.
 func (n *nopLogger) Debugf(format string, args ...interface{}) {}
+
+// DebugWithContext logs a message and context (traceid...) at level Debug.
+func (n *nopLogger) DebugWithContext(ctx context.Context, args ...interface{}) {}
+
+// DebugWithContextf logs a message and context (traceid...) at level Debug.
+func (n *nopLogger) DebugWithContextf(ctx context.Context, format string, args ...interface{}) {}
 
 // Warn logs a message at level Warn.
 func (n *nopLogger) Warn(args ...interface{}) {}
@@ -62,14 +80,32 @@ func (n *nopLogger) Warn(args ...interface{}) {}
 // Warnf logs a message at level Warn.
 func (n *nopLogger) Warnf(format string, args ...interface{}) {}
 
+// WarnWithContext logs a message and context (tarceid...) at level Warn.
+func (n *nopLogger) WarnWithContext(ctx context.Context, args ...interface{}) {}
+
+// WarnWithContextf logs a message and context (tarceid...) at level Warn.
+func (n *nopLogger) WarnWithContextf(ctx context.Context, format string, args ...interface{}) {}
+
 // Error logs a message at level Error.
 func (n *nopLogger) Error(args ...interface{}) {}
 
 // Errorf logs a message at level Error.
 func (n *nopLogger) Errorf(format string, args ...interface{}) {}
 
+// ErrorWithContext logs a message and context (traceid...) at level Error.
+func (n *nopLogger) ErrorWithContext(ctx context.Context, args ...interface{}) {}
+
+// ErrorWithContextf logs a message and context (traceid...) at level Error.
+func (n *nopLogger) ErrorWithContextf(ctx context.Context, format string, args ...interface{}) {}
+
 // Fatal logs a message at level Fatal then the process will exit with status set to 1.
 func (n *nopLogger) Fatal(args ...interface{}) {}
 
 // Fatalf logs a message at level Fatal then the process will exit with status set to 1.
 func (n *nopLogger) Fatalf(format string, args ...interface{}) {}
+
+// FatalWithContext logs a message and context (traceid...) at level Fatal then the process will exit with status set to 1.
+func (n *nopLogger) FatalWithContext(ctx context.Context, args ...interface{}) {}
+
+// FatalWithContextf logs a message and context (traceid...) at level Fatal then the process will exit with status set to 1.
+func (n *nopLogger) FatalWithContextf(ctx context.Context, format string, args ...interface{}) {}
