@@ -94,50 +94,33 @@ type Logger interface { //nolint: interfacebloat
 	// WithFields returns a logger with the added structured fields.
 	WithFields(fields map[string]any) Logger
 
+	// WithContext return a logger with context.
+	WithContext(ctx context.Context) Logger
+
 	// Info logs a message at level Info.
 	Info(args ...interface{})
 	// Infof logs a message at level Info.
 	Infof(format string, args ...interface{})
-	// InfoWithContext logs a message and context (traceid...) at level Info.
-	InfoWithContext(ctx context.Context, args ...interface{})
-	// InfoWithContextf logs a message and context (traceid...) at level Info.
-	InfoWithContextf(ctx context.Context, format string, args ...interface{})
 
 	// Debug logs a message at level Debug.
 	Debug(args ...interface{})
 	// Debugf logs a message at level Debug.
 	Debugf(format string, args ...interface{})
-	// DebugWithContext logs a message and context (traceid...) at level Debug.
-	DebugWithContext(ctx context.Context, args ...interface{})
-	// DebugWithContextf logs a message and context (traceid...) at level Debug.
-	DebugWithContextf(ctx context.Context, format string, args ...interface{})
 
 	// Warn logs a message at level Warn.
 	Warn(args ...interface{})
 	// Warnf logs a message at level Warn.
 	Warnf(format string, args ...interface{})
-	// WarnWithContext logs a message and context (tarceid...) at level Warn.
-	WarnWithContext(ctx context.Context, args ...interface{})
-	// WarnWithContextf logs a message and context (tarceid...) at level Warn.
-	WarnWithContextf(ctx context.Context, format string, args ...interface{})
 
 	// Error logs a message at level Error.
 	Error(args ...interface{})
 	// Errorf logs a message at level Error.
 	Errorf(format string, args ...interface{})
-	// ErrorWithContext logs a message and context (traceid...) at level Error.
-	ErrorWithContext(ctx context.Context, args ...interface{})
-	// ErrorWithContextf logs a message and context (traceid...) at level Error.
-	ErrorWithContextf(ctx context.Context, format string, args ...interface{})
 
 	// Fatal logs a message at level Fatal then the process will exit with status set to 1.
 	Fatal(args ...interface{})
 	// Fatalf logs a message at level Fatal then the process will exit with status set to 1.
 	Fatalf(format string, args ...interface{})
-	// FatalWithContext logs a message and context (traceid...) at level Fatal then the process will exit with status set to 1.
-	FatalWithContext(ctx context.Context, args ...interface{})
-	// FatalWithContextf logs a message and context (traceid...) at level Fatal then the process will exit with status set to 1.
-	FatalWithContextf(ctx context.Context, format string, args ...interface{})
 }
 
 // toLogLevel converts to LogLevel.

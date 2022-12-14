@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"regexp"
@@ -199,7 +198,7 @@ func TestJSONLoggerFieldsWithSpanContext(t *testing.T) {
 			"dapr-pod",
 			trace.SpanContextWithContext(context.Background()),
 			func(l *daprLogger, ctx context.Context, msg string) {
-				l.InfoWithContext(ctx, msg)
+				l.WithContext(ctx).Info(msg)
 			},
 		},
 		{
@@ -212,7 +211,7 @@ func TestJSONLoggerFieldsWithSpanContext(t *testing.T) {
 			"dapr-pod",
 			trace.SpanContextWithContext(context.Background()),
 			func(l *daprLogger, ctx context.Context, msg string) {
-				l.InfoWithContext(ctx, msg)
+				l.WithContext(ctx).Info(msg)
 			},
 		},
 	}
@@ -232,7 +231,6 @@ func TestJSONLoggerFieldsWithSpanContext(t *testing.T) {
 			b, _ := buf.ReadBytes('\n')
 			var o map[string]interface{}
 			assert.NoError(t, json.Unmarshal(b, &o))
-			fmt.Printf("line: %s", string(b))
 
 			// assert
 			assert.Equal(t, tt.appID, o[logFieldAppID])
