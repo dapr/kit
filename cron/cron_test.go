@@ -14,7 +14,7 @@ You can check the original license at:
 		https://github.com/robfig/cron/blob/master/LICENSE
 */
 
-//nolint
+//nolint:dupword
 package cron
 
 import (
@@ -33,6 +33,8 @@ import (
 // Many tests schedule a job for every second, and then wait at most a second
 // for it to run.  This amount is just slightly larger than 1 second to
 // compensate for a few milliseconds of runtime.
+//
+//nolint:revive
 const OneSecond = 1*time.Second + 50*time.Millisecond
 
 type syncWriter struct {
@@ -40,6 +42,7 @@ type syncWriter struct {
 	m  sync.Mutex
 }
 
+//nolint:nonamedreturns
 func (sw *syncWriter) Write(data []byte) (n int, err error) {
 	sw.m.Lock()
 	n, err = sw.wr.Write(data)
@@ -484,9 +487,10 @@ func TestJob(t *testing.T) {
 	// Ensure the entries are in the right order.
 	expecteds := []string{"job2", "job4", "job5", "job1", "job3", "job0"}
 
-	var actuals []string
-	for _, entry := range cron.Entries() {
-		actuals = append(actuals, entry.Job.(testJob).name)
+	cronEntries := cron.Entries()
+	actuals := make([]string, len(cronEntries))
+	for i, entry := range cronEntries {
+		actuals[i] = entry.Job.(testJob).name
 	}
 
 	for i, expected := range expecteds {
@@ -693,9 +697,9 @@ func TestMockClock(t *testing.T) {
 	clk := clock.NewMock()
 	clk.Set(time.Now())
 	cron := New(WithClock(clk))
-	counter := 0
+	counter := atomic.Uint64{}
 	cron.AddFunc("@every 1s", func() {
-		counter += 1
+		counter.Add(1)
 	})
 	cron.Start()
 	defer cron.Stop()
@@ -703,8 +707,8 @@ func TestMockClock(t *testing.T) {
 		clk.Add(1 * time.Second)
 	}
 	time.Sleep(100 * time.Millisecond)
-	if counter != 10 {
-		t.Errorf("expected 10 calls, got %d", counter)
+	if counter.Load() != 10 {
+		t.Errorf("expected 10 calls, got %d", counter.Load())
 	}
 }
 
