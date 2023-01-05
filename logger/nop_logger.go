@@ -15,7 +15,9 @@ limitations under the License.
 
 package logger
 
-import "io"
+import (
+	"io"
+)
 
 type nopLogger struct{}
 

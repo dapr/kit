@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/pkg/errors"
 
 	"github.com/dapr/kit/config"
 )
@@ -199,7 +198,7 @@ func (p *PolicyType) DecodeString(value string) error {
 	case "exponential":
 		*p = PolicyExponential
 	default:
-		return errors.Errorf("unexpected back off policy type: %s", value)
+		return fmt.Errorf("unexpected back off policy type: %s", value)
 	}
 	return nil
 }
