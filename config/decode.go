@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -73,7 +72,7 @@ func decodeString(f reflect.Type, t reflect.Type, data any) (any, error) {
 
 	dataString, ok := data.(string)
 	if !ok {
-		return nil, errors.Errorf("expected string: got %s", reflect.TypeOf(data))
+		return nil, fmt.Errorf("expected string: got %T", data)
 	}
 
 	var result any
@@ -93,7 +92,7 @@ func decodeString(f reflect.Type, t reflect.Type, data any) (any, error) {
 				t = t.Elem()
 			}
 
-			return nil, errors.Errorf("invalid %s %q: %v", t.Name(), dataString, err)
+			return nil, fmt.Errorf("invalid %s %q: %v", t.Name(), dataString, err)
 		}
 
 		return result, nil
@@ -189,5 +188,5 @@ func invalidError(err error, msg, value string) error {
 		return nil
 	}
 
-	return errors.Errorf("invalid %s %q", msg, value)
+	return fmt.Errorf("invalid %s %q", msg, value)
 }
