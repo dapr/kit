@@ -49,7 +49,8 @@ func NewSpanContextFromTrace(traceparent, tracestate string) trace.SpanContext {
 }
 
 // SpanContextFromW3CString extracts a span context from given string which got earlier from SpanContextToW3CString format.
-func SpanContextFromW3CString(h string) (sc trace.SpanContext, ok bool) {
+func SpanContextFromW3CString(h string) (trace.SpanContext, bool) {
+	var sc trace.SpanContext
 	if h == "" {
 		return trace.SpanContext{}, false
 	}

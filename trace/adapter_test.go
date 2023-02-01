@@ -85,7 +85,7 @@ func (s *testServer) SayHello(ctx context.Context, in *gpb.HelloRequest) (*gpb.H
 }
 
 func TestSpanContextFromFastHTTP(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		traceparent string
 		valid       bool
 		traceid     string
@@ -110,7 +110,6 @@ func TestSpanContextFromFastHTTP(t *testing.T) {
 		retsc := SpanContextFromFastHTTP(reqCtx)
 		assert.Equal(t, item.valid, retsc.IsValid(), item.desc)
 		assert.Equal(t, item.traceid, retsc.TraceID().String())
-
 	}
 }
 
