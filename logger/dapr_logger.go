@@ -14,9 +14,12 @@ limitations under the License.
 package logger
 
 import (
+	"context"
 	"io"
 	"os"
 	"time"
+
+	"github.com/dapr/kit/trace"
 
 	"github.com/sirupsen/logrus"
 )
@@ -25,6 +28,8 @@ import (
 type daprLogger struct {
 	// name is the name of logger that is published to log as a scope
 	name string
+	// traceEnabled is the flag to enable trace.
+	traceEnabled bool
 	// loger is the instance of logrus logger
 	logger *logrus.Entry
 }
@@ -36,7 +41,8 @@ func newDaprLogger(name string) *daprLogger {
 	newLogger.SetOutput(os.Stdout)
 
 	dl := &daprLogger{
-		name: name,
+		name:         name,
+		traceEnabled: defaultTraceEnabled,
 		logger: newLogger.WithFields(logrus.Fields{
 			logFieldScope: name,
 			logFieldType:  LogTypeLog,
@@ -88,6 +94,11 @@ func (l *daprLogger) SetAppID(id string) {
 	l.logger = l.logger.WithField(logFieldAppID, id)
 }
 
+// SetTraceEnabled sets trace enabled for dapr logger.
+func (l *daprLogger) SetTraceEnabled(enabled bool) {
+	l.traceEnabled = enabled
+}
+
 func toLogrusLevel(lvl LogLevel) logrus.Level {
 	// ignore error because it will never happen
 	l, _ := logrus.ParseLevel(string(lvl))
@@ -112,17 +123,36 @@ func (l *daprLogger) SetOutput(dst io.Writer) {
 // WithLogType specify the log_type field in log. Default value is LogTypeLog.
 func (l *daprLogger) WithLogType(logType string) Logger {
 	return &daprLogger{
-		name:   l.name,
-		logger: l.logger.WithField(logFieldType, logType),
+		name:         l.name,
+		traceEnabled: defaultTraceEnabled,
+		logger:       l.logger.WithField(logFieldType, logType),
 	}
 }
 
 // WithFields returns a logger with the added structured fields.
 func (l *daprLogger) WithFields(fields map[string]any) Logger {
 	return &daprLogger{
-		name:   l.name,
-		logger: l.logger.WithFields(fields),
+		name:         l.name,
+		logger:       l.logger.WithFields(fields),
+		traceEnabled: l.traceEnabled,
 	}
+}
+
+// WithContext return a logger with context.
+func (l *daprLogger) WithContext(ctx context.Context) Logger {
+	var id string
+
+	if l.traceEnabled {
+		id = trace.ID(ctx)
+	}
+
+	if id != "" {
+		return l.WithFields(map[string]any{
+			"id": id,
+		})
+	}
+
+	return l
 }
 
 // Info logs a message at level Info.

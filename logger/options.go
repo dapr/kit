@@ -18,9 +18,10 @@ import (
 )
 
 const (
-	defaultJSONOutput  = false
-	defaultOutputLevel = "info"
-	undefinedAppID     = ""
+	defaultJSONOutput   = false
+	defaultOutputLevel  = "info"
+	defaultTraceEnabled = false
+	undefinedAppID      = ""
 )
 
 // Options defines the sets of options for Dapr logging.
@@ -33,6 +34,9 @@ type Options struct {
 
 	// OutputLevel is the level of logging
 	OutputLevel string
+
+	// TraceEnabled is the flag to enable traceid.
+	TraceEnabled bool
 }
 
 // SetOutputLevel sets the log output level.
@@ -70,12 +74,18 @@ func (o *Options) AttachCmdFlags(
 	}
 }
 
+// SetTraceEnabled sets trace enable.
+func (o *Options) SetTraceEnabled(enabled bool) {
+	o.TraceEnabled = enabled
+}
+
 // DefaultOptions returns default values of Options.
 func DefaultOptions() Options {
 	return Options{
 		JSONFormatEnabled: defaultJSONOutput,
 		appID:             undefinedAppID,
 		OutputLevel:       defaultOutputLevel,
+		TraceEnabled:      defaultTraceEnabled,
 	}
 }
 
@@ -90,6 +100,8 @@ func ApplyOptionsToLoggers(options *Options) error {
 		if options.appID != undefinedAppID {
 			v.SetAppID(options.appID)
 		}
+
+		v.SetTraceEnabled(options.TraceEnabled)
 	}
 
 	daprLogLevel := toLogLevel(options.OutputLevel)

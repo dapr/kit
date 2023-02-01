@@ -16,6 +16,7 @@ limitations under the License.
 package logger
 
 import (
+	"context"
 	"io"
 )
 
@@ -30,6 +31,9 @@ func (n *nopLogger) SetAppID(id string) {}
 // SetOutputLevel sets log output level.
 func (n *nopLogger) SetOutputLevel(outputLevel LogLevel) {}
 
+// SetTraceEnabled sets trace enabled.
+func (n *nopLogger) SetTraceEnabled(enabled bool) {}
+
 // SetOutput sets the destination for the logs
 func (n *nopLogger) SetOutput(dst io.Writer) {}
 
@@ -43,6 +47,11 @@ func (n *nopLogger) WithLogType(logType string) Logger {
 
 // WithFields returns a logger with the added structured fields.
 func (n *nopLogger) WithFields(fields map[string]any) Logger {
+	return n
+}
+
+// WithContext return a logger with context.
+func (n *nopLogger) WithContext(ctx context.Context) Logger {
 	return n
 }
 
