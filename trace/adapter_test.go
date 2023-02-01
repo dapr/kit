@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/valyala/fasthttp"
 	"google.golang.org/grpc"
 
 	"google.golang.org/grpc/credentials/insecure"
@@ -42,7 +44,7 @@ func TestGrpc(t *testing.T) {
 	}()
 	defer s.Stop()
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(10 * time.Millisecond)
 
 	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(GRPCClientUnaryInterceptor))
@@ -80,4 +82,44 @@ func (s *testServer) SayHello(ctx context.Context, in *gpb.HelloRequest) (*gpb.H
 	traceID := ID(ctx)
 	log.Printf("Received: %s, %s", in.GetName(), traceID)
 	return &gpb.HelloReply{Message: traceID}, nil
+}
+
+func TestSpanContextFromFastHTTP(t *testing.T) {
+	var testCases = []struct {
+		traceparent string
+		valid       bool
+		traceid     string
+		desc        string
+	}{
+		{
+			traceparent: "00-06989a13f327a69a0cdcf33661a32421-11184bd782bd5fde-00",
+			traceid:     "06989a13f327a69a0cdcf33661a32421",
+			valid:       true,
+			desc:        "check trace success",
+		},
+		{
+			traceparent: "",
+			traceid:     "00000000000000000000000000000000",
+			valid:       false,
+			desc:        "check trace failed",
+		},
+	}
+	for _, item := range testCases {
+		reqCtx := new(fasthttp.RequestCtx)
+		reqCtx.Request.Header.Add(TraceparentHeader, item.traceparent)
+		retsc := SpanContextFromFastHTTP(reqCtx)
+		assert.Equal(t, item.valid, retsc.IsValid(), item.desc)
+		assert.Equal(t, item.traceid, retsc.TraceID().String())
+
+	}
+}
+
+func TestSpanContextToFastHTTP(t *testing.T) {
+	reqCtx := new(fasthttp.RequestCtx)
+	sc := GenerateSpanContext()
+	expected := Traceparent(sc)
+	ctx := trace.ContextWithSpanContext(reqCtx, sc)
+	SpanContextToFastHTTP(ctx, reqCtx)
+	rettraceparent := reqCtx.Request.Header.Peek(TraceparentHeader)
+	assert.Equal(t, expected, string(rettraceparent))
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/valyala/fasthttp"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -94,6 +95,33 @@ func SpanContextFromHTTP(h http.Header) trace.SpanContext {
 	tracestate := h.Get(TracestateHeader)
 	if len(traceparent) > 0 {
 		return NewSpanContextFromTrace(traceparent, tracestate)
+	}
+
+	return trace.SpanContext{}
+}
+
+// SpanContextToFastHTTP writes span context to fasthttp header.
+func SpanContextToFastHTTP(ctx context.Context, reqCtx *fasthttp.RequestCtx) {
+	sc := trace.SpanContextFromContext(ctx)
+	if !sc.IsValid() {
+		return
+	}
+
+	reqCtx.Request.Header.Set(TraceparentHeader, Traceparent(sc))
+	reqCtx.Request.Header.Set(TracestateHeader, sc.TraceState().String())
+}
+
+// SpanContextFromFastHTTP get span context from fasthttp request.
+func SpanContextFromFastHTTP(ctx context.Context) trace.SpanContext {
+	reqCtx, ok := ctx.(*fasthttp.RequestCtx)
+	if !ok {
+		return trace.SpanContext{}
+	}
+
+	traceparent := reqCtx.Request.Header.Peek(TraceparentHeader)
+	tracestate := reqCtx.Request.Header.Peek(TracestateHeader)
+	if len(traceparent) > 0 {
+		return NewSpanContextFromTrace(string(traceparent), string(tracestate))
 	}
 
 	return trace.SpanContext{}

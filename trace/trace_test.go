@@ -57,8 +57,9 @@ func TestSpanContextFromW3CString(t *testing.T) {
 		},
 	}
 	for _, ut := range uts {
-		sc := SpanContextFromW3CString(ut.traceparent)
+		sc, ok := SpanContextFromW3CString(ut.traceparent)
 		assert.Equalf(t, ut.expected, sc.IsValid(), ut.desc)
+		assert.Equalf(t, ut.expected, ok, ut.desc)
 	}
 }
 

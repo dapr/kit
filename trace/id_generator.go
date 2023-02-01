@@ -2,9 +2,7 @@ package trace
 
 import (
 	"context"
-	crand "crypto/rand"
-	"encoding/binary"
-	"math/rand"
+	"crypto/rand"
 	"sync"
 
 	"go.opentelemetry.io/otel"
@@ -24,44 +22,32 @@ func init() {
 var (
 	idGenerator *randomIDGenerator
 	_           trace.IDGenerator = new(randomIDGenerator)
-	idOnce      sync.Once
 )
 
 type randomIDGenerator struct {
 	sync.Mutex
-	randSource *rand.Rand
 }
 
 // NewSpanID returns a non-zero span ID from a randomly-chosen sequence.
 func (gen *randomIDGenerator) NewSpanID(ctx context.Context, traceID apitrace.TraceID) apitrace.SpanID {
-	gen.Lock()
-	defer gen.Unlock()
 	sid := apitrace.SpanID{}
-	gen.randSource.Read(sid[:])
+	_, _ = rand.Read(sid[:])
+
 	return sid
 }
 
 // NewIDs returns a non-zero trace ID and a non-zero span ID from a
 // randomly-chosen sequence.
 func (gen *randomIDGenerator) NewIDs(ctx context.Context) (apitrace.TraceID, apitrace.SpanID) {
-	gen.Lock()
-	defer gen.Unlock()
 	tid := apitrace.TraceID{}
-	gen.randSource.Read(tid[:])
+	_, _ = rand.Read(tid[:])
 	sid := apitrace.SpanID{}
-	gen.randSource.Read(sid[:])
+	_, _ = rand.Read(sid[:])
+
 	return tid, sid
 }
 
 // DefaultIDGenerator default idgenerator.
 func DefaultIDGenerator() trace.IDGenerator {
-	idOnce.Do(
-		func() {
-			idGenerator = new(randomIDGenerator)
-			var rngSeed int64
-			_ = binary.Read(crand.Reader, binary.LittleEndian, &rngSeed)
-			idGenerator.randSource = rand.New(rand.NewSource(rngSeed))
-		},
-	)
 	return idGenerator
 }
