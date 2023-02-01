@@ -3,7 +3,6 @@ package trace
 import (
 	"context"
 	"crypto/rand"
-	"sync"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
@@ -20,13 +19,11 @@ func init() {
 }
 
 var (
-	idGenerator *randomIDGenerator
-	_           trace.IDGenerator = new(randomIDGenerator)
+	idGenerator                   = new(randomIDGenerator)
+	_           trace.IDGenerator = &randomIDGenerator{}
 )
 
-type randomIDGenerator struct {
-	sync.Mutex
-}
+type randomIDGenerator struct{}
 
 // NewSpanID returns a non-zero span ID from a randomly-chosen sequence.
 func (gen *randomIDGenerator) NewSpanID(ctx context.Context, traceID apitrace.TraceID) apitrace.SpanID {
