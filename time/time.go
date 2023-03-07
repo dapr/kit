@@ -14,58 +14,163 @@ limitations under the License.
 */
 
 // Package time contains utilities for working with times, dates, and durations.
+//
+//nolint:nakedret,nonamedreturns
 package time
 
 import (
 	"errors"
-	"fmt"
-	"regexp"
 	"strconv"
 	"time"
 )
 
-var pattern = regexp.MustCompile(`^(R(?P<repetition>\d+)/)?P((?P<year>\d+)Y)?((?P<month>\d+)M)?((?P<week>\d+)W)?((?P<day>\d+)D)?(T((?P<hour>\d+)H)?((?P<minute>\d+)M)?((?P<second>\d+)S)?)?$`)
-
-// ParseISO8601Duration parses a duration from a string in the ISO8601 duration format.
-func ParseISO8601Duration(from string) (int, int, int, time.Duration, int, error) {
-	match := pattern.FindStringSubmatch(from)
-	if match == nil {
-		return 0, 0, 0, 0, 0, fmt.Errorf("unsupported ISO8601 duration format %q", from)
-	}
-	years, months, days, duration := 0, 0, 0, time.Duration(0)
+func ParseISO8601Duration(from string) (years int, months int, days int, duration time.Duration, repetition int, err error) {
 	// -1 signifies infinite repetition
-	repetition := -1
-	for i, name := range pattern.SubexpNames() {
-		part := match[i]
-		if i == 0 || name == "" || part == "" {
-			continue
+	repetition = -1
+
+	// Length must be at least 2 characters per specs
+	l := len(from)
+	if l < 2 {
+		err = errors.New("unsupported ISO8601 duration format: " + from)
+		return
+	}
+
+	var i int
+
+	// Check if the first character is "R", indicating we have repetitions
+	if from[0] == 'R' {
+		// Scan until the "/" character to get the repetitions
+		for {
+			i++
+			if i == l || from[i] == '/' {
+				break
+			}
 		}
-		val, err := strconv.Atoi(part)
+
+		if i-1 < 1 {
+			err = errors.New("unsupported ISO8601 duration format: " + from)
+			return
+		}
+		repetition, err = strconv.Atoi(from[1:i])
 		if err != nil {
-			return 0, 0, 0, 0, 0, err
+			err = errors.New("unsupported ISO8601 duration format: " + from)
+			return
 		}
-		switch name {
-		case "year":
-			years = val
-		case "month":
-			months = val
-		case "week":
-			days += 7 * val
-		case "day":
-			days += val
-		case "hour":
-			duration += time.Hour * time.Duration(val)
-		case "minute":
-			duration += time.Minute * time.Duration(val)
-		case "second":
-			duration += time.Second * time.Duration(val)
-		case "repetition":
-			repetition = val
-		default:
-			return 0, 0, 0, 0, 0, fmt.Errorf("unsupported ISO8601 duration field %s", name)
+
+		i++
+
+		// If we're already at the end of the string after getting repetitions, return
+		if i >= l {
+			return
 		}
 	}
-	return years, months, days, duration, repetition, nil
+
+	// First character must be a "P"
+	if from[i] != 'P' {
+		err = errors.New("unsupported ISO8601 duration format: " + from)
+		return
+	}
+	i++
+
+	start := i
+	isParsingTime := false
+	var tmp int
+	for i < l {
+		switch from[i] {
+		case 'T':
+			if start != i {
+				err = errors.New("unsupported ISO8601 duration format: " + from)
+				return
+			}
+			isParsingTime = true
+			start = i + 1
+
+		case 'Y':
+			if isParsingTime || start == i {
+				err = errors.New("unsupported ISO8601 duration format: " + from)
+				return
+			}
+			years, err = strconv.Atoi(from[start:i])
+			if err != nil {
+				err = errors.New("unsupported ISO8601 duration format: " + from)
+				return
+			}
+			start = i + 1
+
+		case 'W':
+			if isParsingTime || start == i {
+				err = errors.New("unsupported ISO8601 duration format: " + from)
+				return
+			}
+			tmp, err = strconv.Atoi(from[start:i])
+			if err != nil {
+				err = errors.New("unsupported ISO8601 duration format: " + from)
+				return
+			}
+			days += tmp * 7
+			start = i + 1
+
+		case 'D':
+			if isParsingTime || start == i {
+				err = errors.New("unsupported ISO8601 duration format: " + from)
+				return
+			}
+			tmp, err = strconv.Atoi(from[start:i])
+			if err != nil {
+				err = errors.New("unsupported ISO8601 duration format: " + from)
+				return
+			}
+			days += tmp
+			start = i + 1
+
+		case 'H':
+			if !isParsingTime || start == i {
+				err = errors.New("unsupported ISO8601 duration format: " + from)
+				return
+			}
+			tmp, err = strconv.Atoi(from[start:i])
+			if err != nil {
+				err = errors.New("unsupported ISO8601 duration format: " + from)
+				return
+			}
+			duration += time.Duration(tmp) * time.Hour
+			start = i + 1
+
+		case 'S':
+			if !isParsingTime || start == i {
+				err = errors.New("unsupported ISO8601 duration format: " + from)
+				return
+			}
+			tmp, err = strconv.Atoi(from[start:i])
+			if err != nil {
+				err = errors.New("unsupported ISO8601 duration format: " + from)
+				return
+			}
+			duration += time.Duration(tmp) * time.Second
+			start = i + 1
+
+		case 'M': // "M" can be used for both months and minutes
+			if start == i {
+				err = errors.New("unsupported ISO8601 duration format: " + from)
+				return
+			}
+			tmp, err = strconv.Atoi(from[start:i])
+			if err != nil {
+				err = errors.New("unsupported ISO8601 duration format: " + from)
+				return
+			}
+			if isParsingTime {
+				duration += time.Duration(tmp) * time.Minute
+			} else {
+				months = tmp
+			}
+			start = i + 1
+		}
+
+		i++
+	}
+
+	return
 }
 
 // ParseDuration creates time.Duration from either:
@@ -80,7 +185,7 @@ func ParseDuration(from string) (int, int, int, time.Duration, int, error) {
 	if err == nil {
 		return 0, 0, 0, dur, -1, nil
 	}
-	return 0, 0, 0, 0, 0, fmt.Errorf("unsupported duration format %q", from)
+	return 0, 0, 0, 0, 0, errors.New("unsupported duration format: " + from)
 }
 
 // ParseTime creates time.Duration from either:
@@ -108,5 +213,5 @@ func ParseTime(from string, offset *time.Time) (time.Time, error) {
 	if t, err := time.Parse(time.RFC3339, from); err == nil {
 		return t, nil
 	}
-	return time.Time{}, fmt.Errorf("unsupported time/duration format %q", from)
+	return time.Time{}, errors.New("unsupported time/duration format: " + from)
 }
