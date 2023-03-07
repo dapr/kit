@@ -156,6 +156,8 @@ linters-settings:
   nakedret:
     # make an issue if func has more lines of code than this setting and it has naked returns; default is 30
     max-func-lines: 30
+  nolintlint:
+    allow-unused: true
   prealloc:
     # XXX: we don't recommend using this linter before doing performance profiling.
     # For most programs usage of prealloc will be a premature optimization.
@@ -229,12 +231,17 @@ linters:
   disable:
     # TODO Enforce the below linters later
     - dupl
+    - nonamedreturns
     - errcheck
     - funlen
     - gochecknoglobals
     - gochecknoinits
     - gocyclo
     - gocognit
+    - nosnakecase
+    - varcheck
+    - structcheck
+    - deadcode
     - godox
     - interfacer
     - lll
@@ -247,7 +254,6 @@ linters:
     - goerr113
     - nestif
     - nlreturn
-    - exhaustive
     - noctx
     - gci
     - golint
@@ -256,7 +262,9 @@ linters:
     - wrapcheck
     - tagliatelle
     - ireturn
+    - exhaustive
     - exhaustivestruct
+    - exhaustruct
     - errchkjson
     - contextcheck
     - gomoddirectives
