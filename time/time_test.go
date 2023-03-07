@@ -23,18 +23,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func BenchmarkParseISO8601Duration_New(b *testing.B) {
-	for n := 0; n < b.N; n++ {
-		ParseISO8601Duration_New("R5/P10Y5M3DT30M")
-	}
-}
-
-func BenchmarkParseISO8601Duration(b *testing.B) {
-	for n := 0; n < b.N; n++ {
-		ParseISO8601Duration("R5/P10Y5M3DT30M")
-	}
-}
-
 func TestParseDuration(t *testing.T) {
 	t.Run("parse time.Duration", func(t *testing.T) {
 		y, m, d, duration, repetition, err := ParseDuration("0h30m0s")
@@ -227,6 +215,6 @@ func TestParseTime(t *testing.T) {
 	})
 	t.Run("parse empty string", func(t *testing.T) {
 		_, err := ParseTime("", nil)
-		assert.EqualError(t, err, "unsupported time/duration format \"\"")
+		assert.ErrorContains(t, err, "unsupported time/duration format")
 	})
 }

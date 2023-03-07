@@ -18,57 +18,11 @@ package time
 
 import (
 	"errors"
-	"fmt"
-	"regexp"
 	"strconv"
 	"time"
 )
 
-var pattern = regexp.MustCompile(`^(R(?P<repetition>\d+)/)?P((?P<year>\d+)Y)?((?P<month>\d+)M)?((?P<week>\d+)W)?((?P<day>\d+)D)?(T((?P<hour>\d+)H)?((?P<minute>\d+)M)?((?P<second>\d+)S)?)?$`)
-
-// ParseISO8601Duration parses a duration from a string in the ISO8601 duration format.
-func ParseISO8601Duration(from string) (int, int, int, time.Duration, int, error) {
-	match := pattern.FindStringSubmatch(from)
-	if match == nil {
-		return 0, 0, 0, 0, 0, fmt.Errorf("unsupported ISO8601 duration format %q", from)
-	}
-	years, months, days, duration := 0, 0, 0, time.Duration(0)
-	// -1 signifies infinite repetition
-	repetition := -1
-	for i, name := range pattern.SubexpNames() {
-		part := match[i]
-		if i == 0 || name == "" || part == "" {
-			continue
-		}
-		val, err := strconv.Atoi(part)
-		if err != nil {
-			return 0, 0, 0, 0, 0, err
-		}
-		switch name {
-		case "year":
-			years = val
-		case "month":
-			months = val
-		case "week":
-			days += 7 * val
-		case "day":
-			days += val
-		case "hour":
-			duration += time.Hour * time.Duration(val)
-		case "minute":
-			duration += time.Minute * time.Duration(val)
-		case "second":
-			duration += time.Second * time.Duration(val)
-		case "repetition":
-			repetition = val
-		default:
-			return 0, 0, 0, 0, 0, fmt.Errorf("unsupported ISO8601 duration field %s", name)
-		}
-	}
-	return years, months, days, duration, repetition, nil
-}
-
-func ParseISO8601Duration_New(from string) (years int, months int, days int, duration time.Duration, repetition int, err error) {
+func ParseISO8601Duration(from string) (years int, months int, days int, duration time.Duration, repetition int, err error) {
 	// -1 signifies infinite repetition
 	repetition = -1
 
@@ -221,7 +175,7 @@ func ParseISO8601Duration_New(from string) (years int, months int, days int, dur
 // - ISO8601 duration format
 // - time.Duration string format
 func ParseDuration(from string) (int, int, int, time.Duration, int, error) {
-	y, m, d, dur, r, err := ParseISO8601Duration_New(from)
+	y, m, d, dur, r, err := ParseISO8601Duration(from)
 	if err == nil {
 		return y, m, d, dur, r, nil
 	}
@@ -229,7 +183,7 @@ func ParseDuration(from string) (int, int, int, time.Duration, int, error) {
 	if err == nil {
 		return 0, 0, 0, dur, -1, nil
 	}
-	return 0, 0, 0, 0, 0, fmt.Errorf("unsupported duration format %q", from)
+	return 0, 0, 0, 0, 0, errors.New("unsupported duration format: " + from)
 }
 
 // ParseTime creates time.Duration from either:
@@ -257,5 +211,5 @@ func ParseTime(from string, offset *time.Time) (time.Time, error) {
 	if t, err := time.Parse(time.RFC3339, from); err == nil {
 		return t, nil
 	}
-	return time.Time{}, fmt.Errorf("unsupported time/duration format %q", from)
+	return time.Time{}, errors.New("unsupported time/duration format: " + from)
 }
