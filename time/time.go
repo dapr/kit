@@ -14,6 +14,8 @@ limitations under the License.
 */
 
 // Package time contains utilities for working with times, dates, and durations.
+//
+//nolint:nakedret,nonamedreturns
 package time
 
 import (

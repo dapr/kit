@@ -109,7 +109,6 @@ func TestParseDuration(t *testing.T) {
 		assert.Equal(t, 2, d)
 		assert.Equal(t, time.Duration(0), duration)
 		assert.Equal(t, -1, repetition)
-
 	})
 
 	t.Run("parse ISO 8601 duration with repetition only", func(t *testing.T) {
