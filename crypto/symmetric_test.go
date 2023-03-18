@@ -21,6 +21,8 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/dapr/kit/crypto/internal/padding"
 )
 
 func TestEncryptSymmetricAESCBC(t *testing.T) {
@@ -205,7 +207,7 @@ func TestDecryptSymmetricAESCBC(t *testing.T) {
 				iv:         mustDecodeHexString("5086cb9b507219ee95db113a917678b2"),
 				ciphertext: mustDecodeHexString("73bed6b8e3c1743b7116e69e22229516f6eccda327bf8e5ec43718b0039adcea"),
 			},
-			wantErr: ErrInvalidPKCS7Padding,
+			wantErr: padding.ErrInvalidPKCS7Padding,
 		},
 	}
 

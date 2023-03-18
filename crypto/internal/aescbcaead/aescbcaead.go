@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package crypto
+package aescbcaead
 
 // This implements an AEAD with AES-CBC and HMAC-SHA256
 // Specs:
@@ -31,6 +31,8 @@ import (
 	"errors"
 	"fmt"
 	"hash"
+
+	"github.com/dapr/kit/crypto/internal/padding"
 )
 
 // NewAESCBC128SHA256 returns an AEAD_AES_128_CBC_HMAC_SHA_256 instance given a
@@ -128,7 +130,7 @@ func (aead *aesCBCAEAD) Seal(dst, nonce, plaintext, additionalData []byte) []byt
 	// In this method, we panic in case of errors because the aead.Seal() interface doesn't allow returning errors
 	// However, errors in this method should only happen due to development-time mistakes, so we should never have to panic at runtime.
 	if len(nonce) != aes.BlockSize {
-		panic(ErrInvalidNonce)
+		panic("invalid nonce")
 	}
 
 	// Create the cipher
@@ -138,7 +140,7 @@ func (aead *aesCBCAEAD) Seal(dst, nonce, plaintext, additionalData []byte) []byt
 	}
 
 	// Pad the plaintext with PKCS#7 per specs
-	plaintext, err = PadPKCS7(plaintext, aes.BlockSize)
+	plaintext, err = padding.PadPKCS7(plaintext, aes.BlockSize)
 	if err != nil {
 		panic(err)
 	}
@@ -203,7 +205,7 @@ func (aead *aesCBCAEAD) Open(dst, nonce, ciphertext, additionalData []byte) ([]b
 		CryptBlocks(out, ciphertext)
 
 	// Remove PKCS#7 padding
-	out, err = UnpadPKCS7(out, aes.BlockSize)
+	out, err = padding.UnpadPKCS7(out, aes.BlockSize)
 	if err != nil {
 		return nil, err
 	}

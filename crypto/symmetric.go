@@ -23,7 +23,8 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"golang.org/x/crypto/chacha20poly1305"
 
-	"github.com/dapr/kit/crypto/aeskw"
+	"github.com/dapr/kit/crypto/internal/aeskw"
+	"github.com/dapr/kit/crypto/internal/padding"
 )
 
 // EncryptSymmetric encrypts a message using a symmetric key and the specified algorithm.
@@ -106,7 +107,7 @@ func encryptSymmetricAESCBC(plaintext []byte, algorithm string, key []byte, iv [
 	case Algorithm_A128CBC_NOPAD, Algorithm_A192CBC_NOPAD, Algorithm_A256CBC_NOPAD:
 		// nop
 	default:
-		plaintext, err = PadPKCS7(plaintext, aes.BlockSize)
+		plaintext, err = padding.PadPKCS7(plaintext, aes.BlockSize)
 		if err != nil {
 			return nil, err
 		}
@@ -146,7 +147,7 @@ func decryptSymmetricAESCBC(ciphertext []byte, algorithm string, key []byte, iv 
 	case Algorithm_A128CBC_NOPAD, Algorithm_A192CBC_NOPAD, Algorithm_A256CBC_NOPAD:
 		// nop
 	default:
-		plaintext, err = UnpadPKCS7(plaintext, aes.BlockSize)
+		plaintext, err = padding.UnpadPKCS7(plaintext, aes.BlockSize)
 		if err != nil {
 			return nil, err
 		}
