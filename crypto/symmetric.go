@@ -116,7 +116,7 @@ func encryptSymmetricAESCBC(plaintext []byte, algorithm string, key []byte, iv [
 	cipher.NewCBCEncrypter(block, iv).
 		CryptBlocks(ciphertext, plaintext)
 
-	return ciphertext, err
+	return ciphertext, nil
 }
 
 // Note that when using PKCS#7 padding, this returns a specific error if padding mismatches.
@@ -152,7 +152,7 @@ func decryptSymmetricAESCBC(ciphertext []byte, algorithm string, key []byte, iv 
 		}
 	}
 
-	return plaintext, err
+	return plaintext, nil
 }
 
 func encryptSymmetricAESGCM(plaintext []byte, algorithm string, key []byte, nonce []byte, associatedData []byte) (ciphertext []byte, tag []byte, err error) {
