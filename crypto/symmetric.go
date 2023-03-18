@@ -23,6 +23,7 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"golang.org/x/crypto/chacha20poly1305"
 
+	"github.com/dapr/kit/crypto/internal/aescbcaead"
 	"github.com/dapr/kit/crypto/internal/aeskw"
 	"github.com/dapr/kit/crypto/internal/padding"
 )
@@ -43,6 +44,9 @@ func EncryptSymmetric(plaintext []byte, algorithm string, key jwk.Key, nonce []b
 
 	case Algorithm_A128GCM, Algorithm_A192GCM, Algorithm_A256GCM:
 		return encryptSymmetricAESGCM(plaintext, algorithm, keyBytes, nonce, associatedData)
+
+	case Algorithm_A128CBC_HS256, Algorithm_A192CBC_HS384, Algorithm_A256CBC_HS512:
+		return encryptSymmetricAESCBCHMAC(plaintext, algorithm, keyBytes, nonce, associatedData)
 
 	case Algorithm_A128KW, Algorithm_A192KW, Algorithm_A256KW:
 		ciphertext, err = encryptSymmetricAESKW(plaintext, algorithm, keyBytes)
@@ -71,6 +75,9 @@ func DecryptSymmetric(ciphertext []byte, algorithm string, key jwk.Key, nonce []
 
 	case Algorithm_A128GCM, Algorithm_A192GCM, Algorithm_A256GCM:
 		return decryptSymmetricAESGCM(ciphertext, algorithm, keyBytes, nonce, tag, associatedData)
+
+	case Algorithm_A128CBC_HS256, Algorithm_A192CBC_HS384, Algorithm_A256CBC_HS512:
+		return decryptSymmetricAESCBCHMAC(ciphertext, algorithm, keyBytes, nonce, tag, associatedData)
 
 	case Algorithm_A128KW, Algorithm_A192KW, Algorithm_A256KW:
 		return decryptSymmetricAESKW(ciphertext, algorithm, keyBytes)
@@ -171,6 +178,19 @@ func encryptSymmetricAESGCM(plaintext []byte, algorithm string, key []byte, nonc
 		return nil, nil, ErrKeyTypeMismatch
 	}
 
+	return encryptSymmetricAEAD(aead, plaintext, algorithm, key, nonce, associatedData)
+}
+
+func encryptSymmetricAESCBCHMAC(plaintext []byte, algorithm string, key []byte, nonce []byte, associatedData []byte) (ciphertext []byte, tag []byte, err error) {
+	aead, err := getAESCBCHMACCipher(algorithm, key)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return encryptSymmetricAEAD(aead, plaintext, algorithm, key, nonce, associatedData)
+}
+
+func encryptSymmetricAEAD(aead cipher.AEAD, plaintext []byte, algorithm string, key []byte, nonce []byte, associatedData []byte) (ciphertext []byte, tag []byte, err error) {
 	if len(nonce) != aead.NonceSize() {
 		return nil, nil, ErrInvalidNonce
 	}
@@ -196,6 +216,19 @@ func decryptSymmetricAESGCM(ciphertext []byte, algorithm string, key []byte, non
 		return nil, ErrKeyTypeMismatch
 	}
 
+	return decryptSymmetricAEAD(aead, ciphertext, algorithm, key, nonce, tag, associatedData)
+}
+
+func decryptSymmetricAESCBCHMAC(ciphertext []byte, algorithm string, key []byte, nonce []byte, tag []byte, associatedData []byte) (plaintext []byte, err error) {
+	aead, err := getAESCBCHMACCipher(algorithm, key)
+	if err != nil {
+		return nil, err
+	}
+
+	return decryptSymmetricAEAD(aead, ciphertext, algorithm, key, nonce, tag, associatedData)
+}
+
+func decryptSymmetricAEAD(aead cipher.AEAD, ciphertext []byte, algorithm string, key []byte, nonce []byte, tag []byte, associatedData []byte) (plaintext []byte, err error) {
 	if len(nonce) != aead.NonceSize() {
 		return nil, ErrInvalidNonce
 	}
@@ -287,6 +320,32 @@ func getChaCha20Poly1305Cipher(algorithm string, key []byte, nonce []byte) (aead
 	}
 
 	return nil, errors.New("invalid algorithm")
+}
+
+func getAESCBCHMACCipher(algorithm string, key []byte) (aead cipher.AEAD, err error) {
+	switch algorithm {
+	case Algorithm_A128CBC_HS256:
+		if len(key) != 32 {
+			return nil, ErrKeyTypeMismatch
+		}
+		aead, err = aescbcaead.NewAESCBC128SHA256(key)
+	case Algorithm_A192CBC_HS384:
+		if len(key) != 48 {
+			return nil, ErrKeyTypeMismatch
+		}
+		aead, err = aescbcaead.NewAESCBC192SHA384(key)
+	case Algorithm_A256CBC_HS512:
+		if len(key) != 64 {
+			return nil, ErrKeyTypeMismatch
+		}
+		aead, err = aescbcaead.NewAESCBC256SHA512(key)
+	default:
+		return nil, errors.New("invalid algorithm")
+	}
+	if err != nil {
+		return nil, ErrKeyTypeMismatch
+	}
+	return aead, nil
 }
 
 func expectedKeySize(alg string) int {
