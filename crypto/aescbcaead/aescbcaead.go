@@ -32,7 +32,7 @@ import (
 	"fmt"
 	"hash"
 
-	"github.com/dapr/kit/crypto/internal/padding"
+	"github.com/dapr/kit/crypto/padding"
 )
 
 // NewAESCBC128SHA256 returns an AEAD_AES_128_CBC_HMAC_SHA_256 instance given a
@@ -119,7 +119,7 @@ type aesCBCAEAD struct {
 }
 
 func (aead *aesCBCAEAD) Overhead() int {
-	return aes.BlockSize + aead.tagSize + 8 + aead.NonceSize()
+	return aead.tagSize
 }
 
 func (aead *aesCBCAEAD) NonceSize() int {

@@ -23,9 +23,9 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"golang.org/x/crypto/chacha20poly1305"
 
-	"github.com/dapr/kit/crypto/internal/aescbcaead"
-	"github.com/dapr/kit/crypto/internal/aeskw"
-	"github.com/dapr/kit/crypto/internal/padding"
+	"github.com/dapr/kit/crypto/aescbcaead"
+	"github.com/dapr/kit/crypto/aeskw"
+	"github.com/dapr/kit/crypto/padding"
 )
 
 // EncryptSymmetric encrypts a message using a symmetric key and the specified algorithm.
