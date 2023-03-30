@@ -32,7 +32,7 @@ header || binary_payload
 The **header** is human-readable and contains 3 items, each terminated by a line feed (`0x0A`) character:
 
 1. Name and version of the encryption scheme used. In this version of the spec, this is always `dapr.io/enc/v1`.
-2. The manifest, which is a JSON object.
+2. The manifest, which is a JSON object, compacted with all the unnecessary whitespaces removed. 
 3. The MAC for the header, base64-encoded.
 
 > Base64 encoding follows [RFC 4648 §4](https://datatracker.ietf.org/doc/html/rfc4648#section-4) ("standard" format, with padding included)
@@ -47,7 +47,9 @@ pBDKLrhAWL7IAvDKBV/v7lmbTG6AEZbf3srUN0Pnn30=
 
 ### Manifest
 
-The second line in the header is the **manifest**, which is a compact JSON object.
+The second line in the header is the **manifest**, which is a compact JSON object (i.e. with all the unnecessary whitespaces removed).
+
+> Note that per the JSON spec, newline characters within a string are safely encoded as the string `\n`, which would not interpreted as newlines while scanning the manifest.
 
 Its corresponding Go struct is:
 
