@@ -22,6 +22,16 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwk"
 )
 
+// SupportedAsymmetricAlgorithms returns the list of supported asymmetric encryption algorithms.
+// This is a subset of the algorithms defined in consts.go.
+func SupportedAsymmetricAlgorithms() []string {
+	return []string{
+		Algorithm_RSA1_5,
+		Algorithm_RSA_OAEP,
+		Algorithm_RSA_OAEP_256, Algorithm_RSA_OAEP_384, Algorithm_RSA_OAEP_512,
+	}
+}
+
 // EncryptPublicKey encrypts a message using a public key and the specified algorithm.
 // Note that "associatedData" is ignored if the cipher does not support labels/AAD.
 func EncryptPublicKey(plaintext []byte, algorithm string, key jwk.Key, associatedData []byte) (ciphertext []byte, err error) {

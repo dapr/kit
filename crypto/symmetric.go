@@ -28,6 +28,19 @@ import (
 	"github.com/dapr/kit/crypto/padding"
 )
 
+// SupportedSymmetricAlgorithms returns the list of supported symmetric encryption algorithms.
+// This is a subset of the algorithms defined in consts.go.
+func SupportedSymmetricAlgorithms() []string {
+	return []string{
+		Algorithm_A128CBC, Algorithm_A192CBC, Algorithm_A256CBC,
+		Algorithm_A128CBC_NOPAD, Algorithm_A192CBC_NOPAD, Algorithm_A256CBC_NOPAD,
+		Algorithm_A128GCM, Algorithm_A192GCM, Algorithm_A256GCM,
+		Algorithm_A128CBC_HS256, Algorithm_A192CBC_HS384, Algorithm_A256CBC_HS512,
+		Algorithm_A128KW, Algorithm_A192KW, Algorithm_A256KW,
+		Algorithm_C20P, Algorithm_C20PKW, Algorithm_XC20P, Algorithm_XC20PKW,
+	}
+}
+
 // EncryptSymmetric encrypts a message using a symmetric key and the specified algorithm.
 // Note that "associatedData" is ignored if the cipher does not support labels/AAD.
 func EncryptSymmetric(plaintext []byte, algorithm string, key jwk.Key, nonce []byte, associatedData []byte) (ciphertext []byte, tag []byte, err error) {
