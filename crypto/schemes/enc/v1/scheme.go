@@ -88,8 +88,8 @@ type DecryptOptions struct {
 	KeyName string
 }
 
-// Pool that returns buffers of SegmentSize+SegmentOverhead, plus one extra byte
-var bufPool = sync.Pool{
+// BufPool is a sync.Pool that returns buffers of SegmentSize+SegmentOverhead, plus one extra byte
+var BufPool = sync.Pool{
 	New: func() any {
 		const bufSize = SegmentSize + SegmentOverhead + 1
 		// Return a pointer here
@@ -257,9 +257,9 @@ func Decrypt(in io.Reader, opts DecryptOptions) (io.Reader, error) {
 // Reads all segment from the input stream, either plaintext or ciphertext, and process them (encrypt or decrypt them)
 func processSegments(fk fileKey, in io.Reader, out *io.PipeWriter, processFn processSegmentFn, segmentSize int) {
 	// Get a buffer from the pool
-	buf := bufPool.Get().(*[]byte)
+	buf := BufPool.Get().(*[]byte)
 	defer func() {
-		bufPool.Put(buf)
+		BufPool.Put(buf)
 	}()
 
 	// Read from the input stream till the end, one segment at a time
@@ -346,9 +346,9 @@ func processSegments(fk fileKey, in io.Reader, out *io.PipeWriter, processFn pro
 
 func readHeader(in *io.Reader) (manifest []byte, mac []byte, err error) {
 	// Get a buffer from the pool
-	buf := bufPool.Get().(*[]byte)
+	buf := BufPool.Get().(*[]byte)
 	defer func() {
-		bufPool.Put(buf)
+		BufPool.Put(buf)
 	}()
 
 	// Read the first segment to get the header
