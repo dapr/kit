@@ -22,10 +22,10 @@ import (
 type KeyAlgorithm string
 
 const (
-	KeyAlgorithmAESKW      KeyAlgorithm = "AES-KW"
+	KeyAlgorithmAES256KW   KeyAlgorithm = "AES-256-KW"
 	KeyAlgorithmRSAOAEP256 KeyAlgorithm = "RSA-OAEP-256"
 
-	KeyAlgorithmAES KeyAlgorithm = "AES" // Alias for AES-KW
+	KeyAlgorithmAES KeyAlgorithm = "AES" // Alias for AES-256-KW
 	KeyAlgorithmRSA KeyAlgorithm = "RSA" // Alias for RSA-OAEP-256
 )
 
@@ -33,12 +33,12 @@ const (
 func (a KeyAlgorithm) Validate() (KeyAlgorithm, error) {
 	switch a {
 	// Valid algorithms, not aliased
-	case KeyAlgorithmAESKW, KeyAlgorithmRSAOAEP256:
+	case KeyAlgorithmAES256KW, KeyAlgorithmRSAOAEP256:
 		return a, nil
 
-	// Alias for AES-KW
+	// Alias for AES-256-KW
 	case KeyAlgorithmAES:
-		return KeyAlgorithmAESKW, nil
+		return KeyAlgorithmAES256KW, nil
 
 	// Alias for RSA-OAEP-256
 	case KeyAlgorithmRSA:
@@ -52,7 +52,7 @@ func (a KeyAlgorithm) Validate() (KeyAlgorithm, error) {
 // ID returns the numeric ID for the algorithm.
 func (a KeyAlgorithm) ID() int {
 	switch a {
-	case KeyAlgorithmAESKW, KeyAlgorithmAES:
+	case KeyAlgorithmAES256KW, KeyAlgorithmAES:
 		return 1
 	case KeyAlgorithmRSAOAEP256, KeyAlgorithmRSA:
 		return 2
@@ -65,7 +65,7 @@ func (a KeyAlgorithm) ID() int {
 func NewKeyAlgorithmFromID(id int) (KeyAlgorithm, error) {
 	switch id {
 	case 1:
-		return KeyAlgorithmAESKW, nil
+		return KeyAlgorithmAES256KW, nil
 	case 2:
 		return KeyAlgorithmRSAOAEP256, nil
 	default:

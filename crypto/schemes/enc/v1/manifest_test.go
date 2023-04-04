@@ -33,7 +33,7 @@ func TestManifestValidate(t *testing.T) {
 			name: "all properties included",
 			manifest: &Manifest{
 				KeyName:              "mykey",
-				KeyWrappingAlgorithm: KeyAlgorithmAESKW,
+				KeyWrappingAlgorithm: KeyAlgorithmAES256KW,
 				WFK:                  []byte{0x01, 0x02, 0x03},
 				Cipher:               CipherAESGCM,
 				NoncePrefix:          []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07},
@@ -42,7 +42,7 @@ func TestManifestValidate(t *testing.T) {
 		{
 			name: "key name is optional",
 			manifest: &Manifest{
-				KeyWrappingAlgorithm: KeyAlgorithmAESKW,
+				KeyWrappingAlgorithm: KeyAlgorithmAES256KW,
 				WFK:                  []byte{0x01, 0x02, 0x03},
 				Cipher:               CipherAESGCM,
 				NoncePrefix:          []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07},
@@ -60,7 +60,7 @@ func TestManifestValidate(t *testing.T) {
 		{
 			name: "missing wrapped file key",
 			manifest: &Manifest{
-				KeyWrappingAlgorithm: KeyAlgorithmAESKW,
+				KeyWrappingAlgorithm: KeyAlgorithmAES256KW,
 				Cipher:               CipherAESGCM,
 				NoncePrefix:          []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07},
 			},
@@ -69,7 +69,7 @@ func TestManifestValidate(t *testing.T) {
 		{
 			name: "missing cipher",
 			manifest: &Manifest{
-				KeyWrappingAlgorithm: KeyAlgorithmAESKW,
+				KeyWrappingAlgorithm: KeyAlgorithmAES256KW,
 				WFK:                  []byte{0x01, 0x02, 0x03},
 				NoncePrefix:          []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07},
 			},
@@ -78,7 +78,7 @@ func TestManifestValidate(t *testing.T) {
 		{
 			name: "missing nonce prefix",
 			manifest: &Manifest{
-				KeyWrappingAlgorithm: KeyAlgorithmAESKW,
+				KeyWrappingAlgorithm: KeyAlgorithmAES256KW,
 				WFK:                  []byte{0x01, 0x02, 0x03},
 				Cipher:               CipherAESGCM,
 			},
@@ -87,7 +87,7 @@ func TestManifestValidate(t *testing.T) {
 		{
 			name: "nonce prefix too short",
 			manifest: &Manifest{
-				KeyWrappingAlgorithm: KeyAlgorithmAESKW,
+				KeyWrappingAlgorithm: KeyAlgorithmAES256KW,
 				WFK:                  []byte{0x01, 0x02, 0x03},
 				Cipher:               CipherAESGCM,
 				NoncePrefix:          []byte{0x01, 0x02, 0x03, 0x04},
@@ -112,7 +112,7 @@ func TestManifestJSON(t *testing.T) {
 		return func(t *testing.T) {
 			m := &Manifest{
 				KeyName:              keyName,
-				KeyWrappingAlgorithm: KeyAlgorithmAESKW,
+				KeyWrappingAlgorithm: KeyAlgorithmAES256KW,
 				WFK:                  []byte{0x01, 0x02, 0x03},
 				Cipher:               CipherAESGCM,
 				NoncePrefix:          []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07},

@@ -25,8 +25,8 @@ func TestKeyAlgorithmValidate(t *testing.T) {
 		want    KeyAlgorithm
 		wantErr bool
 	}{
-		{name: string(KeyAlgorithmAESKW), a: KeyAlgorithmAESKW, want: KeyAlgorithmAESKW},
-		{name: string(KeyAlgorithmAES) + " alias", a: KeyAlgorithmAES, want: KeyAlgorithmAESKW},
+		{name: string(KeyAlgorithmAES256KW), a: KeyAlgorithmAES256KW, want: KeyAlgorithmAES256KW},
+		{name: string(KeyAlgorithmAES) + " alias", a: KeyAlgorithmAES, want: KeyAlgorithmAES256KW},
 		{name: string(KeyAlgorithmRSAOAEP256), a: KeyAlgorithmRSAOAEP256, want: KeyAlgorithmRSAOAEP256},
 		{name: string(KeyAlgorithmRSA) + " alias", a: KeyAlgorithmRSA, want: KeyAlgorithmRSAOAEP256},
 		{name: "invalid algorithm", a: "foo", wantErr: true},
@@ -57,7 +57,7 @@ func TestKeyAlgorithmMarshalJSON(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{name: string(KeyAlgorithmAESKW), a: KeyAlgorithmAESKW, want: "1"},
+		{name: string(KeyAlgorithmAES256KW), a: KeyAlgorithmAES256KW, want: "1"},
 		{name: string(KeyAlgorithmAES) + " alias", a: KeyAlgorithmAES, want: "1"},
 		{name: string(KeyAlgorithmRSAOAEP256), a: KeyAlgorithmRSAOAEP256, want: "2"},
 		{name: string(KeyAlgorithmRSA) + " alias", a: KeyAlgorithmRSA, want: "2"},
@@ -85,7 +85,7 @@ func TestKeyAlgorithmUnmarshalJSON(t *testing.T) {
 		want    KeyAlgorithm
 		wantErr bool
 	}{
-		{name: string(KeyAlgorithmAESKW), message: "1", want: KeyAlgorithmAESKW},
+		{name: string(KeyAlgorithmAES256KW), message: "1", want: KeyAlgorithmAES256KW},
 		{name: string(KeyAlgorithmRSAOAEP256), message: "2", want: KeyAlgorithmRSAOAEP256},
 		{name: "invalid ID", message: "99", wantErr: true},
 		{name: "empty", message: "", wantErr: true},
