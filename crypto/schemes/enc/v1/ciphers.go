@@ -23,7 +23,7 @@ type Cipher string
 
 const (
 	CipherAESGCM           Cipher = "AES-GCM"
-	CipherChaCha20Poly1305 Cipher = "ChaCha20-Poly1305"
+	CipherChaCha20Poly1305 Cipher = "CHACHA20-POLY1305"
 )
 
 // Validate the passed cipher and resolves aliases.
