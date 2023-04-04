@@ -27,6 +27,17 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwk"
 )
 
+// SupportedSignatureAlgorithms returns the list of supported signature algorithms.
+// This is a subset of the algorithms defined in consts.go.
+func SupportedSignatureAlgorithms() []string {
+	return []string{
+		Algorithm_RS256, Algorithm_RS384, Algorithm_RS512,
+		Algorithm_PS256, Algorithm_PS384, Algorithm_PS512,
+		Algorithm_ES256, Algorithm_ES384, Algorithm_ES512,
+		Algorithm_EdDSA,
+	}
+}
+
 // SignPrivateKey creates a signature from a digest using a private key and the specified algorithm.
 // Note: when using EdDSA, the message gets hashed as part of the signing process, so users should normally pass the full message for the "digest" parameter.
 func SignPrivateKey(digest []byte, algorithm string, key jwk.Key) (signature []byte, err error) {
