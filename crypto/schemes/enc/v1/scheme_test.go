@@ -207,15 +207,46 @@ func TestScheme(t *testing.T) {
 		require.Len(t, manifest.NoncePrefix, 7)
 	})
 
+	t.Run("encryption option DecryptionKeyName", func(t *testing.T) {
+		// Encrypt the message
+		enc, err := Encrypt(
+			bytes.NewReader(testData["single-segment"]),
+			EncryptOptions{
+				WrapKeyFn:         wrapKeyFn,
+				KeyName:           keyName,
+				Algorithm:         algorithm,
+				DecryptionKeyName: "dec-key",
+			},
+		)
+		require.NoError(t, err)
+
+		// Read the encrypted data
+		encData, err := io.ReadAll(enc)
+		require.NoError(t, err)
+		require.NotEmpty(t, encData)
+
+		// Get the JSON manifest
+		start := bytes.IndexByte(encData, '{')
+		require.Greater(t, start, 14)
+		end := start + bytes.IndexByte(encData[start:], '\n')
+		require.Greater(t, end, start)
+		var manifest Manifest
+		err = json.Unmarshal(encData[start:end], &manifest)
+		require.NoError(t, err)
+		require.NoError(t, manifest.Validate())
+		require.Equal(t, "dec-key", manifest.KeyName)
+	})
+
 	t.Run("encryption option OmitKeyName", func(t *testing.T) {
 		// Encrypt the message
 		enc, err := Encrypt(
 			bytes.NewReader(testData["single-segment"]),
 			EncryptOptions{
-				WrapKeyFn:   wrapKeyFn,
-				KeyName:     keyName,
-				Algorithm:   algorithm,
-				OmitKeyName: true,
+				WrapKeyFn:         wrapKeyFn,
+				KeyName:           keyName,
+				Algorithm:         algorithm,
+				DecryptionKeyName: "dec-key", // Should be ignored
+				OmitKeyName:       true,
 			},
 		)
 		require.NoError(t, err)

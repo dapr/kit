@@ -70,6 +70,9 @@ type EncryptOptions struct {
 	Algorithm KeyAlgorithm
 	// Name of the key to use
 	KeyName string
+	// Name of the key to include as decryption key
+	// If empty, uses KeyName
+	DecryptionKeyName string
 	// If true, does not include the key name in the manifest
 	OmitKeyName bool
 	// Cipher used to encrypt the data
@@ -142,13 +145,15 @@ func Encrypt(in io.Reader, opts EncryptOptions) (io.Reader, error) {
 	}
 
 	// Create the manifest and sign it
-	keyName := opts.KeyName
+	keyName := opts.DecryptionKeyName
 	if opts.OmitKeyName {
 		keyName = ""
+	} else if keyName == "" {
+		keyName = opts.KeyName
 	}
 	manifest, err := json.Marshal(&Manifest{
 		KeyName:              keyName,
-		KeyWrappingAlgorithm: opts.Algorithm,
+		KeyWrappingAlgorithm: keyWrapAlgorithm,
 		WFK:                  wrappedFileKey,
 		Cipher:               cipher,
 		NoncePrefix:          fk.GetNoncePrefix(),
