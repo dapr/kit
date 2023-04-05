@@ -21,7 +21,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"errors"
-	"math/big"
 
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
@@ -70,11 +69,7 @@ func signPrivateKeyECDSA(digest []byte, key jwk.Key) ([]byte, error) {
 		return nil, ErrKeyTypeMismatch
 	}
 
-	r, s, err := ecdsa.Sign(rand.Reader, ecdsaKey, digest)
-	if err != nil {
-		return nil, err
-	}
-	return append(r.Bytes(), s.Bytes()...), nil
+	return ecdsa.SignASN1(rand.Reader, ecdsaKey, digest)
 }
 
 func signPrivateKeyEdDSA(message []byte, key jwk.Key) ([]byte, error) {
@@ -162,13 +157,7 @@ func verifyPublicKeyECDSA(digest []byte, signature []byte, key jwk.Key) (bool, e
 		return false, ErrKeyTypeMismatch
 	}
 
-	n := len(signature) / 2
-	r := &big.Int{}
-	r.SetBytes(signature[:n])
-	s := &big.Int{}
-	s.SetBytes(signature[n:])
-
-	return ecdsa.Verify(ecdsaKey, digest, r, s), nil
+	return ecdsa.VerifyASN1(ecdsaKey, digest, signature), nil
 }
 
 func verifyPublicKeyEdDSA(mesage []byte, signature []byte, key jwk.Key) (bool, error) {
