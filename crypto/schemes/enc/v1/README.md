@@ -53,7 +53,7 @@ pBDKLrhAWL7IAvDKBV/v7lmbTG6AEZbf3srUN0Pnn30=
 
 The second line in the header is the **manifest**, which is a compact JSON object (i.e. with all the unnecessary whitespaces removed).
 
-> Note that per the JSON spec, newline characters within a string are safely encoded as the string `\n`, which would not interpreted as newlines while scanning the manifest.
+> Note that per the [JSON spec (RFC 8259)](https://www.rfc-editor.org/rfc/rfc8259), newline characters within a string are safely encoded as the string `\n`, which would not interpreted as newlines while scanning the manifest. The spec also defines what constitutes "unnecessary whitespace".
 
 Its corresponding Go struct is:
 
