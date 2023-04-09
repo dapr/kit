@@ -22,8 +22,6 @@ import (
 	"sync"
 
 	"github.com/lestrrat-go/jwx/v2/jwk"
-
-	"github.com/dapr/kit/ptr"
 )
 
 const (
@@ -264,20 +262,21 @@ func processSegments(fk fileKey, in io.Reader, out *io.PipeWriter, processFn pro
 
 	// Read from the input stream till the end, one segment at a time
 	var (
-		err       error
-		segment   uint32
-		done      bool
-		carryover *byte
-		n, nn     int
+		err          error
+		segment      uint32
+		done         bool
+		hasCarryover bool
+		carryover    byte
+		n, nn        int
 	)
 	for !done {
 		n = 0
 
 		// Add the carryover byte if we have one
-		if carryover != nil {
-			(*buf)[0] = *carryover
+		if hasCarryover {
+			(*buf)[0] = carryover
 			n = 1
-			carryover = nil
+			hasCarryover = false
 		}
 
 		// Read a segment from the buffer till we have a full segment + 1 byte or an error (could be EOF).
@@ -300,7 +299,8 @@ func processSegments(fk fileKey, in io.Reader, out *io.PipeWriter, processFn pro
 		// If we read an extra byte, set that as carryover
 		// Otherwise, this means that we have the last segment
 		if n > segmentSize {
-			carryover = ptr.Of((*buf)[n-1])
+			carryover = (*buf)[n-1]
+			hasCarryover = true
 			n--
 		} else {
 			done = true
