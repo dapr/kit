@@ -26,8 +26,6 @@ import (
 
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/stretchr/testify/require"
-
-	"github.com/dapr/kit/ptr"
 )
 
 var (
@@ -738,11 +736,12 @@ func TestScheme(t *testing.T) {
 		})
 
 		t.Run("option Cipher is invalid", func(t *testing.T) {
+			invalidCipher := Cipher("invalid")
 			out, err := Encrypt(&bytes.Buffer{}, EncryptOptions{
 				WrapKeyFn: wrapKeyFn,
 				KeyName:   keyName,
 				Algorithm: algorithm,
-				Cipher:    ptr.Of(Cipher("invalid")),
+				Cipher:    &invalidCipher,
 			})
 			require.Error(t, err)
 			require.ErrorContains(t, err, "option Cipher is not valid")
