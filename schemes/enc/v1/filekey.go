@@ -27,7 +27,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/lestrrat-go/jwx/v2/jwk"
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/hkdf"
 )
@@ -75,13 +74,9 @@ func importFileKey(fileKey, noncePrefix []byte, cipher Cipher) (fk fileKey, err 
 	return fk, nil
 }
 
-// Returns the fileKey as a jwk.Key object.
-func (k fileKey) GetKeyJWK() (jwk.Key, error) {
-	obj, err := jwk.FromRaw(k.fileKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to import file key: %w", err)
-	}
-	return obj, nil
+// Returns the file key.
+func (k fileKey) GetFileKey() []byte {
+	return k.fileKey
 }
 
 // Returns the nonce prefix.

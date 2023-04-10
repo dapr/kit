@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"io"
 	"sync"
-
-	"github.com/lestrrat-go/jwx/v2/jwk"
 )
 
 const (
@@ -52,11 +50,11 @@ var (
 type (
 	// Signature of the method that wraps keys.
 	// This does not accept a context, which needs to be provided by the caller of the Encrypt method inside the lambda.
-	WrapKeyFn = func(plaintextKey jwk.Key, algorithm string, keyName string, nonce []byte) (wrappedKey []byte, tag []byte, err error)
+	WrapKeyFn = func(plaintextKey []byte, algorithm string, keyName string, nonce []byte) (wrappedKey []byte, tag []byte, err error)
 
 	// Signature of the method that unwraps keys.
 	// This does not accept a context, which needs to be provided by the caller of the Decrypt method inside the lambda.
-	UnwrapKeyFn = func(wrappedKey []byte, algorithm string, keyName string, nonce []byte, tag []byte) (plaintextKey jwk.Key, err error)
+	UnwrapKeyFn = func(wrappedKey []byte, algorithm string, keyName string, nonce []byte, tag []byte) (plaintextKey []byte, err error)
 )
 
 // EncryptOptions contains the options passed to the Encrypt method
@@ -133,11 +131,7 @@ func Encrypt(in io.Reader, opts EncryptOptions) (io.Reader, error) {
 
 	// Wrap the file key
 	// Note: we're skipping the nonce and ignoring the tag parameter at the moment because none of the supported ciphers use them
-	fileKeyJWK, err := fk.GetKeyJWK()
-	if err != nil {
-		return nil, err
-	}
-	wrappedFileKey, _, err := opts.WrapKeyFn(fileKeyJWK, string(keyWrapAlgorithm), opts.KeyName, nil)
+	wrappedFileKey, _, err := opts.WrapKeyFn(fk.GetFileKey(), string(keyWrapAlgorithm), opts.KeyName, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to wrap the file key: %w", err)
 	}
@@ -216,20 +210,14 @@ func Decrypt(in io.Reader, opts DecryptOptions) (io.Reader, error) {
 
 	// Unwrap the file key
 	// Note: we're skipping the nonce and tag parameters at the moment because none of the supported ciphers use them
-	var fileKeyBytes []byte
-	fileKeyJWK, err := opts.UnwrapKeyFn(manifestObj.WFK, string(manifestObj.KeyWrappingAlgorithm), keyName, nil, nil)
-	if err != nil {
+	fileKeyBytes, _ := opts.UnwrapKeyFn(manifestObj.WFK, string(manifestObj.KeyWrappingAlgorithm), keyName, nil, nil)
+	if len(fileKeyBytes) != 32 {
 		// This is where things get a bit tricky.
 		// If the UnwrapKeyFn returned an error, we want to ignore that for now, and instead continue validating the MAC using an empty fileKey (which will fail).
 		// This is because otherwise we may be making it easier to disclose certain information such as whether a key exists or not in the vault via timing attacks.
 		// What we're doing here doesn't remove timing attacks entirely, starting from the fact that we're putting an `if` block. Also, the underlying components may respond faster if the key isn't available… but at least we can try not making the situation worse!
 		// Also, this takes some time as we're allocating memory, but in the case of err==nil the operation there takes some time too.
 		fileKeyBytes = make([]byte, 32)
-	} else {
-		err = fileKeyJWK.Raw(&fileKeyBytes)
-		if err != nil {
-			fileKeyBytes = make([]byte, 32)
-		}
 	}
 
 	// Import the file key

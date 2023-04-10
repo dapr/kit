@@ -24,7 +24,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,13 +35,12 @@ var (
 func TestScheme(t *testing.T) {
 	// Fake wrapKeyFn and unwrapKeyFn, which just return the plaintext key
 	//nolint:stylecheck
-	var wrapKeyFn WrapKeyFn = func(plaintextKey jwk.Key, algorithm, keyName string, nonce []byte) (wrappedKey []byte, tag []byte, err error) {
-		err = plaintextKey.Raw(&wrappedKey)
-		return
+	var wrapKeyFn WrapKeyFn = func(plaintextKey []byte, algorithm, keyName string, nonce []byte) (wrappedKey []byte, tag []byte, err error) {
+		return plaintextKey, nil, nil
 	}
 	//nolint:stylecheck
-	var unwrapKeyFn UnwrapKeyFn = func(wrappedKey []byte, algorithm, keyName string, nonce, tag []byte) (plaintextKey jwk.Key, err error) {
-		return jwk.FromRaw(wrappedKey)
+	var unwrapKeyFn UnwrapKeyFn = func(wrappedKey []byte, algorithm, keyName string, nonce, tag []byte) (plaintextKey []byte, err error) {
+		return wrappedKey, nil
 	}
 
 	// In all these tests, the key name and wrapping algorithms don't matter as we don't actually wrap/unwrap keys
@@ -312,7 +310,7 @@ func TestScheme(t *testing.T) {
 		_, err := Encrypt(
 			strings.NewReader("hello world"),
 			EncryptOptions{
-				WrapKeyFn: func(plaintextKey jwk.Key, algorithm, keyName string, nonce []byte) (wrappedKey []byte, tag []byte, err error) {
+				WrapKeyFn: func(plaintextKey []byte, algorithm, keyName string, nonce []byte) (wrappedKey []byte, tag []byte, err error) {
 					gotAlgorithm = algorithm
 					gotKeyName = keyName
 					return wrapKeyFn(plaintextKey, algorithm, keyName, nonce)
@@ -342,7 +340,7 @@ func TestScheme(t *testing.T) {
 			DecryptOptions{
 				// Although we're passing a different value for keyName, we still return the same key so decryption will work
 				KeyName: "anotherkey",
-				UnwrapKeyFn: func(wrappedKey []byte, algorithm, keyName string, nonce, tag []byte) (plaintextKey jwk.Key, err error) {
+				UnwrapKeyFn: func(wrappedKey []byte, algorithm, keyName string, nonce, tag []byte) (plaintextKey []byte, err error) {
 					gotKeyName = keyName
 					return unwrapKeyFn(wrappedKey, algorithm, keyName, nonce, tag)
 				},
@@ -380,7 +378,7 @@ func TestScheme(t *testing.T) {
 		enc, err := Encrypt(
 			&bytes.Buffer{},
 			EncryptOptions{
-				WrapKeyFn: func(plaintextKey jwk.Key, algorithm, keyName string, nonce []byte) (wrappedKey []byte, tag []byte, err error) {
+				WrapKeyFn: func(plaintextKey []byte, algorithm, keyName string, nonce []byte) (wrappedKey []byte, tag []byte, err error) {
 					return nil, nil, errSimulated
 				},
 				KeyName:   keyName,
@@ -402,7 +400,7 @@ func TestScheme(t *testing.T) {
 		dec, err := Decrypt(
 			f,
 			DecryptOptions{
-				UnwrapKeyFn: func(wrappedKey []byte, algorithm, keyName string, nonce, tag []byte) (plaintextKey jwk.Key, err error) {
+				UnwrapKeyFn: func(wrappedKey []byte, algorithm, keyName string, nonce, tag []byte) (plaintextKey []byte, err error) {
 					return nil, errSimulated
 				},
 			},
@@ -420,8 +418,8 @@ func TestScheme(t *testing.T) {
 		dec, err := Decrypt(
 			f,
 			DecryptOptions{
-				UnwrapKeyFn: func(wrappedKey []byte, algorithm, keyName string, nonce, tag []byte) (plaintextKey jwk.Key, err error) {
-					return jwk.FromRaw(bytes.Repeat([]byte{1, 2, 3, 4, 5, 6, 7, 8}, 4))
+				UnwrapKeyFn: func(wrappedKey []byte, algorithm, keyName string, nonce, tag []byte) (plaintextKey []byte, err error) {
+					return bytes.Repeat([]byte{1, 2, 3, 4, 5, 6, 7, 8}, 4), nil
 				},
 			},
 		)
