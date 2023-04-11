@@ -51,6 +51,11 @@ func SerializeKey(key jwk.Key) ([]byte, error) {
 // It supports keys represented as JWKs, PEM-encoded (PKCS#8, PKCS#1 or PKIX) or as raw bytes (optionally base64-encoded).
 // The parameter contentType is optional and it can contain a mime type.
 func ParseKey(raw []byte, contentType string) (jwk.Key, error) {
+	l := len(raw)
+	if l == 0 {
+		return nil, errors.New("key is empty")
+	}
+
 	// Determine the type of key if the type parameter is set
 	switch contentType {
 	case "application/json": // JWK
@@ -60,7 +65,6 @@ func ParseKey(raw []byte, contentType string) (jwk.Key, error) {
 	}
 
 	// Heuristically determine the type of key
-	l := len(raw)
 	switch {
 	case raw[0] == '{' && l != 16 && l != 24 && l != 32: // Assume it's a JWK unless the length is 16, 24, or 32 bytes
 		return jwk.ParseKey(raw)
