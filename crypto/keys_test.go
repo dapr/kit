@@ -26,6 +26,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestEmptyKey(t *testing.T) {
+	key, err := ParseKey([]byte{}, "")
+	require.Error(t, err)
+	require.EqualError(t, err, "key is empty")
+	require.Nil(t, key)
+}
+
 func TestSymmetricKeys(t *testing.T) {
 	rawKey := make([]byte, 16)
 	_, rawErr := io.ReadFull(rand.Reader, rawKey)
