@@ -24,6 +24,9 @@ type Cipher string
 const (
 	CipherAESGCM           Cipher = "AES-GCM"
 	CipherChaCha20Poly1305 Cipher = "CHACHA20-POLY1305"
+
+	cipherNumAESGCM = 1
+	cipherNumChaCha20Poly1305 = 2
 )
 
 // Validate the passed cipher and resolves aliases.
@@ -42,9 +45,9 @@ func (a Cipher) Validate() (Cipher, error) {
 func (a Cipher) ID() int {
 	switch a {
 	case CipherAESGCM:
-		return 1
+		return cipherNumAESGCM
 	case CipherChaCha20Poly1305:
-		return 2
+		return cipherNumChaCha20Poly1305
 	default:
 		return 0
 	}
@@ -53,9 +56,9 @@ func (a Cipher) ID() int {
 // NewCipherFromID returns a Cipher from its ID.
 func NewCipherFromID(id int) (Cipher, error) {
 	switch id {
-	case 1:
+	case cipherNumAESGCM:
 		return CipherAESGCM, nil
-	case 2:
+	case cipherNumChaCha20Poly1305:
 		return CipherChaCha20Poly1305, nil
 	default:
 		return "", errors.New("cipher ID " + strconv.Itoa(id) + " is not supported")

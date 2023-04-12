@@ -51,8 +51,10 @@ pBDKLrhAWL7IAvDKBV/v7lmbTG6AEZbf3srUN0Pnn30=
 
 ### Manifest
 
-The second line in the header is the **manifest**, which is a compact JSON object (i.e. with all the unnecessary whitespaces removed).
+The second line in the header is the **manifest**, which is a JSON object.
 
+> It's important that the manifest is in a "compact" format that does not contain newline characters.
+>
 > Note that per the [JSON spec (RFC 8259)](https://www.rfc-editor.org/rfc/rfc8259), newline characters within a string are safely encoded as the string `\n`, which would not interpreted as newlines while scanning the manifest. The spec also defines what constitutes "unnecessary whitespace".
 
 Its corresponding Go struct is:
@@ -82,11 +84,11 @@ type Manifest struct {
 
 - **`KeyName`** is the name of the key that can be used to decrypt the message.  
   Usually this is the same as the name of the key used to encrypt the message, but when asymmetric ciphers are used, it could be different.  
-  Including a `KeyName` in the manifest is not required, but when i'ts present, it's used as the default value for the key name while decrypting the document (however, users can override this value by passing a custom one while decrypting the document).
+  Including a `KeyName` in the manifest is not required, but when it's present, it's used as the default value for the key name while decrypting the document (however, users can override this value by passing a custom one while decrypting the document).
 - **`Cipher`** indicates the cipher used to encrypt the actual data, and it must be an [AEAD](https://en.wikipedia.org/wiki/Authenticated_encryption#Authenticated_encryption_with_associated_data_(AEAD)) symmetric cipher.
   - Dapr will choose AES-GCM as cipher by default.
   - ChaCha20-Poly1305 is offered as an option for users that work with hardware that doesn't support AES-NI (such as Raspberry Pi), and needs to be enabled explicitly.
-  - Other AEAD ciphers can be supported in the future if needed, for example.
+  - Other AEAD ciphers can be supported in the future if needed.
 
 ### MAC
 
@@ -107,7 +109,7 @@ Note that there's one newline character (`0x0A`) at the end of the MAC, which co
 
 ## Binary payload
 
-The binary payload begins immediately after the header (after the 3rd newline character) and it includes the each segment of data encrypted:
+The binary payload begins immediately after the header (after the 3rd newline character) and it includes each segment of data encrypted:
 
 ```text
 segment_0 || segment_1 || ... || segment_k

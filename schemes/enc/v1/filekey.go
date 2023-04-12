@@ -31,6 +31,9 @@ import (
 	"golang.org/x/crypto/hkdf"
 )
 
+// fileKey holds the fileKey and uses that (and the haeaderKey and payloadKey it derives from it)
+// to perform the actual cryptographic operations in the package.
+// This object is also used encrypt/decrypt each segment, and to compute the MAC of the header.
 type fileKey struct {
 	cipher Cipher
 
