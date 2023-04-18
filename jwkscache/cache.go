@@ -215,9 +215,9 @@ func (c *JWKSCache) initJWKSFromFile(ctx context.Context, file string) error {
 			case <-eventCh:
 				// When there's a change, reload the JWKS file
 				if firstDone {
-					c.logger.Debugf("Reloading JWKS file from disk")
+					c.logger.Debug("Reloading JWKS file from disk")
 				} else {
-					c.logger.Debugf("Loading JWKS file from disk")
+					c.logger.Debug("Loading JWKS file from disk")
 				}
 				err := c.parseJWKSFile(file)
 				if !firstDone {
