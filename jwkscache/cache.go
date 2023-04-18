@@ -214,6 +214,11 @@ func (c *JWKSCache) initJWKSFromFile(ctx context.Context, file string) error {
 			select {
 			case <-eventCh:
 				// When there's a change, reload the JWKS file
+				if firstDone {
+					c.logger.Debugf("Reloading JWKS file from disk")
+				} else {
+					c.logger.Debugf("Loading JWKS file from disk")
+				}
 				err := c.parseJWKSFile(file)
 				if !firstDone {
 					// The first time, signal that the initialization was complete and pass the error
@@ -247,8 +252,6 @@ func (c *JWKSCache) initJWKSFromFile(ctx context.Context, file string) error {
 
 // Used by initJWKSFromFile to parse a JWKS file every time it's changed
 func (c *JWKSCache) parseJWKSFile(file string) error {
-	c.logger.Debugf("Reloading JWKS file from disk")
-
 	read, err := os.ReadFile(file)
 	if err != nil {
 		return fmt.Errorf("failed to read JWKS file: %v", err)
