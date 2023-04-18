@@ -139,6 +139,99 @@ func TestJWKSCache(t *testing.T) {
 		require.True(t, ok)
 		require.NotNil(t, key)
 	})
+
+	t.Run("start and wait for init", func(t *testing.T) {
+		cache := NewJWKSCache(testJWKS1, log)
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		// Start in background
+		errCh := make(chan error)
+		go func() {
+			errCh <- cache.Start(ctx)
+		}()
+
+		// Wait for initialization
+		err := cache.WaitForCacheReady(ctx)
+		require.NoError(t, err)
+
+		// Canceling the context should make Start() return
+		cancel()
+		require.Nil(t, <-errCh)
+	})
+
+	t.Run("start and init fails", func(t *testing.T) {
+		// Create a custom HTTP client with a RoundTripper that doesn't require starting a TCP listener
+		client := &http.Client{
+			Transport: roundTripFn(func(r *http.Request) *http.Response {
+				// Return an error
+				return &http.Response{
+					StatusCode: http.StatusInternalServerError,
+				}
+			}),
+		}
+
+		cache := NewJWKSCache("https://localhost/jwks.json", log)
+		cache.SetHTTPClient(client)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		// Start in background
+		errCh := make(chan error)
+		go func() {
+			errCh <- cache.Start(ctx)
+		}()
+
+		// Wait for initialization
+		err := cache.WaitForCacheReady(ctx)
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "failed to fetch JWKS")
+
+		// Canceling the context should make Start() return with the init error
+		cancel()
+		require.Equal(t, err, <-errCh)
+	})
+
+	t.Run("start and init times out", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+		defer cancel()
+
+		// Create a custom HTTP client with a RoundTripper that doesn't require starting a TCP listener
+		client := &http.Client{
+			Transport: roundTripFn(func(r *http.Request) *http.Response {
+				// Wait until context is canceled
+				<-ctx.Done()
+
+				// Sleep for another 500ms
+				time.Sleep(500 * time.Millisecond)
+
+				// Return an error
+				return &http.Response{
+					StatusCode: http.StatusInternalServerError,
+				}
+			}),
+		}
+
+		cache := NewJWKSCache("https://localhost/jwks.json", log)
+		cache.SetHTTPClient(client)
+
+		// Start in background
+		errCh := make(chan error)
+		go func() {
+			errCh <- cache.Start(ctx)
+		}()
+
+		// Wait for initialization
+		err := cache.WaitForCacheReady(context.Background())
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "failed to fetch JWKS")
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+
+		// Canceling the context should make Start() return with the init error
+		cancel()
+		require.Equal(t, err, <-errCh)
+	})
 }
 
 type roundTripFn func(req *http.Request) *http.Response
