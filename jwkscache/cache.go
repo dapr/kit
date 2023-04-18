@@ -60,6 +60,7 @@ type JWKSCache struct {
 	lock    sync.RWMutex
 	client  *http.Client
 	running atomic.Bool
+	initCh  chan error
 }
 
 // NewJWKSCache creates a new JWKSCache object.
@@ -70,6 +71,8 @@ func NewJWKSCache(location string, logger logger.Logger) *JWKSCache {
 
 		requestTimeout:     defaultRequestTimeout,
 		minRefreshInterval: defaultMinRefreshInterval,
+
+		initCh: make(chan error, 1),
 	}
 }
 
@@ -84,8 +87,15 @@ func (c *JWKSCache) Start(ctx context.Context) error {
 	// Init the cache
 	err := c.initCache(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to init cache: %w", err)
+		err = fmt.Errorf("failed to init cache: %w", err)
+		// Store the error in the initCh, then close it
+		c.initCh <- err
+		close(c.initCh)
+		return err
 	}
+
+	// Close initCh
+	close(c.initCh)
 
 	// Block until context is canceled
 	<-ctx.Done()
@@ -114,6 +124,17 @@ func (c *JWKSCache) KeySet() jwk.Set {
 	defer c.lock.RUnlock()
 
 	return c.jwks
+}
+
+// WaitForCacheReady pauses until the cache is ready (the initial JWKS has been fetched) or the passed ctx is canceled.
+// It will return the initialization error.
+func (c *JWKSCache) WaitForCacheReady(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case err := <-c.initCh:
+		return err
+	}
 }
 
 // Init the cache from the given location.
