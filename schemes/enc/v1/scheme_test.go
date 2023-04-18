@@ -34,11 +34,11 @@ var (
 
 func TestScheme(t *testing.T) {
 	// Fake wrapKeyFn and unwrapKeyFn, which just return the plaintext key
-	//nolint:stylecheck
+	//nolint:stylecheck,revive
 	var wrapKeyFn WrapKeyFn = func(plaintextKey []byte, algorithm, keyName string, nonce []byte) (wrappedKey []byte, tag []byte, err error) {
 		return plaintextKey, nil, nil
 	}
-	//nolint:stylecheck
+	//nolint:stylecheck,revive
 	var unwrapKeyFn UnwrapKeyFn = func(wrappedKey []byte, algorithm, keyName string, nonce, tag []byte) (plaintextKey []byte, err error) {
 		return wrappedKey, nil
 	}

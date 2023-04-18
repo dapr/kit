@@ -224,12 +224,12 @@ func (k fileKey) DecryptSegment(out io.Writer, data []byte, num uint32, last boo
 // Computes the nonce for a segment.
 func (k fileKey) nonceForSegment(num uint32, last bool) []byte {
 	nonce := make([]byte, 12)
-	copy(nonce[0:7], k.noncePrefix)
-	binary.BigEndian.PutUint32(nonce[7:11], num)
+	copy(nonce[0:NoncePrefixLength], k.noncePrefix)
+	binary.BigEndian.PutUint32(nonce[NoncePrefixLength:(NoncePrefixLength+4)], num)
 	if last {
-		nonce[11] = 0x1
+		nonce[(NoncePrefixLength + 4)] = 0x1
 	} else {
-		nonce[11] = 0x0
+		nonce[(NoncePrefixLength + 4)] = 0x0
 	}
 	return nonce
 }

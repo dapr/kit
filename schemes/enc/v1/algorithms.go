@@ -15,6 +15,7 @@ package v1
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 )
 
@@ -31,10 +32,11 @@ const (
 	KeyAlgorithmAES KeyAlgorithm = "AES" // Alias for A256KW
 	KeyAlgorithmRSA KeyAlgorithm = "RSA" // Alias for RSA-OAEP-256
 
-	keyAlgorithmNumAES256KW = 1
-	keyAlgorithmNumAES128CBC = 2
-	keyAlgorithmNumAES192CBC = 3
-	keyAlgorithmNumAES256CBC = 4
+	keyAlgorithmInvalid       = 0
+	keyAlgorithmNumAES256KW   = 1
+	keyAlgorithmNumAES128CBC  = 2
+	keyAlgorithmNumAES192CBC  = 3
+	keyAlgorithmNumAES256CBC  = 4
 	keyAlgorithmNumRSAOAEP256 = 5
 )
 
@@ -56,7 +58,7 @@ func (a KeyAlgorithm) Validate() (KeyAlgorithm, error) {
 		return KeyAlgorithmRSAOAEP256, nil
 
 	default:
-		return a, errors.New("algorithm " + string(a) + " is not supported")
+		return a, fmt.Errorf("algorithm %s is not supported", a)
 	}
 }
 
@@ -74,7 +76,7 @@ func (a KeyAlgorithm) ID() int {
 	case KeyAlgorithmRSAOAEP256, KeyAlgorithmRSA:
 		return keyAlgorithmNumRSAOAEP256
 	default:
-		return 0
+		return keyAlgorithmInvalid
 	}
 }
 
@@ -92,7 +94,7 @@ func NewKeyAlgorithmFromID(id int) (KeyAlgorithm, error) {
 	case keyAlgorithmNumRSAOAEP256:
 		return KeyAlgorithmRSAOAEP256, nil
 	default:
-		return "", errors.New("algorithm ID " + strconv.Itoa(id) + " is not supported")
+		return "", fmt.Errorf("algorithm ID %d is not supported", id)
 	}
 }
 

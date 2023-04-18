@@ -15,6 +15,7 @@ package v1
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 )
 
@@ -25,31 +26,32 @@ const (
 	CipherAESGCM           Cipher = "AES-GCM"
 	CipherChaCha20Poly1305 Cipher = "CHACHA20-POLY1305"
 
-	cipherNumAESGCM = 1
+	cipherInvalid             = 0
+	cipherNumAESGCM           = 1
 	cipherNumChaCha20Poly1305 = 2
 )
 
 // Validate the passed cipher and resolves aliases.
-func (a Cipher) Validate() (Cipher, error) {
-	switch a {
+func (c Cipher) Validate() (Cipher, error) {
+	switch c {
 	// Valid ciphers, not aliased
 	case CipherAESGCM, CipherChaCha20Poly1305:
-		return a, nil
+		return c, nil
 
 	default:
-		return a, errors.New("cipher " + string(a) + " is not supported")
+		return c, fmt.Errorf("cipher %s is not supported", c)
 	}
 }
 
 // ID returns the numeric ID for the cipher.
-func (a Cipher) ID() int {
-	switch a {
+func (c Cipher) ID() int {
+	switch c {
 	case CipherAESGCM:
 		return cipherNumAESGCM
 	case CipherChaCha20Poly1305:
 		return cipherNumChaCha20Poly1305
 	default:
-		return 0
+		return cipherInvalid
 	}
 }
 
@@ -61,17 +63,17 @@ func NewCipherFromID(id int) (Cipher, error) {
 	case cipherNumChaCha20Poly1305:
 		return CipherChaCha20Poly1305, nil
 	default:
-		return "", errors.New("cipher ID " + strconv.Itoa(id) + " is not supported")
+		return "", fmt.Errorf("cipher ID %d is not supported", id)
 	}
 }
 
 // MarhsalJSON implements json.Marshaler.
-func (a Cipher) MarshalJSON() ([]byte, error) {
-	return []byte(strconv.Itoa(a.ID())), nil
+func (c Cipher) MarshalJSON() ([]byte, error) {
+	return []byte(strconv.Itoa(c.ID())), nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (a *Cipher) UnmarshalJSON(dataB []byte) error {
+func (c *Cipher) UnmarshalJSON(dataB []byte) error {
 	data := string(dataB)
 	if data == "" || data == "null" {
 		return errors.New("value is empty")
@@ -82,10 +84,10 @@ func (a *Cipher) UnmarshalJSON(dataB []byte) error {
 		return errors.New("failed to parse value as number")
 	}
 
-	newA, err := NewCipherFromID(id)
+	newC, err := NewCipherFromID(id)
 	if err != nil {
 		return err
 	}
-	*a = newA
+	*c = newC
 	return nil
 }

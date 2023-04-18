@@ -30,9 +30,12 @@ const (
 	// Each segment is exactly 64KB in length, except the last one which could be shorter.
 	SegmentSize = 64 << 10
 
-	// Overhead of each segment in bytes
-	// This is equivalent to the size of the authentication tag for AES-GCM and ChaCha20-Poly1305
+	// Overhead of each segment in bytes.
+	// This is equivalent to the size of the authentication tag for AES-GCM and ChaCha20-Poly1305.
 	SegmentOverhead = 16
+
+	// Length of the nonce prefix.
+	NoncePrefixLength = 7
 )
 
 var (

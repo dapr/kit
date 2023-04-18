@@ -47,7 +47,7 @@ func (m *Manifest) Validate() (err error) {
 	if err != nil {
 		return fmt.Errorf("cipher is invalid: %w", err)
 	}
-	if len(m.NoncePrefix) != 7 {
+	if len(m.NoncePrefix) != NoncePrefixLength {
 		return errors.New("nonce prefix is invalid")
 	}
 
