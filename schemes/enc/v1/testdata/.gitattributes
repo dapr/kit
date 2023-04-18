@@ -1,0 +1,2 @@
+# Treat .enc files as binary
+*.enc     binary
