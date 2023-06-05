@@ -71,8 +71,12 @@ func TestSymmetricKeys(t *testing.T) {
 	t.Run("raw bytes", testSymmetricKey(rawKey, ""))
 	t.Run("base64 standard with padding", testSymmetricKey([]byte(base64.StdEncoding.EncodeToString(rawKey)), ""))
 	t.Run("base64 standard without padding", testSymmetricKey([]byte(base64.RawStdEncoding.EncodeToString(rawKey)), ""))
+	t.Run("base64 standard with padding and trailing newline", testSymmetricKey([]byte(base64.StdEncoding.EncodeToString(rawKey)+"\n"), ""))
+	t.Run("base64 standard without padding and trailing newline", testSymmetricKey([]byte(base64.RawStdEncoding.EncodeToString(rawKey)+"\n"), ""))
 	t.Run("base64 url with padding", testSymmetricKey([]byte(base64.URLEncoding.EncodeToString(rawKey)), ""))
 	t.Run("base64 url without padding", testSymmetricKey([]byte(base64.RawURLEncoding.EncodeToString(rawKey)), ""))
+	t.Run("base64 url with padding and trailing newline", testSymmetricKey([]byte(base64.URLEncoding.EncodeToString(rawKey)+"\n"), ""))
+	t.Run("base64 url without padding and trailing newline", testSymmetricKey([]byte(base64.RawURLEncoding.EncodeToString(rawKey)+"\n"), ""))
 	t.Run("JSON with content-type", testSymmetricKey(rawKeyJSON, "application/json"))
 	t.Run("JSON without content-type", testSymmetricKey(rawKeyJSON, ""))
 }
