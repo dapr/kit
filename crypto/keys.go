@@ -76,8 +76,8 @@ func ParseKey(raw []byte, contentType string) (jwk.Key, error) {
 }
 
 func parseSymmetricKey(raw []byte) (jwk.Key, error) {
-	// Try parsing as base64; first: remove any padding if present
-	trimmedRaw := bytes.TrimRight(raw, "=")
+	// Try parsing as base64; first: remove any padding (and trailing newlines) if present
+	trimmedRaw := bytes.TrimRight(raw, "\n=")
 
 	// Try parsing as base64-standard
 	dst := make([]byte, base64.RawStdEncoding.DecodedLen(len(raw)))
