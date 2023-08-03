@@ -35,9 +35,9 @@ type queue[T queueable] struct {
 }
 
 // newQueue creates a new queue.
-func newQueue[T queueable]() *queue[T] {
-	return &queue[T]{
-		heap:  &queueHeap[T]{},
+func newQueue[T queueable]() queue[T] {
+	return queue[T]{
+		heap:  new(queueHeap[T]),
 		items: make(map[string]*queueItem[T]),
 	}
 }

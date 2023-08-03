@@ -70,8 +70,8 @@ func TestQueueSkipDuplicates(t *testing.T) {
 	require.Equal(t, 2, queue.Len())
 
 	// Pop the items and check only the 2 original ones were in the queue
-	popAndCompare(t, queue, 1, "2021-01-01T01:01:01Z")
-	popAndCompare(t, queue, 2, "2022-02-02T02:02:02Z")
+	popAndCompare(t, &queue, 1, "2021-01-01T01:01:01Z")
+	popAndCompare(t, &queue, 2, "2022-02-02T02:02:02Z")
 
 	_, ok := queue.Pop()
 	require.False(t, ok)
@@ -92,8 +92,8 @@ func TestQueueReplaceDuplicates(t *testing.T) {
 	require.Equal(t, 2, queue.Len())
 
 	// Pop the items and validate the new order
-	popAndCompare(t, queue, 2, "2022-02-02T02:02:02Z")
-	popAndCompare(t, queue, 1, "2029-09-09T09:09:09Z")
+	popAndCompare(t, &queue, 2, "2022-02-02T02:02:02Z")
+	popAndCompare(t, &queue, 1, "2029-09-09T09:09:09Z")
 
 	_, ok := queue.Pop()
 	require.False(t, ok)
@@ -185,8 +185,8 @@ func TestRemoveFromQueue(t *testing.T) {
 	require.Equal(t, 2, queue.Len())
 
 	// Pop all the remaining elements and make sure they're in order
-	popAndCompare(t, queue, 3, "2023-03-03T03:03:03Z")
-	popAndCompare(t, queue, 5, "2029-09-09T09:09:09Z")
+	popAndCompare(t, &queue, 3, "2023-03-03T03:03:03Z")
+	popAndCompare(t, &queue, 5, "2029-09-09T09:09:09Z")
 
 	_, ok := queue.Pop()
 	require.False(t, ok)
@@ -229,9 +229,9 @@ func TestUpdateInQueue(t *testing.T) {
 	require.Equal(t, 3, queue.Len())
 
 	// Pop all the remaining elements and make sure they're in order
-	popAndCompare(t, queue, 5, "2021-01-01T01:01:01Z") // 5 comes before 3 now
-	popAndCompare(t, queue, 3, "2023-03-03T03:03:03Z")
-	popAndCompare(t, queue, 4, "2024-04-04T14:14:14Z")
+	popAndCompare(t, &queue, 5, "2021-01-01T01:01:01Z") // 5 comes before 3 now
+	popAndCompare(t, &queue, 3, "2023-03-03T03:03:03Z")
+	popAndCompare(t, &queue, 4, "2024-04-04T14:14:14Z")
 
 	_, ok := queue.Pop()
 	require.False(t, ok)
@@ -247,39 +247,39 @@ func TestQueuePeek(t *testing.T) {
 	// Add 6 items, which are not in order
 	queue.Insert(newTestItem(2, "2022-02-02T02:02:02Z"), false)
 	require.Equal(t, 1, queue.Len())
-	peekAndCompare(t, queue, 2, "2022-02-02T02:02:02Z")
+	peekAndCompare(t, &queue, 2, "2022-02-02T02:02:02Z")
 
 	queue.Insert(newTestItem(3, "2023-03-03T03:03:03Z"), false)
 	require.Equal(t, 2, queue.Len())
-	peekAndCompare(t, queue, 2, "2022-02-02T02:02:02Z")
+	peekAndCompare(t, &queue, 2, "2022-02-02T02:02:02Z")
 
 	queue.Insert(newTestItem(1, "2021-01-01T01:01:01Z"), false)
 	require.Equal(t, 3, queue.Len())
-	peekAndCompare(t, queue, 1, "2021-01-01T01:01:01Z")
+	peekAndCompare(t, &queue, 1, "2021-01-01T01:01:01Z")
 
 	queue.Insert(newTestItem(5, "2029-09-09T09:09:09Z"), false)
 	require.Equal(t, 4, queue.Len())
-	peekAndCompare(t, queue, 1, "2021-01-01T01:01:01Z")
+	peekAndCompare(t, &queue, 1, "2021-01-01T01:01:01Z")
 
 	queue.Insert(newTestItem(4, "2024-04-04T04:04:04Z"), false)
 	require.Equal(t, 5, queue.Len())
-	peekAndCompare(t, queue, 1, "2021-01-01T01:01:01Z")
+	peekAndCompare(t, &queue, 1, "2021-01-01T01:01:01Z")
 
 	queue.Insert(newTestItem(6, "2019-01-19T01:01:01Z"), false)
 	require.Equal(t, 6, queue.Len())
-	peekAndCompare(t, queue, 6, "2019-01-19T01:01:01Z")
+	peekAndCompare(t, &queue, 6, "2019-01-19T01:01:01Z")
 
 	// Pop from the queue
-	popAndCompare(t, queue, 6, "2019-01-19T01:01:01Z")
-	peekAndCompare(t, queue, 1, "2021-01-01T01:01:01Z")
+	popAndCompare(t, &queue, 6, "2019-01-19T01:01:01Z")
+	peekAndCompare(t, &queue, 1, "2021-01-01T01:01:01Z")
 
 	// Update a item to bring it to first
 	queue.Update(newTestItem(2, "2019-01-19T01:01:01Z"))
-	peekAndCompare(t, queue, 2, "2019-01-19T01:01:01Z")
+	peekAndCompare(t, &queue, 2, "2019-01-19T01:01:01Z")
 
 	// Replace the first item to push it back
 	queue.Insert(newTestItem(2, "2039-01-19T01:01:01Z"), true)
-	peekAndCompare(t, queue, 1, "2021-01-01T01:01:01Z")
+	peekAndCompare(t, &queue, 1, "2021-01-01T01:01:01Z")
 }
 
 func newTestItem(n int, dueTime any) *queueableItem {

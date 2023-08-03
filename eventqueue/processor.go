@@ -28,7 +28,7 @@ var ErrProcessorStopped = errors.New("processor is stopped")
 // Processor manages the queue of items and processes them at the correct time.
 type Processor[T queueable] struct {
 	executeFn          func(r T)
-	queue              *queue[T]
+	queue              queue[T]
 	clock              kclock.Clock
 	queueLock          sync.Mutex
 	processorRunningCh chan struct{}
@@ -90,7 +90,8 @@ func (p *Processor[T]) Dequeue(key string) error {
 	return nil
 }
 
-// Stop the processor.
+// Close stops the processor.
+// This method blocks until the processor loop returns.
 func (p *Processor[T]) Close() error {
 	if !p.stopped.CompareAndSwap(false, true) {
 		// Already stopped
@@ -100,17 +101,8 @@ func (p *Processor[T]) Close() error {
 	// Send a signal to stop
 	close(p.stopCh)
 
-	// Blocks until process loop ends
-	t := time.NewTimer(5 * time.Second)
-	select {
-	case p.processorRunningCh <- struct{}{}:
-		// All good
-		if !t.Stop() {
-			<-t.C
-		}
-	case <-t.C:
-		return errors.New("Processor loop did not stop in 5s")
-	}
+	// Blocks until processor loop ends
+	p.processorRunningCh <- struct{}{}
 
 	return nil
 }
