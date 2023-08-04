@@ -39,7 +39,7 @@ import (
 	clocktesting "k8s.io/utils/clock/testing"
 )
 
-clk := clock.NewFakeClock(time.Now())
+clk := clocktesting.NewFakeClock(time.Now())
 
 c := cron.New(cron.WithClock(clk))
 
