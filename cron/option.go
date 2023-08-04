@@ -14,13 +14,12 @@ You can check the original license at:
 		https://github.com/robfig/cron/blob/master/LICENSE
 */
 
-//nolint
 package cron
 
 import (
 	"time"
 
-	"github.com/benbjohnson/clock"
+	"k8s.io/utils/clock"
 )
 
 // Option represents a modification to the default behavior of a Cron.

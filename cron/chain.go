@@ -14,7 +14,6 @@ You can check the original license at:
 		https://github.com/robfig/cron/blob/master/LICENSE
 */
 
-//nolint
 package cron
 
 import (
@@ -23,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/benbjohnson/clock"
+	"k8s.io/utils/clock"
 )
 
 // JobWrapper decorates the given Job with some behavior.
@@ -81,7 +80,7 @@ func Recover(logger Logger) JobWrapper {
 // previous one is complete. Jobs running after a delay of more than a minute
 // have the delay logged at Info.
 func DelayIfStillRunning(logger Logger) JobWrapper {
-	return DelayIfStillRunningWithClock(logger, clock.New())
+	return DelayIfStillRunningWithClock(logger, clock.RealClock{})
 }
 
 // DelayIfStillRunningWithClock behaves identically to DelayIfStillRunning but

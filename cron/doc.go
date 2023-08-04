@@ -35,9 +35,11 @@ them in their own goroutines.
 
 # Time mocking
 
-import "github.com/benbjohnson/clock"
+import (
+	clocktesting "k8s.io/utils/clock/testing"
+)
 
-clk := clock.NewMock()
+clk := clock.NewFakeClock(time.Now())
 
 c := cron.New(cron.WithClock(clk))
 
