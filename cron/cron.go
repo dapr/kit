@@ -14,7 +14,6 @@ You can check the original license at:
 		https://github.com/robfig/cron/blob/master/LICENSE
 */
 
-//nolint
 package cron
 
 import (
@@ -23,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/benbjohnson/clock"
+	"k8s.io/utils/clock"
 )
 
 // Cron keeps track of any number of entries, invoking the associated func as
@@ -143,7 +142,7 @@ func New(opts ...Option) *Cron {
 		logger:    DefaultLogger,
 		location:  time.Local,
 		parser:    standardParser,
-		clk:       clock.New(),
+		clk:       clock.RealClock{},
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -271,18 +270,25 @@ func (c *Cron) run() {
 		// Determine the next entry to run.
 		sort.Sort(byTime(c.entries))
 
-		var timer *clock.Timer
+		var (
+			timer   clock.Timer
+			timerCh <-chan time.Time
+		)
 		if len(c.entries) == 0 || c.entries[0].Next.IsZero() {
 			// If there are no entries yet, just sleep - it still handles new entries
 			// and stop requests.
-			timer = c.clk.Timer(100000 * time.Hour)
+			timerCh = make(chan time.Time)
 		} else {
-			timer = c.clk.Timer(c.entries[0].Next.Sub(now))
+			timer = c.clk.NewTimer(c.entries[0].Next.Sub(now))
+			timerCh = timer.C()
 		}
 
 		for {
 			select {
-			case now = <-timer.C:
+			case now = <-timerCh:
+				// Set timer to nil so we can exit cleanly
+				timer = nil
+
 				now = now.In(c.location)
 				c.logger.Info("wake", "now", now)
 
@@ -298,7 +304,6 @@ func (c *Cron) run() {
 				}
 
 			case newEntry := <-c.add:
-				timer.Stop()
 				now = c.now()
 				newEntry.Next = newEntry.Schedule.Next(now)
 				c.entries = append(c.entries, newEntry)
@@ -309,15 +314,22 @@ func (c *Cron) run() {
 				continue
 
 			case <-c.stop:
-				timer.Stop()
+				if timer != nil && !timer.Stop() {
+					<-timer.C()
+				}
 				c.logger.Info("stop")
 				return
 
 			case id := <-c.remove:
-				timer.Stop()
 				now = c.now()
 				c.removeEntry(id)
 				c.logger.Info("removed", "entry", id)
+			}
+
+			// Stop the timer cleanly if we're here
+			if timer != nil && !timer.Stop() {
+				<-timer.C()
+				timer = nil
 			}
 
 			break

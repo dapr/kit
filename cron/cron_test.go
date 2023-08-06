@@ -21,13 +21,14 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
+	clocktesting "k8s.io/utils/clock/testing"
 )
 
 // Many tests schedule a job for every second, and then wait at most a second
@@ -694,8 +695,7 @@ func TestStopAndWait(t *testing.T) {
 }
 
 func TestMockClock(t *testing.T) {
-	clk := clock.NewMock()
-	clk.Set(time.Now())
+	clk := clocktesting.NewFakeClock(time.Now())
 	cron := New(WithClock(clk))
 	counter := atomic.Uint64{}
 	cron.AddFunc("@every 1s", func() {
@@ -704,9 +704,10 @@ func TestMockClock(t *testing.T) {
 	cron.Start()
 	defer cron.Stop()
 	for i := 0; i <= 10; i++ {
-		clk.Add(1 * time.Second)
+		clk.Step(1 * time.Second)
+		runtime.Gosched()
+		time.Sleep(100 * time.Millisecond)
 	}
-	time.Sleep(100 * time.Millisecond)
 	if counter.Load() != 10 {
 		t.Errorf("expected 10 calls, got %d", counter.Load())
 	}
