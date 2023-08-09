@@ -42,7 +42,8 @@ var (
 )
 
 type ResourceInfoData struct {
-	ResourceType, ResourceName string
+	ResourceType string
+	ResourceName string
 }
 
 // call this function to apply option
