@@ -21,16 +21,45 @@ import (
 )
 
 func TestActivateErrorCodesFeature(t *testing.T) {
-	md := map[string]string{}
-	ActivateErrorCodesFeature(true, md)
-	if _, ok := md[ErrorCodesFeatureMetadataKey]; !ok {
-		t.Errorf("expected metadata to contain the value of 'error_codes_feature' ")
+	tests := []struct {
+		name     string
+		md       map[string]string
+		enabled  bool
+		expected bool
+	}{
+		{
+			name:     "ActivateErrorCodesFeature_OK",
+			md:       map[string]string{},
+			enabled:  true,
+			expected: true,
+		},
+		{
+			name:     "ActivateErrorCodesFeature_Enabled_False",
+			md:       map[string]string{},
+			enabled:  false,
+			expected: false,
+		},
+		{
+			name:     "ActivateErrorCodesFeature_Nil_Map_False",
+			md:       nil,
+			enabled:  true,
+			expected: false,
+		},
+		{
+			name:     "ActivateErrorCodesFeature_Disabled_Nil_Map_False",
+			md:       nil,
+			enabled:  false,
+			expected: false,
+		},
 	}
 
-	md = map[string]string{}
-	ActivateErrorCodesFeature(false, md)
-	if _, ok := md[ErrorCodesFeatureMetadataKey]; ok {
-		t.Errorf("expected metadata NOT to contain the value of 'error_codes_feature' ")
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ActivateErrorCodesFeature(test.enabled, test.md)
+			if _, ok := test.md[ErrorCodesFeatureMetadataKey]; ok != test.expected {
+				t.Errorf("unexpected result - expected %t, but got %t", ok, test.expected)
+			}
+		})
 	}
 }
 
