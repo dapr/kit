@@ -16,8 +16,6 @@ package errorcodes
 import (
 	"fmt"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestActivateErrorCodesFeature(t *testing.T) {
@@ -64,8 +62,73 @@ func TestActivateErrorCodesFeature(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	if de := New(nil, nil); de == nil {
-		assert.Nil(t, de)
+	// trid := &ResourceInfoData{
+	// 	ResourceType: "type",
+	// 	ResourceName: "name",
+	// }
+
+	// tmd := map[string]string{
+	// 	ErrorCodesFeatureMetadataKey: "true",
+	// }
+	// tde := &DaprError{
+	// 	err:              fmt.Errorf("inner error"),
+	// 	resourceInfoData: trid,
+	// 	metadata:         tmd,
+	// }
+
+	tests := []struct {
+		name           string
+		inErr          error
+		inErrOptions   []ErrorOption
+		md             map[string]string
+		expReason      Reason
+		expDescription string
+		expMetadata    map[string]string
+		expDe          *DaprError
+	}{
+		{
+			name:  "DaprError_New_OK_No_Reason",
+			inErr: &DaprError{},
+			md: map[string]string{
+				ErrorCodesFeatureMetadataKey: "true",
+			},
+			expReason: NoReason,
+		},
+		{
+			name:  "DaprError_New_Nil_Error",
+			inErr: nil,
+			md: map[string]string{
+				ErrorCodesFeatureMetadataKey: "true",
+			},
+			expDe: &DaprError{},
+		},
+		// {
+		// 	name:     "DaprError_New_Nil_Metadata",
+		// 	inErr:    &DaprError{},
+		// 	md:       nil,
+		// 	expected: nil,
+		// },
+		// {
+		// 	name:     "DaprError_New_Empty_Metadata",
+		// 	inErr:    &DaprError{},
+		// 	md:       map[string]string{},
+		// 	expected: nil,
+		// },
+		// {
+		// 	name:  "DaprError_New_Details",
+		// 	inErr: tde,
+		// 	inErrOptions: []ErrorOption{
+		// 		WithResourceInfoData(trid),
+		// 	},
+		// 	md:       tmd,
+		// 	expected: tdexp,
+		// },
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			NewDaprError(test.inErr, test.md, test.inErrOptions...)
+		})
 	}
 }
 

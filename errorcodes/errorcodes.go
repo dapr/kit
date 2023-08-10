@@ -70,13 +70,17 @@ func featureEnabled(metadata map[string]string) bool {
 	return false
 }
 
-// New create a new DaprError using the supplied metadata and ErrorOptions
+// NewDaprError create a new DaprError using the supplied metadata and ErrorOptions
 // **Note**: As this code is in `Feature Preview`, it will only continue processing
 // if the ErrorCodes is enabled
-func New(err error, metadata map[string]string, options ...ErrorOption) *DaprError {
+func NewDaprError(err error, metadata map[string]string, options ...ErrorOption) *DaprError {
 	// The following condition can be removed once the
 	// Error Codes Feature is GA
 	if !featureEnabled(metadata) {
+		return nil
+	}
+
+	if err == nil {
 		return nil
 	}
 
@@ -96,7 +100,10 @@ func New(err error, metadata map[string]string, options ...ErrorOption) *DaprErr
 
 // Error implements the error interface.
 func (c DaprError) Error() string {
-	return c.err.Error()
+	if c.err != nil {
+		return c.err.Error()
+	}
+	return ""
 }
 
 // Unwrap implements the error unwrapping interface.
