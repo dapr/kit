@@ -41,7 +41,7 @@ var (
 	ConfigurationKeyNotFoundReason = Reason("DAPR_CONFIG_KEY_NOT_FOUND")
 )
 
-type ResourceInfoData struct {
+type ResourceInfo struct {
 	ResourceType string
 	ResourceName string
 }
@@ -50,15 +50,18 @@ type ResourceInfoData struct {
 type ErrorOption func(*DaprError)
 
 type DaprError struct {
-	err              error
-	description      string
-	reason           Reason
-	resourceInfoData *ResourceInfoData
-	metadata         map[string]string
+	err          error
+	description  string
+	reason       Reason
+	resourceInfo *ResourceInfo
+	metadata     map[string]string
 }
 
-func ActivateErrorCodesFeature(enabled bool, metadata map[string]string) {
-	if enabled && metadata != nil {
+// EnableComponentErrorCode stores an indicator for
+// components to determine if the ErrorCodes Feature
+// is enable.
+func EnableComponentErrorCode(metadata map[string]string) {
+	if metadata != nil {
 		metadata[ErrorCodesFeatureMetadataKey] = "true"
 	}
 }
@@ -123,8 +126,8 @@ func (c *DaprError) SetDescription(description string) {
 	c.description = description
 }
 
-func (c *DaprError) SetResourceInfoData(resourceInfoData *ResourceInfoData) {
-	c.resourceInfoData = resourceInfoData
+func (c *DaprError) SetResourceInfoData(resourceInfoData *ResourceInfo) {
+	c.resourceInfo = resourceInfoData
 }
 
 func (c *DaprError) SetMetadata(md map[string]string) {
@@ -138,9 +141,9 @@ func WithReason(reason Reason) ErrorOption {
 	return f
 }
 
-func WithResourceInfoData(resourceInfoData *ResourceInfoData) ErrorOption {
+func WithResourceInfoData(resourceInfoData *ResourceInfo) ErrorOption {
 	f := func(de *DaprError) {
-		de.resourceInfoData = resourceInfoData
+		de.resourceInfo = resourceInfoData
 	}
 	return f
 }
@@ -170,7 +173,7 @@ func FromDaprErrorToGRPC(err error) (*status.Status, error) {
 	var st *status.Status
 	var ese error
 	if errors.As(err, de) {
-		st, ese = newStatusError(de)
+		st, ese = de.newStatusError()
 		if ese != nil {
 			return nil, ese
 		}
@@ -180,14 +183,14 @@ func FromDaprErrorToGRPC(err error) (*status.Status, error) {
 	return nil, fmt.Errorf("unable to a DaprError from: %v", err)
 }
 
-func newStatusError(de *DaprError) (*status.Status, error) {
+func (de *DaprError) newStatusError() (*status.Status, error) {
 	cd := convertReasonToStatusCode(de.reason)
 	messages := []protoiface.MessageV1{
 		newErrorInfo(de.reason, de.metadata),
 	}
 
-	if de.resourceInfoData != nil {
-		messages = append(messages, newResourceInfo(de.resourceInfoData, de.err))
+	if de.resourceInfo != nil {
+		messages = append(messages, newResourceInfo(de.resourceInfo, de.err))
 	}
 
 	ste, stErr := status.New(cd, de.description).WithDetails(messages...)
@@ -208,7 +211,7 @@ func newErrorInfo(reason Reason, md map[string]string) *errdetails.ErrorInfo {
 	return &ei
 }
 
-func newResourceInfo(rid *ResourceInfoData, err error) *errdetails.ResourceInfo {
+func newResourceInfo(rid *ResourceInfo, err error) *errdetails.ResourceInfo {
 	return &errdetails.ResourceInfo{
 		ResourceType: rid.ResourceType,
 		ResourceName: rid.ResourceName,

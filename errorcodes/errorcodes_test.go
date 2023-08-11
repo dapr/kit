@@ -53,7 +53,9 @@ func TestActivateErrorCodesFeature(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ActivateErrorCodesFeature(test.enabled, test.md)
+			if test.enabled {
+				EnableComponentErrorCode(test.md)
+			}
 			if _, ok := test.md[ErrorCodesFeatureMetadataKey]; ok != test.expected {
 				t.Errorf("unexpected result - expected %t, but got %t", ok, test.expected)
 			}
@@ -61,7 +63,7 @@ func TestActivateErrorCodesFeature(t *testing.T) {
 	}
 }
 
-func TestNew(t *testing.T) {
+func TestNewDaprError(t *testing.T) {
 	// trid := &ResourceInfoData{
 	// 	ResourceType: "type",
 	// 	ResourceName: "name",
@@ -77,19 +79,20 @@ func TestNew(t *testing.T) {
 	// }
 
 	tests := []struct {
-		name           string
-		inErr          error
-		inErrOptions   []ErrorOption
-		md             map[string]string
-		expReason      Reason
-		expDescription string
-		expMetadata    map[string]string
-		expDe          *DaprError
+		name                string
+		inErr               error
+		inErrOptions        []ErrorOption
+		inMetadata          map[string]string
+		expReason           Reason
+		expDescription      string
+		expMetadata         map[string]string
+		expResourceInfoData *ResourceInfo
+		expDe               *DaprError
 	}{
 		{
 			name:  "DaprError_New_OK_No_Reason",
 			inErr: &DaprError{},
-			md: map[string]string{
+			inMetadata: map[string]string{
 				ErrorCodesFeatureMetadataKey: "true",
 			},
 			expReason: NoReason,
@@ -97,7 +100,7 @@ func TestNew(t *testing.T) {
 		{
 			name:  "DaprError_New_Nil_Error",
 			inErr: nil,
-			md: map[string]string{
+			inMetadata: map[string]string{
 				ErrorCodesFeatureMetadataKey: "true",
 			},
 			expDe: &DaprError{},
@@ -127,7 +130,7 @@ func TestNew(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			NewDaprError(test.inErr, test.md, test.inErrOptions...)
+			NewDaprError(test.inErr, test.inMetadata, test.inErrOptions...)
 		})
 	}
 }
