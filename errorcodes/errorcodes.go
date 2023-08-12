@@ -102,7 +102,7 @@ func NewDaprError(err error, metadata map[string]string, options ...ErrorOption)
 }
 
 // Error implements the error interface.
-func (c DaprError) Error() string {
+func (c *DaprError) Error() string {
 	if c.err != nil {
 		return c.err.Error()
 	}
@@ -172,7 +172,7 @@ func FromDaprErrorToGRPC(err error) (*status.Status, error) {
 	de := &DaprError{}
 	var st *status.Status
 	var ese error
-	if errors.As(err, de) {
+	if errors.As(err, &de) {
 		st, ese = de.newStatusError()
 		if ese != nil {
 			return nil, ese
@@ -237,6 +237,8 @@ func convertReasonToStatusCode(reason Reason) codes.Code {
 		c = codes.NotFound
 	case ConfigurationKeyNotFoundReason:
 		c = codes.NotFound
+	case NoReason:
+		c = codes.Internal
 	}
 
 	return c
