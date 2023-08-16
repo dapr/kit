@@ -52,10 +52,11 @@ func TestProcessor(t *testing.T) {
 	assertNoExecutedItem := func(t *testing.T) {
 		t.Helper()
 
+		runtime.Gosched()
 		select {
 		case r := <-executeCh:
 			t.Fatalf("received unexpected item: %s", r.Name)
-		case <-time.After(100 * time.Millisecond):
+		case <-time.After(500 * time.Millisecond):
 			// all good
 		}
 	}
@@ -131,7 +132,7 @@ func TestProcessor(t *testing.T) {
 
 	t.Run("dequeue item", func(t *testing.T) {
 		assert.Equal(t, 0, processor.queue.Len())
-		assert.False(t, clock.HasWaiters())
+		require.False(t, clock.HasWaiters())
 
 		// Enqueue 5 items
 		for i := 1; i <= 5; i++ {
@@ -153,7 +154,7 @@ func TestProcessor(t *testing.T) {
 
 		// Advance tickers and assert messages are coming in order
 		for i := 1; i <= 5; i++ {
-			assert.Eventually(t, clock.HasWaiters, time.Second, 100*time.Millisecond)
+			require.Eventually(t, clock.HasWaiters, time.Second, 100*time.Millisecond)
 			clock.Step(time.Second)
 
 			if i == 2 || i == 4 {
