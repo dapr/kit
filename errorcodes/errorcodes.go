@@ -180,7 +180,7 @@ func FromDaprErrorToGRPC(err error) (*status.Status, error) {
 		return st, nil
 	}
 
-	return nil, fmt.Errorf("unable to a DaprError from: %v", err)
+	return nil, fmt.Errorf("unable to convert to a DaprError from input value: %v", err)
 }
 
 func (de *DaprError) newStatusError() (*status.Status, error) {

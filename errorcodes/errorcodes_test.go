@@ -16,6 +16,8 @@ package errorcodes
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestActivateErrorCodesFeature(t *testing.T) {
@@ -64,20 +66,6 @@ func TestActivateErrorCodesFeature(t *testing.T) {
 }
 
 func TestNewDaprError(t *testing.T) {
-	// trid := &ResourceInfoData{
-	// 	ResourceType: "type",
-	// 	ResourceName: "name",
-	// }
-
-	// tmd := map[string]string{
-	// 	ErrorCodesFeatureMetadataKey: "true",
-	// }
-	// tde := &DaprError{
-	// 	err:              fmt.Errorf("inner error"),
-	// 	resourceInfoData: trid,
-	// 	metadata:         tmd,
-	// }
-
 	tests := []struct {
 		name                string
 		inErr               error
@@ -136,13 +124,79 @@ func TestNewDaprError(t *testing.T) {
 }
 
 func TestFromDaprErrorToGRPC(t *testing.T) {
-	if _, e := FromDaprErrorToGRPC(fmt.Errorf("bad error")); e == nil {
-		t.Errorf("expected failure")
+	tests := []struct {
+		name   string
+		errIn  error
+		expErr string
+	}{
+		{
+			name:  "FromDaprErrorToGRPC_OK",
+			errIn: &DaprError{},
+		},
+		{
+			name:   "FromDaprErrorToGRPC_Nil",
+			expErr: "unable to convert to a DaprError from input value: <nil>",
+		},
+		{
+			name:   "FromDaprErrorToGRPC_Invalid",
+			errIn:  fmt.Errorf("invalid"),
+			expErr: "unable to convert to a DaprError from input value: invalid",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			st, e := FromDaprErrorToGRPC(test.errIn)
+
+			if test.expErr == "" {
+				assert.NoError(t, e, fmt.Sprintf("wanted nil, but got = %v", e))
+				assert.NotNil(t, st, "unexpected nil value for Status")
+			} else {
+				assert.Error(t, e)
+				assert.EqualError(t, e, test.expErr)
+			}
+		})
 	}
 }
 
 func TestFromDaprErrorToHTTP(t *testing.T) {
-	if _, _, e := FromDaprErrorToHTTP(fmt.Errorf("bad error")); e == nil {
-		t.Errorf("expected failure")
+	md := map[string]string{
+		ErrorCodesFeatureMetadataKey: "true",
+	}
+	tests := []struct {
+		name    string
+		errIn   error
+		expErr  string
+		expCode int
+	}{
+		{
+			name:    "FromDaprErrorToHTTP_OK",
+			errIn:   NewDaprError(fmt.Errorf("503"), md),
+			expCode: 503,
+		},
+		{
+			name:   "FromDaprErrorToHTTP_Nil",
+			expErr: "unable to convert to a DaprError from input value: <nil>",
+		},
+		{
+			name:   "FromDaprErrorToHTTP_Invalid",
+			errIn:  fmt.Errorf("invalid"),
+			expErr: "unable to convert to a DaprError from input value: invalid",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			code, b, e := FromDaprErrorToHTTP(test.errIn)
+
+			if test.expErr == "" {
+				assert.NoError(t, e, fmt.Sprintf("wanted nil, but got = %v", e))
+				assert.NotNil(t, b, "unexpected nil value for bytes")
+				assert.Equal(t, test.expCode, code)
+			} else {
+				assert.Error(t, e)
+				assert.EqualError(t, e, test.expErr)
+			}
+		})
 	}
 }
