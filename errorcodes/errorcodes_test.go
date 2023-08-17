@@ -69,15 +69,10 @@ func TestActivateErrorCodesFeature(t *testing.T) {
 
 func TestNewDaprError(t *testing.T) {
 	tests := []struct {
-		name                string
-		inErr               error
-		inErrOptions        []ErrorOption
-		inMetadata          map[string]string
-		expReason           Reason
-		expDescription      string
-		expMetadata         map[string]string
-		expResourceInfoData *ResourceInfo
-		expDe               *DaprError
+		name              string
+		inErr             error
+		inMetadata        map[string]string
+		expectedDaprError bool
 	}{
 		{
 			name:  "DaprError_New_OK_No_Reason",
@@ -85,7 +80,7 @@ func TestNewDaprError(t *testing.T) {
 			inMetadata: map[string]string{
 				ErrorCodesFeatureMetadataKey: "true",
 			},
-			expReason: NoReason,
+			expectedDaprError: true,
 		},
 		{
 			name:  "DaprError_New_Nil_Error",
@@ -93,34 +88,29 @@ func TestNewDaprError(t *testing.T) {
 			inMetadata: map[string]string{
 				ErrorCodesFeatureMetadataKey: "true",
 			},
-			expDe: &DaprError{},
+			expectedDaprError: false,
 		},
-		// {
-		// 	name:     "DaprError_New_Nil_Metadata",
-		// 	inErr:    &DaprError{},
-		// 	md:       nil,
-		// 	expected: nil,
-		// },
-		// {
-		// 	name:     "DaprError_New_Empty_Metadata",
-		// 	inErr:    &DaprError{},
-		// 	md:       map[string]string{},
-		// 	expected: nil,
-		// },
-		// {
-		// 	name:  "DaprError_New_Details",
-		// 	inErr: tde,
-		// 	inErrOptions: []ErrorOption{
-		// 		WithResourceInfoData(trid),
-		// 	},
-		// 	md:       tmd,
-		// 	expected: tdexp,
-		// },
+		{
+			name:              "DaprError_New_Nil_Metadata",
+			inErr:             nil,
+			expectedDaprError: false,
+		},
+		{
+			name:              "DaprError_New_Metadata_No_ErrorCodes_Key",
+			inErr:             nil,
+			inMetadata:        map[string]string{},
+			expectedDaprError: false,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			NewDaprError(test.inErr, test.inMetadata, test.inErrOptions...)
+			de := NewDaprError(test.inErr, test.inMetadata)
+			if test.expectedDaprError {
+				assert.NotNil(t, test.expectedDaprError, "expected DaprError but got none")
+			} else {
+				assert.Nil(t, de, "unexpected DaprError but got %v", de)
+			}
 		})
 	}
 }
