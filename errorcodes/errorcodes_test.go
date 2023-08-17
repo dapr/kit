@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 )
 
@@ -120,6 +121,50 @@ func TestNewDaprError(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			NewDaprError(test.inErr, test.inMetadata, test.inErrOptions...)
+		})
+	}
+}
+
+func TestDaprErrorNewStatusError(t *testing.T) {
+	md := map[string]string{
+		ErrorCodesFeatureMetadataKey: "true",
+	}
+
+	tests := []struct {
+		name                 string
+		de                   *DaprError
+		expectedDetailsCount int
+		expectedResourceInfo bool
+	}{
+		{
+			name: "WithResourceInfo_OK",
+			de: NewDaprError(fmt.Errorf("some error"), md,
+				WithResourceInfo(&ResourceInfo{ResourceType: "testResourceType", ResourceName: "testResourceName"})),
+			expectedDetailsCount: 2,
+			expectedResourceInfo: true,
+		},
+		{
+			name:                 "ResourceInfo_Empty",
+			de:                   NewDaprError(fmt.Errorf("some error"), md),
+			expectedDetailsCount: 1,
+			expectedResourceInfo: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			st, e := test.de.newStatusError()
+			assert.Nil(t, e, "want nil, got = %v", e)
+			assert.NotNil(t, st, "want nil, got = %v", st)
+			assert.NotNil(t, st.Details())
+			assert.Equal(t, test.expectedDetailsCount, len(st.Details()), "want 2, got = %d", len(st.Details()))
+			gotResourceInfo := false
+			for _, detail := range st.Details() {
+				switch detail.(type) {
+				case *errdetails.ResourceInfo:
+					gotResourceInfo = true
+				}
+			}
+			assert.Equal(t, test.expectedResourceInfo, gotResourceInfo, "expected ResourceInfo, but got none")
 		})
 	}
 }

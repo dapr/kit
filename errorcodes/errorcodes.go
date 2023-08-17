@@ -141,7 +141,7 @@ func WithReason(reason Reason) ErrorOption {
 	return f
 }
 
-func WithResourceInfoData(resourceInfoData *ResourceInfo) ErrorOption {
+func WithResourceInfo(resourceInfoData *ResourceInfo) ErrorOption {
 	f := func(de *DaprError) {
 		de.resourceInfo = resourceInfoData
 	}
