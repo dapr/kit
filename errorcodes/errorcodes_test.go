@@ -200,3 +200,37 @@ func TestFromDaprErrorToHTTP(t *testing.T) {
 		})
 	}
 }
+
+func TestFeatureEnabled(t *testing.T) {
+	tests := []struct {
+		name     string
+		md       map[string]string
+		expected bool
+	}{
+		{
+			name: "FeatureEnabled_OK",
+			md: map[string]string{
+				ErrorCodesFeatureMetadataKey: "true",
+			},
+			expected: true,
+		},
+		{
+			name:     "FeatureEnabled_NoMap",
+			expected: false,
+		},
+		{
+			name: "FeatureEnabled_Map_MissingKey",
+			md: map[string]string{
+				"other": "1",
+			},
+			expected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			b := featureEnabled(test.md)
+			assert.Equal(t, test.expected, b)
+		})
+	}
+}
