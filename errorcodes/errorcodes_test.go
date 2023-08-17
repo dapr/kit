@@ -281,3 +281,39 @@ func TestConvertReasonToStatusCode(t *testing.T) {
 		})
 	}
 }
+
+func TestConvertStatusCodeToHTTPCode(t *testing.T) {
+	tests := []struct {
+		name             string
+		code             codes.Code
+		expectedHTTPCode int
+	}{
+		{
+			name:             "Aborted",
+			code:             codes.Aborted,
+			expectedHTTPCode: 409,
+		},
+		{
+			name:             "InvalidArgument",
+			code:             codes.InvalidArgument,
+			expectedHTTPCode: 400,
+		},
+		{
+			name:             "NotFound",
+			code:             codes.NotFound,
+			expectedHTTPCode: 404,
+		},
+		{
+			name:             "Internal",
+			code:             codes.Internal,
+			expectedHTTPCode: 503,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := convertStatusCodeToHTTPCode(test.code)
+			assert.Equal(t, test.expectedHTTPCode, got, fmt.Sprintf("want %d, got = %d\n", test.expectedHTTPCode, got))
+		})
+	}
+}
