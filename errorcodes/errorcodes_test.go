@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc/codes"
 )
 
 func TestActivateErrorCodesFeature(t *testing.T) {
@@ -231,6 +232,52 @@ func TestFeatureEnabled(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			b := featureEnabled(test.md)
 			assert.Equal(t, test.expected, b)
+		})
+	}
+}
+
+func TestConvertReasonToStatusCode(t *testing.T) {
+	tests := []struct {
+		name         string
+		reason       Reason
+		expectedCode codes.Code
+	}{
+		{
+			name:         "StateETagMismatchReason",
+			reason:       StateETagMismatchReason,
+			expectedCode: codes.Aborted,
+		},
+		{
+			name:         "StateETagInvalidReason",
+			reason:       StateETagInvalidReason,
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name:         "TopicNotFoundReason",
+			reason:       TopicNotFoundReason,
+			expectedCode: codes.NotFound,
+		},
+		{
+			name:         "SecretKeyNotFoundReason",
+			reason:       SecretKeyNotFoundReason,
+			expectedCode: codes.NotFound,
+		},
+		{
+			name:         "ConfigurationKeyNotFoundReason",
+			reason:       ConfigurationKeyNotFoundReason,
+			expectedCode: codes.NotFound,
+		},
+		{
+			name:         "NoReason",
+			reason:       NoReason,
+			expectedCode: codes.Internal,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := convertReasonToStatusCode(test.reason)
+			assert.Equal(t, test.expectedCode, got, fmt.Sprintf("want %s, got = %s\n", test.expectedCode, got))
 		})
 	}
 }
