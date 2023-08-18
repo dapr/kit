@@ -183,17 +183,17 @@ func FromDaprErrorToGRPC(err error) (*status.Status, error) {
 	return nil, fmt.Errorf("unable to convert to a DaprError from input value: %v", err)
 }
 
-func (de *DaprError) newStatusError() (*status.Status, error) {
-	cd := convertReasonToStatusCode(de.reason)
+func (c *DaprError) newStatusError() (*status.Status, error) {
+	cd := convertReasonToStatusCode(c.reason)
 	messages := []protoiface.MessageV1{
-		newErrorInfo(de.reason, de.metadata),
+		newErrorInfo(c.reason, c.metadata),
 	}
 
-	if de.resourceInfo != nil {
-		messages = append(messages, newResourceInfo(de.resourceInfo, de.err))
+	if c.resourceInfo != nil {
+		messages = append(messages, newResourceInfo(c.resourceInfo, c.err))
 	}
 
-	ste, stErr := status.New(cd, de.description).WithDetails(messages...)
+	ste, stErr := status.New(cd, c.description).WithDetails(messages...)
 	if stErr != nil {
 		return nil, stErr
 	}
