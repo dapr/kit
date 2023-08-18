@@ -74,7 +74,7 @@ func TestNewDaprError(t *testing.T) {
 		inMetadata        map[string]string
 		inOptions         []ErrorOption
 		expectedDaprError bool
-		expectedReason    Reason
+		expectedReason    string
 	}{
 		{
 			name:  "DaprError_New_OK_No_Reason",
@@ -83,7 +83,7 @@ func TestNewDaprError(t *testing.T) {
 				ErrorCodesFeatureMetadataKey: "true",
 			},
 			expectedDaprError: true,
-			expectedReason:    NoReason,
+			expectedReason:    "NO_REASON_SPECIFIED",
 		},
 		{
 			name:  "DaprError_New_OK_StateETagMismatchReason",
@@ -93,9 +93,9 @@ func TestNewDaprError(t *testing.T) {
 			},
 			expectedDaprError: true,
 			inOptions: []ErrorOption{
-				WithReason(StateETagMismatchReason),
+				WithErrorReason("StateETagMismatchReason", 404, codes.NotFound),
 			},
-			expectedReason: StateETagMismatchReason,
+			expectedReason: "StateETagMismatchReason",
 		},
 		{
 			name:  "DaprError_New_OK_StateETagInvalidReason",
@@ -105,45 +105,9 @@ func TestNewDaprError(t *testing.T) {
 			},
 			expectedDaprError: true,
 			inOptions: []ErrorOption{
-				WithReason(StateETagInvalidReason),
+				WithErrorReason("StateETagInvalidReason", 400, codes.Aborted),
 			},
-			expectedReason: StateETagInvalidReason,
-		},
-		{
-			name:  "DaprError_New_OK_TopicNotFoundReason",
-			inErr: &DaprError{},
-			inMetadata: map[string]string{
-				ErrorCodesFeatureMetadataKey: "true",
-			},
-			expectedDaprError: true,
-			inOptions: []ErrorOption{
-				WithReason(TopicNotFoundReason),
-			},
-			expectedReason: TopicNotFoundReason,
-		},
-		{
-			name:  "DaprError_New_OK_SecretKeyNotFoundReason",
-			inErr: &DaprError{},
-			inMetadata: map[string]string{
-				ErrorCodesFeatureMetadataKey: "true",
-			},
-			expectedDaprError: true,
-			inOptions: []ErrorOption{
-				WithReason(SecretKeyNotFoundReason),
-			},
-			expectedReason: SecretKeyNotFoundReason,
-		},
-		{
-			name:  "DaprError_New_OK_ConfigurationKeyNotFoundReason",
-			inErr: &DaprError{},
-			inMetadata: map[string]string{
-				ErrorCodesFeatureMetadataKey: "true",
-			},
-			expectedDaprError: true,
-			inOptions: []ErrorOption{
-				WithReason(ConfigurationKeyNotFoundReason),
-			},
-			expectedReason: ConfigurationKeyNotFoundReason,
+			expectedReason: "StateETagInvalidReason",
 		},
 		{
 			name:  "DaprError_New_Nil_Error",
@@ -183,7 +147,6 @@ func TestDaprErrorNewStatusError(t *testing.T) {
 	md := map[string]string{
 		ErrorCodesFeatureMetadataKey: "true",
 	}
-
 	tests := []struct {
 		name                 string
 		de                   *DaprError
@@ -199,7 +162,7 @@ func TestDaprErrorNewStatusError(t *testing.T) {
 		},
 		{
 			name:                 "ResourceInfo_Empty",
-			de:                   NewDaprError(fmt.Errorf("some error"), md, WithDescription("some"), WithReason(StateETagInvalidReason)),
+			de:                   NewDaprError(fmt.Errorf("some error"), md, WithDescription("some"), WithErrorReason("StateETagInvalidReason", 400, codes.Aborted)),
 			expectedDetailsCount: 1,
 			expectedResourceInfo: false,
 		},
@@ -224,36 +187,41 @@ func TestDaprErrorNewStatusError(t *testing.T) {
 }
 
 func TestFromDaprErrorToGRPC(t *testing.T) {
+	md := map[string]string{
+		ErrorCodesFeatureMetadataKey: "true",
+	}
 	tests := []struct {
-		name   string
-		errIn  error
-		expErr string
+		name             string
+		errIn            error
+		sameAsInputError bool
 	}{
 		{
 			name:  "FromDaprErrorToGRPC_OK",
-			errIn: &DaprError{},
+			errIn: NewDaprError(fmt.Errorf("testE"), md),
 		},
 		{
-			name:   "FromDaprErrorToGRPC_Nil",
-			expErr: "unable to convert to a DaprError from input value: <nil>",
+			name:  "FromDaprErrorToGRPC_OK",
+			errIn: NewDaprError(fmt.Errorf("testE"), md, WithMetadata(md)),
 		},
 		{
-			name:   "FromDaprErrorToGRPC_Invalid",
-			errIn:  fmt.Errorf("invalid"),
-			expErr: "unable to convert to a DaprError from input value: invalid",
+			name:             "FromDaprErrorToGRPC_Nil",
+			sameAsInputError: true,
+		},
+		{
+			name:             "FromDaprErrorToGRPC_Invalid",
+			errIn:            fmt.Errorf("invalid"),
+			sameAsInputError: true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			st, e := FromDaprErrorToGRPC(test.errIn)
-
-			if test.expErr == "" {
-				assert.NoError(t, e, fmt.Sprintf("wanted nil, but got = %v", e))
-				assert.NotNil(t, st, "unexpected nil value for Status")
+			if test.sameAsInputError {
+				assert.Equal(t, test.errIn, e, "want = %v, but got = %v", test.errIn, e)
 			} else {
-				assert.Error(t, e)
-				assert.EqualError(t, e, test.expErr)
+				assert.NoError(t, e, "unexpected error: %v", e)
+				assert.NotNil(t, st, "unexpected nil value for Status")
 			}
 		})
 	}
@@ -264,10 +232,11 @@ func TestFromDaprErrorToHTTP(t *testing.T) {
 		ErrorCodesFeatureMetadataKey: "true",
 	}
 	tests := []struct {
-		name    string
-		errIn   error
-		expErr  string
-		expCode int
+		name             string
+		errIn            error
+		expErr           string
+		sameAsInputError bool
+		expCode          int
 	}{
 		{
 			name:    "FromDaprErrorToHTTP_OK",
@@ -275,19 +244,24 @@ func TestFromDaprErrorToHTTP(t *testing.T) {
 			expCode: 503,
 		},
 		{
-			name:   "FromDaprErrorToHTTP_Nil",
-			expErr: "unable to convert to a DaprError from input value: <nil>",
+			name:             "FromDaprErrorToHTTP_Nil",
+			sameAsInputError: true,
 		},
 		{
 			name:   "FromDaprErrorToHTTP_Invalid",
 			errIn:  fmt.Errorf("invalid"),
-			expErr: "unable to convert to a DaprError from input value: invalid",
+			expErr: "invalid",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			code, b, e := FromDaprErrorToHTTP(test.errIn)
+
+			if test.sameAsInputError {
+				assert.Equal(t, test.errIn, e, "returned error must be the same")
+				return
+			}
 
 			if test.expErr == "" {
 				assert.NoError(t, e, fmt.Sprintf("wanted nil, but got = %v", e))
@@ -331,88 +305,6 @@ func TestFeatureEnabled(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			b := featureEnabled(test.md)
 			assert.Equal(t, test.expected, b)
-		})
-	}
-}
-
-func TestConvertReasonToStatusCode(t *testing.T) {
-	tests := []struct {
-		name         string
-		reason       Reason
-		expectedCode codes.Code
-	}{
-		{
-			name:         "StateETagMismatchReason",
-			reason:       StateETagMismatchReason,
-			expectedCode: codes.Aborted,
-		},
-		{
-			name:         "StateETagInvalidReason",
-			reason:       StateETagInvalidReason,
-			expectedCode: codes.InvalidArgument,
-		},
-		{
-			name:         "TopicNotFoundReason",
-			reason:       TopicNotFoundReason,
-			expectedCode: codes.NotFound,
-		},
-		{
-			name:         "SecretKeyNotFoundReason",
-			reason:       SecretKeyNotFoundReason,
-			expectedCode: codes.NotFound,
-		},
-		{
-			name:         "ConfigurationKeyNotFoundReason",
-			reason:       ConfigurationKeyNotFoundReason,
-			expectedCode: codes.NotFound,
-		},
-		{
-			name:         "NoReason",
-			reason:       NoReason,
-			expectedCode: codes.Internal,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := convertReasonToStatusCode(test.reason)
-			assert.Equal(t, test.expectedCode, got, fmt.Sprintf("want %s, got = %s\n", test.expectedCode, got))
-		})
-	}
-}
-
-func TestConvertStatusCodeToHTTPCode(t *testing.T) {
-	tests := []struct {
-		name             string
-		code             codes.Code
-		expectedHTTPCode int
-	}{
-		{
-			name:             "Aborted",
-			code:             codes.Aborted,
-			expectedHTTPCode: 409,
-		},
-		{
-			name:             "InvalidArgument",
-			code:             codes.InvalidArgument,
-			expectedHTTPCode: 400,
-		},
-		{
-			name:             "NotFound",
-			code:             codes.NotFound,
-			expectedHTTPCode: 404,
-		},
-		{
-			name:             "Internal",
-			code:             codes.Internal,
-			expectedHTTPCode: 503,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := convertStatusCodeToHTTPCode(test.code)
-			assert.Equal(t, test.expectedHTTPCode, got, fmt.Sprintf("want %d, got = %d\n", test.expectedHTTPCode, got))
 		})
 	}
 }

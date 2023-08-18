@@ -15,7 +15,6 @@ package errorcodes
 
 import (
 	"errors"
-	"fmt"
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
@@ -24,21 +23,16 @@ import (
 	"google.golang.org/protobuf/runtime/protoiface"
 )
 
-type Reason string
-
 const (
 	ErrorCodesFeatureMetadataKey = "error_codes_feature"
 	Owner                        = "components-contrib"
 	Domain                       = "dapr.io"
+	NoReason                     = "NO_REASON_SPECIFIED"
 )
 
 var (
-	NoReason                       = Reason("NO_REASON_SPECIFIED")
-	StateETagMismatchReason        = Reason("DAPR_STATE_ETAG_MISMATCH")
-	StateETagInvalidReason         = Reason("DAPR_STATE_ETAG_INVALID")
-	TopicNotFoundReason            = Reason("DAPR_TOPIC_NOT_FOUND")
-	SecretKeyNotFoundReason        = Reason("DAPR_SECRET_KEY_NOT_FOUND")
-	ConfigurationKeyNotFoundReason = Reason("DAPR_CONFIG_KEY_NOT_FOUND")
+	NoErrorReason                = WithErrorReason(NoReason, 503, codes.Internal)
+	StateETagMismatchErrorReason = WithErrorReason("DAPR_STATE_ETAG_MISMATCH", 404, codes.Aborted)
 )
 
 type ResourceInfo struct {
@@ -46,15 +40,26 @@ type ResourceInfo struct {
 	ResourceName string
 }
 
+func WithErrorReason(reason string, httpCode int, grpcStatusCode codes.Code) ErrorOption {
+	f := func(er *DaprError) {
+		er.reason = reason
+		er.grpcStatusCode = grpcStatusCode
+		er.httpCode = httpCode
+	}
+	return f
+}
+
 // call this function to apply option
 type ErrorOption func(*DaprError)
 
 type DaprError struct {
-	err          error
-	description  string
-	reason       Reason
-	resourceInfo *ResourceInfo
-	metadata     map[string]string
+	err            error
+	description    string
+	reason         string
+	httpCode       int
+	grpcStatusCode codes.Code
+	metadata       map[string]string
+	resourceInfo   *ResourceInfo
 }
 
 // EnableComponentErrorCode stores an indicator for
@@ -87,13 +92,17 @@ func NewDaprError(err error, metadata map[string]string, options ...ErrorOption)
 		return nil
 	}
 
+	// Use default values
 	de := &DaprError{
-		err:         err,
-		description: err.Error(),
-		reason:      NoReason,
+		err:            err,
+		description:    err.Error(),
+		reason:         NoReason,
+		httpCode:       503,
+		grpcStatusCode: codes.Internal,
 	}
 
 	// Now apply any requested options
+	// to overr
 	for _, option := range options {
 		option(de)
 	}
@@ -134,13 +143,6 @@ func (c *DaprError) SetMetadata(md map[string]string) {
 	c.metadata = md
 }
 
-func WithReason(reason Reason) ErrorOption {
-	f := func(de *DaprError) {
-		de.reason = reason
-	}
-	return f
-}
-
 func WithResourceInfo(resourceInfoData *ResourceInfo) ErrorOption {
 	f := func(de *DaprError) {
 		de.resourceInfo = resourceInfoData
@@ -166,8 +168,8 @@ func WithMetadata(md map[string]string) ErrorOption {
 
 // FromDaprErrorToGRPC transforms the supplied error into
 // a GRPC Status. It assumes if the supplied error
-// is of type DaprError. Otherwise, an error will be returned
-// instead.
+// is of type DaprError.
+// Otherwise, returns the original error.
 func FromDaprErrorToGRPC(err error) (*status.Status, error) {
 	de := &DaprError{}
 	var st *status.Status
@@ -175,16 +177,15 @@ func FromDaprErrorToGRPC(err error) (*status.Status, error) {
 	if errors.As(err, &de) {
 		st, ese = de.newStatusError()
 		if ese != nil {
-			return nil, ese
+			return nil, err
 		}
 		return st, nil
 	}
 
-	return nil, fmt.Errorf("unable to convert to a DaprError from input value: %v", err)
+	return nil, err
 }
 
 func (c *DaprError) newStatusError() (*status.Status, error) {
-	cd := convertReasonToStatusCode(c.reason)
 	messages := []protoiface.MessageV1{
 		newErrorInfo(c.reason, c.metadata),
 	}
@@ -193,7 +194,7 @@ func (c *DaprError) newStatusError() (*status.Status, error) {
 		messages = append(messages, newResourceInfo(c.resourceInfo, c.err))
 	}
 
-	ste, stErr := status.New(cd, c.description).WithDetails(messages...)
+	ste, stErr := status.New(c.grpcStatusCode, c.description).WithDetails(messages...)
 	if stErr != nil {
 		return nil, stErr
 	}
@@ -201,10 +202,10 @@ func (c *DaprError) newStatusError() (*status.Status, error) {
 	return ste, nil
 }
 
-func newErrorInfo(reason Reason, md map[string]string) *errdetails.ErrorInfo {
+func newErrorInfo(reason string, md map[string]string) *errdetails.ErrorInfo {
 	ei := errdetails.ErrorInfo{
 		Domain:   Domain,
-		Reason:   string(reason),
+		Reason:   reason,
 		Metadata: md,
 	}
 
@@ -220,61 +221,30 @@ func newResourceInfo(rid *ResourceInfo, err error) *errdetails.ResourceInfo {
 	}
 }
 
-func statusErrorJSON(st *status.Status) ([]byte, error) {
-	return protojson.Marshal(st.Proto())
-}
-
-func convertReasonToStatusCode(reason Reason) codes.Code {
-	c := codes.Aborted
-	switch reason {
-	case StateETagMismatchReason:
-		c = codes.Aborted
-	case StateETagInvalidReason:
-		c = codes.InvalidArgument
-	case TopicNotFoundReason:
-		c = codes.NotFound
-	case SecretKeyNotFoundReason:
-		c = codes.NotFound
-	case ConfigurationKeyNotFoundReason:
-		c = codes.NotFound
-	case NoReason:
-		c = codes.Internal
-	}
-
-	return c
-}
-
 // *** HTTP Methods ***
 
 // FromDaprErrorToHTTP transforms the supplied error into
-// a GRPC Status. It assumes if the supplied error
-// is of type DaprError. Otherwise, an error will be returned
-// instead.
+// a GRPC Status and then Marshals it to JSON.
+// It assumes if the supplied error is of type DaprError.
+// Otherwise, returns the original error.
 func FromDaprErrorToHTTP(err error) (int, []byte, error) {
-	st, fe := FromDaprErrorToGRPC(err)
-	if fe != nil {
-		return 0, nil, fe
-	}
+	de := &DaprError{}
+	var st *status.Status
+	var ese error
+	if errors.As(err, &de) {
+		st, ese = de.newStatusError()
+		if ese == nil {
+			resp, sej := statusErrorJSON(st)
+			if sej != nil {
+				return 0, nil, err
+			}
 
-	httpCode := convertStatusCodeToHTTPCode(st.Code())
-	resp, sej := statusErrorJSON(st)
-	if sej != nil {
-		return 0, nil, sej
+			return de.httpCode, resp, nil
+		}
 	}
-
-	return httpCode, resp, nil
+	return 0, nil, err
 }
 
-func convertStatusCodeToHTTPCode(code codes.Code) int {
-	c := 503
-	switch code {
-	case codes.Aborted:
-		c = 409
-	case codes.InvalidArgument:
-		c = 400
-	case codes.NotFound:
-		c = 404
-	}
-
-	return c
+func statusErrorJSON(st *status.Status) ([]byte, error) {
+	return protojson.Marshal(st.Proto())
 }
