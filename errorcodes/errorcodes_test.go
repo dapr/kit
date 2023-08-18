@@ -72,7 +72,9 @@ func TestNewDaprError(t *testing.T) {
 		name              string
 		inErr             error
 		inMetadata        map[string]string
+		inOptions         []ErrorOption
 		expectedDaprError bool
+		expectedReason    Reason
 	}{
 		{
 			name:  "DaprError_New_OK_No_Reason",
@@ -81,6 +83,67 @@ func TestNewDaprError(t *testing.T) {
 				ErrorCodesFeatureMetadataKey: "true",
 			},
 			expectedDaprError: true,
+			expectedReason:    NoReason,
+		},
+		{
+			name:  "DaprError_New_OK_StateETagMismatchReason",
+			inErr: &DaprError{},
+			inMetadata: map[string]string{
+				ErrorCodesFeatureMetadataKey: "true",
+			},
+			expectedDaprError: true,
+			inOptions: []ErrorOption{
+				WithReason(StateETagMismatchReason),
+			},
+			expectedReason: StateETagMismatchReason,
+		},
+		{
+			name:  "DaprError_New_OK_StateETagInvalidReason",
+			inErr: &DaprError{},
+			inMetadata: map[string]string{
+				ErrorCodesFeatureMetadataKey: "true",
+			},
+			expectedDaprError: true,
+			inOptions: []ErrorOption{
+				WithReason(StateETagInvalidReason),
+			},
+			expectedReason: StateETagInvalidReason,
+		},
+		{
+			name:  "DaprError_New_OK_TopicNotFoundReason",
+			inErr: &DaprError{},
+			inMetadata: map[string]string{
+				ErrorCodesFeatureMetadataKey: "true",
+			},
+			expectedDaprError: true,
+			inOptions: []ErrorOption{
+				WithReason(TopicNotFoundReason),
+			},
+			expectedReason: TopicNotFoundReason,
+		},
+		{
+			name:  "DaprError_New_OK_SecretKeyNotFoundReason",
+			inErr: &DaprError{},
+			inMetadata: map[string]string{
+				ErrorCodesFeatureMetadataKey: "true",
+			},
+			expectedDaprError: true,
+			inOptions: []ErrorOption{
+				WithReason(SecretKeyNotFoundReason),
+			},
+			expectedReason: SecretKeyNotFoundReason,
+		},
+		{
+			name:  "DaprError_New_OK_ConfigurationKeyNotFoundReason",
+			inErr: &DaprError{},
+			inMetadata: map[string]string{
+				ErrorCodesFeatureMetadataKey: "true",
+			},
+			expectedDaprError: true,
+			inOptions: []ErrorOption{
+				WithReason(ConfigurationKeyNotFoundReason),
+			},
+			expectedReason: ConfigurationKeyNotFoundReason,
 		},
 		{
 			name:  "DaprError_New_Nil_Error",
@@ -105,9 +168,10 @@ func TestNewDaprError(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			de := NewDaprError(test.inErr, test.inMetadata)
+			de := NewDaprError(test.inErr, test.inMetadata, test.inOptions...)
 			if test.expectedDaprError {
-				assert.NotNil(t, test.expectedDaprError, "expected DaprError but got none")
+				assert.NotNil(t, de, "expected DaprError but got none")
+				assert.Equal(t, test.expectedReason, de.reason, "want %s, but got = %v", test.expectedReason, de.reason)
 			} else {
 				assert.Nil(t, de, "unexpected DaprError but got %v", de)
 			}
@@ -135,7 +199,7 @@ func TestDaprErrorNewStatusError(t *testing.T) {
 		},
 		{
 			name:                 "ResourceInfo_Empty",
-			de:                   NewDaprError(fmt.Errorf("some error"), md),
+			de:                   NewDaprError(fmt.Errorf("some error"), md, WithDescription("some"), WithReason(StateETagInvalidReason)),
 			expectedDetailsCount: 1,
 			expectedResourceInfo: false,
 		},
