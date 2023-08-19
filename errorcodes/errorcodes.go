@@ -30,10 +30,7 @@ const (
 	NoReason                     = "NO_REASON_SPECIFIED"
 )
 
-var (
-	NoErrorReason                = WithErrorReason(NoReason, 503, codes.Internal)
-	StateETagMismatchErrorReason = WithErrorReason("DAPR_STATE_ETAG_MISMATCH", 404, codes.Aborted)
-)
+var NoErrorReason = WithErrorReason(NoReason, 503, codes.Internal)
 
 type ResourceInfo struct {
 	ResourceType string
@@ -172,14 +169,11 @@ func WithMetadata(md map[string]string) ErrorOption {
 // Otherwise, returns the original error.
 func FromDaprErrorToGRPC(err error) (*status.Status, error) {
 	de := &DaprError{}
-	var st *status.Status
-	var ese error
 	if errors.As(err, &de) {
-		st, ese = de.newStatusError()
-		if ese != nil {
-			return nil, err
+		if st, ese := de.newStatusError(); ese == nil {
+			return st, nil
 		}
-		return st, nil
+		return nil, err
 	}
 
 	return nil, err
@@ -229,11 +223,8 @@ func newResourceInfo(rid *ResourceInfo, err error) *errdetails.ResourceInfo {
 // Otherwise, returns the original error.
 func FromDaprErrorToHTTP(err error) (int, []byte, error) {
 	de := &DaprError{}
-	var st *status.Status
-	var ese error
 	if errors.As(err, &de) {
-		st, ese = de.newStatusError()
-		if ese == nil {
+		if st, ese := de.newStatusError(); ese == nil {
 			resp, sej := statusErrorJSON(st)
 			if sej != nil {
 				return 0, nil, err
