@@ -132,17 +132,17 @@ func (c *DaprError) SetDescription(description string) {
 	c.description = description
 }
 
-func (c *DaprError) SetResourceInfoData(resourceInfoData *ResourceInfo) {
-	c.resourceInfo = resourceInfoData
+func (c *DaprError) SetResourceInfo(resourceInfo *ResourceInfo) {
+	c.resourceInfo = resourceInfo
 }
 
 func (c *DaprError) SetMetadata(md map[string]string) {
 	c.metadata = md
 }
 
-func WithResourceInfo(resourceInfoData *ResourceInfo) ErrorOption {
+func WithResourceInfo(resourceInfo *ResourceInfo) ErrorOption {
 	f := func(de *DaprError) {
-		de.resourceInfo = resourceInfoData
+		de.resourceInfo = resourceInfo
 	}
 	return f
 }
