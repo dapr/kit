@@ -33,8 +33,8 @@ const (
 var NoErrorReason = WithErrorReason(NoReason, 503, codes.Internal)
 
 type ResourceInfo struct {
-	ResourceType string
-	ResourceName string
+	Type string
+	Name string
 }
 
 func WithErrorReason(reason string, httpCode int, grpcStatusCode codes.Code) ErrorOption {
@@ -49,7 +49,7 @@ func WithErrorReason(reason string, httpCode int, grpcStatusCode codes.Code) Err
 // call this function to apply option
 type ErrorOption func(*DaprError)
 
-type DaprError struct {
+type Error struct {
 	err            error
 	description    string
 	reason         string
@@ -69,16 +69,14 @@ func EnableComponentErrorCode(metadata map[string]string) {
 }
 
 func featureEnabled(metadata map[string]string) bool {
-	if _, ok := metadata[ErrorCodesFeatureMetadataKey]; ok {
-		return true
-	}
-	return false
+	_, ok := metadata[ErrorCodesFeatureMetadataKey]
+	return ok
 }
 
 // NewDaprError create a new DaprError using the supplied metadata and ErrorOptions
 // **Note**: As this code is in `Feature Preview`, it will only continue processing
 // if the ErrorCodes is enabled
-func NewDaprError(err error, metadata map[string]string, options ...ErrorOption) *DaprError {
+func New(err error, metadata map[string]string, options ...Option) *Error {
 	// The following condition can be removed once the
 	// Error Codes Feature is GA
 	if !featureEnabled(metadata) {
@@ -92,14 +90,13 @@ func NewDaprError(err error, metadata map[string]string, options ...ErrorOption)
 	// Use default values
 	de := &DaprError{
 		err:            err,
-		description:    err.Error(),
 		reason:         NoReason,
 		httpCode:       503,
 		grpcStatusCode: codes.Internal,
 	}
 
 	// Now apply any requested options
-	// to overr
+	// to override
 	for _, option := range options {
 		option(de)
 	}
@@ -109,7 +106,7 @@ func NewDaprError(err error, metadata map[string]string, options ...ErrorOption)
 
 // Error implements the error interface.
 func (c *DaprError) Error() string {
-	if c.err != nil {
+	if c != nil && c.err != nil {
 		return c.err.Error()
 	}
 	return ""
@@ -167,17 +164,7 @@ func WithMetadata(md map[string]string) ErrorOption {
 // a GRPC Status. It assumes if the supplied error
 // is of type DaprError.
 // Otherwise, returns the original error.
-func FromDaprErrorToGRPC(err error) (*status.Status, error) {
-	de := &DaprError{}
-	if errors.As(err, &de) {
-		if st, ese := de.newStatusError(); ese == nil {
-			return st, nil
-		}
-		return nil, err
-	}
-
-	return nil, err
-}
+func (e *Error) ToGRPC() *status.Status {
 
 func (c *DaprError) newStatusError() (*status.Status, error) {
 	messages := []protoiface.MessageV1{
@@ -221,7 +208,7 @@ func newResourceInfo(rid *ResourceInfo, err error) *errdetails.ResourceInfo {
 // a GRPC Status and then Marshals it to JSON.
 // It assumes if the supplied error is of type DaprError.
 // Otherwise, returns the original error.
-func FromDaprErrorToHTTP(err error) (int, []byte, error) {
+func (e *Errro) ToHTTP(err error) (int, []byte) {
 	de := &DaprError{}
 	if errors.As(err, &de) {
 		if st, ese := de.newStatusError(); ese == nil {
