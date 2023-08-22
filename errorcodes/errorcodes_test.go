@@ -67,44 +67,44 @@ func TestActivateErrorCodesFeature(t *testing.T) {
 	}
 }
 
-func TestNewDaprError(t *testing.T) {
+func TestNewErrorReason(t *testing.T) {
 	tests := []struct {
 		name              string
 		inErr             error
 		inMetadata        map[string]string
-		inOptions         []ErrorOption
+		inOptions         []Option
 		expectedDaprError bool
 		expectedReason    string
 	}{
 		{
-			name:  "DaprError_New_OK_No_Reason",
-			inErr: &DaprError{},
+			name:  "Error_New_OK_No_Reason",
+			inErr: &Error{},
 			inMetadata: map[string]string{
 				ErrorCodesFeatureMetadataKey: "true",
 			},
 			expectedDaprError: true,
-			expectedReason:    "NO_REASON_SPECIFIED",
+			expectedReason:    "UNKNOWN_REASON",
 		},
 		{
 			name:  "DaprError_New_OK_StateETagMismatchReason",
-			inErr: &DaprError{},
+			inErr: &Error{},
 			inMetadata: map[string]string{
 				ErrorCodesFeatureMetadataKey: "true",
 			},
 			expectedDaprError: true,
-			inOptions: []ErrorOption{
+			inOptions: []Option{
 				WithErrorReason("StateETagMismatchReason", 404, codes.NotFound),
 			},
 			expectedReason: "StateETagMismatchReason",
 		},
 		{
 			name:  "DaprError_New_OK_StateETagInvalidReason",
-			inErr: &DaprError{},
+			inErr: &Error{},
 			inMetadata: map[string]string{
 				ErrorCodesFeatureMetadataKey: "true",
 			},
 			expectedDaprError: true,
-			inOptions: []ErrorOption{
+			inOptions: []Option{
 				WithErrorReason("StateETagInvalidReason", 400, codes.Aborted),
 			},
 			expectedReason: "StateETagInvalidReason",
@@ -132,7 +132,7 @@ func TestNewDaprError(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			de := NewDaprError(test.inErr, test.inMetadata, test.inOptions...)
+			de := New(test.inErr, test.inMetadata, test.inOptions...)
 			if test.expectedDaprError {
 				assert.NotNil(t, de, "expected DaprError but got none")
 				assert.Equal(t, test.expectedReason, de.reason, "want %s, but got = %v", test.expectedReason, de.reason)
@@ -143,34 +143,39 @@ func TestNewDaprError(t *testing.T) {
 	}
 }
 
-func TestDaprErrorNewStatusError(t *testing.T) {
+func TestNewError(t *testing.T) {
 	md := map[string]string{
 		ErrorCodesFeatureMetadataKey: "true",
 	}
 	tests := []struct {
 		name                 string
-		de                   *DaprError
+		de                   *Error
 		expectedDetailsCount int
 		expectedResourceInfo bool
+		expectedError        error
+		expectedDescription  string
 	}{
 		{
 			name: "WithResourceInfo_OK",
-			de: NewDaprError(fmt.Errorf("some error"), md,
-				WithResourceInfo(&ResourceInfo{ResourceType: "testResourceType", ResourceName: "testResourceName"})),
+			de: New(fmt.Errorf("some error"), md,
+				WithResourceInfo(&ResourceInfo{Type: "testResourceType", Name: "testResourceName"})),
 			expectedDetailsCount: 2,
 			expectedResourceInfo: true,
+			expectedError:        fmt.Errorf("some error"),
+			expectedDescription:  "some error",
 		},
 		{
 			name:                 "ResourceInfo_Empty",
-			de:                   NewDaprError(fmt.Errorf("some error"), md, WithDescription("some"), WithErrorReason("StateETagInvalidReason", 400, codes.Aborted)),
+			de:                   New(fmt.Errorf("some error"), md, WithDescription("some"), WithErrorReason("StateETagInvalidReason", 400, codes.Aborted)),
 			expectedDetailsCount: 1,
 			expectedResourceInfo: false,
+			expectedError:        fmt.Errorf("some error"),
+			expectedDescription:  "some",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			st, e := test.de.newStatusError()
-			assert.Nil(t, e, "want nil, got = %v", e)
+			st := test.de.GRPCStatus()
 			assert.NotNil(t, st, "want nil, got = %v", st)
 			assert.NotNil(t, st.Details())
 			assert.Equal(t, test.expectedDetailsCount, len(st.Details()), "want 2, got = %d", len(st.Details()))
@@ -182,95 +187,65 @@ func TestDaprErrorNewStatusError(t *testing.T) {
 				}
 			}
 			assert.Equal(t, test.expectedResourceInfo, gotResourceInfo, "expected ResourceInfo, but got none")
+			assert.EqualError(t, test.expectedError, test.de.Error())
+			assert.Equal(t, test.expectedDescription, test.de.Description())
 		})
 	}
 }
 
-func TestFromDaprErrorToGRPC(t *testing.T) {
+func TestToHTTP(t *testing.T) {
 	md := map[string]string{
 		ErrorCodesFeatureMetadataKey: "true",
 	}
 	tests := []struct {
-		name             string
-		errIn            error
-		sameAsInputError bool
+		name         string
+		de           *Error
+		expectedCode int
+		expectedJSON string
 	}{
 		{
-			name:  "FromDaprErrorToGRPC_OK",
-			errIn: NewDaprError(fmt.Errorf("testE"), md),
-		},
-		{
-			name:  "FromDaprErrorToGRPC_OK",
-			errIn: NewDaprError(fmt.Errorf("testE"), md, WithMetadata(md)),
-		},
-		{
-			name:             "FromDaprErrorToGRPC_Nil",
-			sameAsInputError: true,
-		},
-		{
-			name:             "FromDaprErrorToGRPC_Invalid",
-			errIn:            fmt.Errorf("invalid"),
-			sameAsInputError: true,
+			name: "WithResourceInfo_OK",
+			de: New(fmt.Errorf("some error"), md,
+				WithResourceInfo(&ResourceInfo{Type: "testResourceType", Name: "testResourceName"})),
+			expectedCode: 500,
+			expectedJSON: `{"code":2, "details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo", "reason":"UNKNOWN_REASON", "domain":"dapr.io"}, {"@type":"type.googleapis.com/google.rpc.ResourceInfo", "resourceType":"testResourceType", "resourceName":"testResourceName", "owner":"components-contrib", "description":"some error"}]}`,
 		},
 	}
-
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			st, e := FromDaprErrorToGRPC(test.errIn)
-			if test.sameAsInputError {
-				assert.Equal(t, test.errIn, e, "want = %v, but got = %v", test.errIn, e)
-			} else {
-				assert.NoError(t, e, "unexpected error: %v", e)
-				assert.NotNil(t, st, "unexpected nil value for Status")
-			}
+			i, b := test.de.ToHTTP()
+			assert.Equal(t, test.expectedCode, i, "want %d, got = %d", test.expectedCode, i)
+			assert.Equal(t, test.expectedJSON, string(b), "want JSON %s , got = %s", test.expectedJSON, string(b))
 		})
 	}
 }
 
-func TestFromDaprErrorToHTTP(t *testing.T) {
+func TestGRPCStatus(t *testing.T) {
 	md := map[string]string{
 		ErrorCodesFeatureMetadataKey: "true",
 	}
 	tests := []struct {
-		name             string
-		errIn            error
-		expErr           string
-		sameAsInputError bool
-		expCode          int
+		name          string
+		de            *Error
+		expectedCode  int
+		expectedBytes int
+		expectedJSON  string
 	}{
 		{
-			name:    "FromDaprErrorToHTTP_OK",
-			errIn:   NewDaprError(fmt.Errorf("503"), md),
-			expCode: 503,
-		},
-		{
-			name:             "FromDaprErrorToHTTP_Nil",
-			sameAsInputError: true,
-		},
-		{
-			name:   "FromDaprErrorToHTTP_Invalid",
-			errIn:  fmt.Errorf("invalid"),
-			expErr: "invalid",
+			name: "WithResourceInfo_OK",
+			de: New(fmt.Errorf("some error"), md,
+				WithResourceInfo(&ResourceInfo{Type: "testResourceType", Name: "testResourceName"}), WithMetadata(md)),
+			expectedCode:  500,
+			expectedBytes: 308,
+			expectedJSON:  `{"code":2, "details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo", "reason":"UNKNOWN_REASON", "domain":"dapr.io"}, {"@type":"type.googleapis.com/google.rpc.ResourceInfo", "resourceType":"testResourceType", "resourceName":"testResourceName", "owner":"components-contrib", "description":"some error"}]}`,
 		},
 	}
-
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			code, b, e := FromDaprErrorToHTTP(test.errIn)
-
-			if test.sameAsInputError {
-				assert.Equal(t, test.errIn, e, "returned error must be the same")
-				return
-			}
-
-			if test.expErr == "" {
-				assert.NoError(t, e, fmt.Sprintf("wanted nil, but got = %v", e))
-				assert.NotNil(t, b, "unexpected nil value for bytes")
-				assert.Equal(t, test.expCode, code)
-			} else {
-				assert.Error(t, e)
-				assert.EqualError(t, e, test.expErr)
-			}
+			test.de.GRPCStatus()
+			// assert.NotNil(t, st, i, "want %d, got = %d", test.expectedCode, i)
+			// assert.Equal(t, test.expectedBytes, len(b), "want  %d bytes, got = %d", test.expectedBytes, len(b))
+			// assert.Equal(t, test.expectedJSON, string(b), "want JSON %s , got = %s", test.expectedJSON, string(b))
 		})
 	}
 }

@@ -14,8 +14,6 @@ limitations under the License.
 package errorcodes
 
 import (
-	"errors"
-
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -27,27 +25,22 @@ const (
 	ErrorCodesFeatureMetadataKey = "error_codes_feature"
 	Owner                        = "components-contrib"
 	Domain                       = "dapr.io"
-	NoReason                     = "NO_REASON_SPECIFIED"
+	unknown                      = "UNKNOWN_REASON"
+)
+const (
+	// gRPC to HTTP Mapping: 500 Internal Server Error
+	unknownHTTPCode = 500
 )
 
-var NoErrorReason = WithErrorReason(NoReason, 503, codes.Internal)
+var UnknownErrorReason = WithErrorReason(unknown, unknownHTTPCode, codes.Unknown)
 
 type ResourceInfo struct {
 	Type string
 	Name string
 }
 
-func WithErrorReason(reason string, httpCode int, grpcStatusCode codes.Code) ErrorOption {
-	f := func(er *DaprError) {
-		er.reason = reason
-		er.grpcStatusCode = grpcStatusCode
-		er.httpCode = httpCode
-	}
-	return f
-}
-
 // call this function to apply option
-type ErrorOption func(*DaprError)
+type Option func(*Error)
 
 type Error struct {
 	err            error
@@ -73,9 +66,10 @@ func featureEnabled(metadata map[string]string) bool {
 	return ok
 }
 
-// NewDaprError create a new DaprError using the supplied metadata and ErrorOptions
+// New create a new Error using the supplied metadata and ErrorOptions
 // **Note**: As this code is in `Feature Preview`, it will only continue processing
 // if the ErrorCodes is enabled
+// TODO: @robertojrojas update when feature is ready.
 func New(err error, metadata map[string]string, options ...Option) *Error {
 	// The following condition can be removed once the
 	// Error Codes Feature is GA
@@ -88,11 +82,11 @@ func New(err error, metadata map[string]string, options ...Option) *Error {
 	}
 
 	// Use default values
-	de := &DaprError{
+	de := &Error{
 		err:            err,
-		reason:         NoReason,
-		httpCode:       503,
-		grpcStatusCode: codes.Internal,
+		reason:         unknown,
+		httpCode:       unknownHTTPCode,
+		grpcStatusCode: codes.Unknown,
 	}
 
 	// Now apply any requested options
@@ -105,82 +99,86 @@ func New(err error, metadata map[string]string, options ...Option) *Error {
 }
 
 // Error implements the error interface.
-func (c *DaprError) Error() string {
-	if c != nil && c.err != nil {
-		return c.err.Error()
+func (e *Error) Error() string {
+	if e != nil && e.err != nil {
+		return e.err.Error()
 	}
 	return ""
 }
 
 // Unwrap implements the error unwrapping interface.
-func (c *DaprError) Unwrap() error {
-	return c.err
+func (e *Error) Unwrap() error {
+	return e.err
 }
 
 // Description returns the description of the error.
-func (c *DaprError) Description() string {
-	if c.description != "" {
-		return c.description
+func (e *Error) Description() string {
+	if e.description != "" {
+		return e.description
 	}
-	return c.err.Error()
+	return e.err.Error()
 }
 
-func (c *DaprError) SetDescription(description string) {
-	c.description = description
+func (e *Error) SetDescription(description string) {
+	e.description = description
 }
 
-func (c *DaprError) SetResourceInfo(resourceInfo *ResourceInfo) {
-	c.resourceInfo = resourceInfo
+func (e *Error) SetResourceInfo(resourceInfo *ResourceInfo) {
+	e.resourceInfo = resourceInfo
 }
 
-func (c *DaprError) SetMetadata(md map[string]string) {
-	c.metadata = md
-}
-
-func WithResourceInfo(resourceInfo *ResourceInfo) ErrorOption {
-	f := func(de *DaprError) {
-		de.resourceInfo = resourceInfo
-	}
-	return f
-}
-
-func WithDescription(description string) ErrorOption {
-	f := func(de *DaprError) {
-		de.description = description
-	}
-	return f
-}
-
-func WithMetadata(md map[string]string) ErrorOption {
-	f := func(de *DaprError) {
-		de.metadata = md
-	}
-	return f
+func (e *Error) SetMetadata(md map[string]string) {
+	e.metadata = md
 }
 
 // *** GRPC Methods ***
 
-// FromDaprErrorToGRPC transforms the supplied error into
-// a GRPC Status. It assumes if the supplied error
-// is of type DaprError.
-// Otherwise, returns the original error.
-func (e *Error) ToGRPC() *status.Status {
-
-func (c *DaprError) newStatusError() (*status.Status, error) {
+// GRPCStatus returns the gRPC status.Status object.
+func (e *Error) GRPCStatus() *status.Status {
 	messages := []protoiface.MessageV1{
-		newErrorInfo(c.reason, c.metadata),
+		newErrorInfo(e.reason, e.metadata),
 	}
 
-	if c.resourceInfo != nil {
-		messages = append(messages, newResourceInfo(c.resourceInfo, c.err))
+	if e.resourceInfo != nil {
+		messages = append(messages, newResourceInfo(e.resourceInfo, e.err))
 	}
 
-	ste, stErr := status.New(c.grpcStatusCode, c.description).WithDetails(messages...)
+	ste, stErr := status.New(e.grpcStatusCode, e.description).WithDetails(messages...)
 	if stErr != nil {
-		return nil, stErr
+		return status.New(e.grpcStatusCode, e.description)
 	}
 
-	return ste, nil
+	return ste
+}
+
+func WithErrorReason(reason string, httpCode int, grpcStatusCode codes.Code) Option {
+	f := func(er *Error) {
+		er.reason = reason
+		er.grpcStatusCode = grpcStatusCode
+		er.httpCode = httpCode
+	}
+	return f
+}
+
+func WithResourceInfo(resourceInfo *ResourceInfo) Option {
+	f := func(e *Error) {
+		e.resourceInfo = resourceInfo
+	}
+	return f
+}
+
+func WithDescription(description string) Option {
+	f := func(e *Error) {
+		e.description = description
+	}
+	return f
+}
+
+func WithMetadata(md map[string]string) Option {
+	f := func(e *Error) {
+		e.metadata = md
+	}
+	return f
 }
 
 func newErrorInfo(reason string, md map[string]string) *errdetails.ErrorInfo {
@@ -195,8 +193,8 @@ func newErrorInfo(reason string, md map[string]string) *errdetails.ErrorInfo {
 
 func newResourceInfo(rid *ResourceInfo, err error) *errdetails.ResourceInfo {
 	return &errdetails.ResourceInfo{
-		ResourceType: rid.ResourceType,
-		ResourceName: rid.ResourceName,
+		ResourceType: rid.Type,
+		ResourceName: rid.Name,
 		Owner:        Owner,
 		Description:  err.Error(),
 	}
@@ -204,25 +202,13 @@ func newResourceInfo(rid *ResourceInfo, err error) *errdetails.ResourceInfo {
 
 // *** HTTP Methods ***
 
-// FromDaprErrorToHTTP transforms the supplied error into
+// ToHTTP transforms the supplied error into
 // a GRPC Status and then Marshals it to JSON.
-// It assumes if the supplied error is of type DaprError.
+// It assumes if the supplied error is of type Error.
 // Otherwise, returns the original error.
-func (e *Errro) ToHTTP(err error) (int, []byte) {
-	de := &DaprError{}
-	if errors.As(err, &de) {
-		if st, ese := de.newStatusError(); ese == nil {
-			resp, sej := statusErrorJSON(st)
-			if sej != nil {
-				return 0, nil, err
-			}
-
-			return de.httpCode, resp, nil
-		}
+func (e *Error) ToHTTP() (int, []byte) {
+	if resp, sej := protojson.Marshal(e.GRPCStatus().Proto()); sej == nil {
+		return e.httpCode, resp
 	}
-	return 0, nil, err
-}
-
-func statusErrorJSON(st *status.Status) ([]byte, error) {
-	return protojson.Marshal(st.Proto())
+	return 0, nil
 }
