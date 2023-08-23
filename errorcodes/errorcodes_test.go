@@ -208,7 +208,7 @@ func TestToHTTP(t *testing.T) {
 			de: New(fmt.Errorf("some error"), md,
 				WithResourceInfo(&ResourceInfo{Type: "testResourceType", Name: "testResourceName"})),
 			expectedCode: 500,
-			expectedJSON: `{"code":2, "details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo", "reason":"UNKNOWN_REASON", "domain":"dapr.io"}, {"@type":"type.googleapis.com/google.rpc.ResourceInfo", "resourceType":"testResourceType", "resourceName":"testResourceName", "owner":"components-contrib", "description":"some error"}]}`,
+			expectedJSON: `{"code":2,"details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"UNKNOWN_REASON","domain":"dapr.io"},{"@type":"type.googleapis.com/google.rpc.ResourceInfo","resourceType":"testResourceType","resourceName":"testResourceName","owner":"components-contrib","description":"some error"}]}`,
 		},
 	}
 	for _, test := range tests {

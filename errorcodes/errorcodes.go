@@ -14,6 +14,9 @@ limitations under the License.
 package errorcodes
 
 import (
+	"encoding/json"
+	"net/http"
+
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -29,7 +32,7 @@ const (
 )
 const (
 	// gRPC to HTTP Mapping: 500 Internal Server Error
-	unknownHTTPCode = 500
+	unknownHTTPCode = http.StatusInternalServerError
 )
 
 var UnknownErrorReason = WithErrorReason(unknown, unknownHTTPCode, codes.Unknown)
@@ -119,38 +122,6 @@ func (e *Error) Description() string {
 	return e.err.Error()
 }
 
-func (e *Error) SetDescription(description string) {
-	e.description = description
-}
-
-func (e *Error) SetResourceInfo(resourceInfo *ResourceInfo) {
-	e.resourceInfo = resourceInfo
-}
-
-func (e *Error) SetMetadata(md map[string]string) {
-	e.metadata = md
-}
-
-// *** GRPC Methods ***
-
-// GRPCStatus returns the gRPC status.Status object.
-func (e *Error) GRPCStatus() *status.Status {
-	messages := []protoiface.MessageV1{
-		newErrorInfo(e.reason, e.metadata),
-	}
-
-	if e.resourceInfo != nil {
-		messages = append(messages, newResourceInfo(e.resourceInfo, e.err))
-	}
-
-	ste, stErr := status.New(e.grpcStatusCode, e.description).WithDetails(messages...)
-	if stErr != nil {
-		return status.New(e.grpcStatusCode, e.description)
-	}
-
-	return ste
-}
-
 func WithErrorReason(reason string, httpCode int, grpcStatusCode codes.Code) Option {
 	f := func(er *Error) {
 		er.reason = reason
@@ -200,6 +171,26 @@ func newResourceInfo(rid *ResourceInfo, err error) *errdetails.ResourceInfo {
 	}
 }
 
+// *** GRPC Methods ***
+
+// GRPCStatus returns the gRPC status.Status object.
+func (e *Error) GRPCStatus() *status.Status {
+	messages := []protoiface.MessageV1{
+		newErrorInfo(e.reason, e.metadata),
+	}
+
+	if e.resourceInfo != nil {
+		messages = append(messages, newResourceInfo(e.resourceInfo, e.err))
+	}
+
+	ste, stErr := status.New(e.grpcStatusCode, e.description).WithDetails(messages...)
+	if stErr != nil {
+		return status.New(e.grpcStatusCode, e.description)
+	}
+
+	return ste
+}
+
 // *** HTTP Methods ***
 
 // ToHTTP transforms the supplied error into
@@ -210,5 +201,19 @@ func (e *Error) ToHTTP() (int, []byte) {
 	if resp, sej := protojson.Marshal(e.GRPCStatus().Proto()); sej == nil {
 		return e.httpCode, resp
 	}
-	return 0, nil
+	return http.StatusInternalServerError, nil
+}
+
+// HTTPCode returns the value of the HTTPCode property.
+func (e *Error) HTTPCode() int {
+	if e.httpCode == 0 {
+		return http.StatusInternalServerError
+	}
+	return e.httpCode
+}
+
+// JSONErrorValue implements the errorResponseValue interface.
+func (e *Error) JSONErrorValue() []byte {
+	b, _ := json.Marshal(e.GRPCStatus().Proto())
+	return b
 }
