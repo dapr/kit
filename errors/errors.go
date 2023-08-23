@@ -30,6 +30,7 @@ const (
 	Domain                       = "dapr.io"
 	unknown                      = "UNKNOWN_REASON"
 )
+
 const (
 	// gRPC to HTTP Mapping: 500 Internal Server Error
 	unknownHTTPCode = http.StatusInternalServerError
