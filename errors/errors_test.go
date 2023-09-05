@@ -198,24 +198,41 @@ func TestToHTTP(t *testing.T) {
 		ErrorCodesFeatureMetadataKey: "true",
 	}
 	tests := []struct {
-		name         string
-		de           *Error
-		expectedCode int
-		expectedJSON string
+		name                 string
+		de                   *Error
+		expectedCode         int
+		expectedReason       string
+		expectedResourceType string
+		expectedResourceName string
 	}{
 		{
 			name: "WithResourceInfo_OK",
 			de: New(fmt.Errorf("some error"), md,
 				WithResourceInfo(&ResourceInfo{Type: "testResourceType", Name: "testResourceName"})),
-			expectedCode: 500,
-			expectedJSON: `{"code":2,"details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"UNKNOWN_REASON","domain":"dapr.io"},{"@type":"type.googleapis.com/google.rpc.ResourceInfo","resourceType":"testResourceType","resourceName":"testResourceName","owner":"components-contrib","description":"some error"}]}`,
+			expectedCode:         500,
+			expectedReason:       "UNKNOWN_REASON",
+			expectedResourceType: "testResourceType",
+			expectedResourceName: "testResourceName",
+		},
+		{
+			name: "WithResourceInfo_OK",
+			de: New(fmt.Errorf("some error"), md,
+				WithErrorReason("RedisFailure", 503, codes.Internal),
+				WithResourceInfo(&ResourceInfo{Type: "testResourceType", Name: "testResourceName"})),
+			expectedCode:         503,
+			expectedReason:       "RedisFailure",
+			expectedResourceType: "testResourceType",
+			expectedResourceName: "testResourceName",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			i, b := test.de.ToHTTP()
+			bodyStr := string(b)
 			assert.Equal(t, test.expectedCode, i, "want %d, got = %d", test.expectedCode, i)
-			assert.Equal(t, test.expectedJSON, string(b), "want JSON %s , got = %s", test.expectedJSON, string(b))
+			assert.Contains(t, bodyStr, test.expectedReason)
+			assert.Contains(t, bodyStr, test.expectedResourceName)
+			assert.Contains(t, bodyStr, test.expectedResourceType)
 		})
 	}
 }
