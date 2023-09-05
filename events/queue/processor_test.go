@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package eventqueue
+package queue
 
 import (
 	"math/rand"
@@ -33,13 +33,12 @@ func TestProcessor(t *testing.T) {
 	executeCh := make(chan *queueableItem)
 	processor := NewProcessor(func(r *queueableItem) {
 		executeCh <- r
-	}, clock)
+	})
+	processor.clock = clock
 
 	assertExecutedItem := func(t *testing.T) *queueableItem {
 		t.Helper()
 
-		// The signal is sent in a background goroutine, so we need to use a wall clock here
-		runtime.Gosched()
 		select {
 		case r := <-executeCh:
 			return r
@@ -53,28 +52,12 @@ func TestProcessor(t *testing.T) {
 	assertNoExecutedItem := func(t *testing.T) {
 		t.Helper()
 
-		// The signal is sent in a background goroutine, so we need to use a wall clock here
 		runtime.Gosched()
 		select {
 		case r := <-executeCh:
 			t.Fatalf("received unexpected item: %s", r.Name)
 		case <-time.After(500 * time.Millisecond):
 			// all good
-		}
-	}
-
-	// Makes tickers advance
-	// Note that step must be > 500ms
-	advanceTickers := func(step time.Duration, count int) {
-		clock.Step(50 * time.Millisecond)
-		// Sleep on the wall clock for a few ms to allow the background goroutine to get in sync (especially when testing with -race)
-		runtime.Gosched()
-		time.Sleep(50 * time.Millisecond)
-		for i := 0; i < count; i++ {
-			clock.Step(step)
-			// Sleep on the wall clock for a few ms to allow the background goroutine to get in sync (especially when testing with -race)
-			runtime.Gosched()
-			time.Sleep(50 * time.Millisecond)
 		}
 	}
 
@@ -87,12 +70,12 @@ func TestProcessor(t *testing.T) {
 		}
 
 		// Advance tickers by 500ms to start
-		advanceTickers(500*time.Millisecond, 1)
+		clock.Step(500 * time.Millisecond)
 
 		// Advance tickers and assert messages are coming in order
 		for i := 1; i <= 5; i++ {
 			t.Logf("Waiting for signal %d", i)
-			advanceTickers(time.Second, 1)
+			clock.Step(time.Second)
 			received := assertExecutedItem(t)
 			assert.Equal(t, strconv.Itoa(i), received.Name)
 		}
@@ -103,7 +86,7 @@ func TestProcessor(t *testing.T) {
 		err := processor.Enqueue(r)
 		require.NoError(t, err)
 
-		advanceTickers(500*time.Millisecond, 1)
+		clock.Step(500 * time.Millisecond)
 
 		received := assertExecutedItem(t)
 		assert.Equal(t, "1", received.Name)
@@ -118,9 +101,11 @@ func TestProcessor(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		// Advance tickers by 1500ms to trigger the first item
+		assert.Eventually(t, clock.HasWaiters, time.Second, 100*time.Millisecond)
+
+		// Advance tickers by 1s to trigger the first item
 		t.Log("Waiting for signal 1")
-		advanceTickers(500*time.Millisecond, 3)
+		clock.Step(time.Second)
 
 		received := assertExecutedItem(t)
 		assert.Equal(t, "1", received.Name)
@@ -139,13 +124,16 @@ func TestProcessor(t *testing.T) {
 				expect = "99"
 			}
 			t.Logf("Waiting for signal %s", expect)
-			advanceTickers(time.Second, 1)
 			received := assertExecutedItem(t)
 			assert.Equal(t, expect, received.Name)
+			clock.Step(time.Second)
 		}
 	})
 
 	t.Run("dequeue item", func(t *testing.T) {
+		assert.Equal(t, 0, processor.queue.Len())
+		require.False(t, clock.HasWaiters())
+
 		// Enqueue 5 items
 		for i := 1; i <= 5; i++ {
 			err := processor.Enqueue(
@@ -153,9 +141,7 @@ func TestProcessor(t *testing.T) {
 			)
 			require.NoError(t, err)
 		}
-
-		// Advance tickers by a few ms to start
-		advanceTickers(0, 0)
+		assert.Equal(t, 5, processor.queue.Len())
 
 		// Dequeue items 2 and 4
 		// Note that this is a string because it's the key
@@ -164,17 +150,21 @@ func TestProcessor(t *testing.T) {
 		err = processor.Dequeue("4")
 		require.NoError(t, err)
 
+		assert.Equal(t, 3, processor.queue.Len())
+
 		// Advance tickers and assert messages are coming in order
 		for i := 1; i <= 5; i++ {
+			require.Eventually(t, clock.HasWaiters, time.Second, 100*time.Millisecond)
+			clock.Step(time.Second)
+
 			if i == 2 || i == 4 {
 				// Skip items that have been removed
 				t.Logf("Should not receive signal %d", i)
-				advanceTickers(time.Second, 1)
 				assertNoExecutedItem(t)
 				continue
 			}
+
 			t.Logf("Waiting for signal %d", i)
-			advanceTickers(time.Second, 1)
 			received := assertExecutedItem(t)
 			assert.Equal(t, strconv.Itoa(i), received.Name)
 		}
@@ -189,11 +179,10 @@ func TestProcessor(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		// Advance tickers by a few ms to start
-		advanceTickers(0, 0)
-
 		// Advance tickers and assert messages are coming in order
 		for i := 1; i <= 6; i++ {
+			assert.Eventually(t, clock.HasWaiters, time.Second, 100*time.Millisecond)
+
 			// On messages 2 and 5, dequeue the item when it's at the front of the queue
 			if i == 2 || i == 5 {
 				// Dequeue the item at the front of the queue
@@ -203,12 +192,12 @@ func TestProcessor(t *testing.T) {
 
 				// Skip items that have been removed
 				t.Logf("Should not receive signal %d", i)
-				advanceTickers(time.Second, 1)
+				clock.Step(time.Second)
 				assertNoExecutedItem(t)
 				continue
 			}
 			t.Logf("Waiting for signal %d", i)
-			advanceTickers(time.Second, 1)
+			clock.Step(time.Second)
 			received := assertExecutedItem(t)
 			assert.Equal(t, strconv.Itoa(i), received.Name)
 		}
@@ -227,15 +216,13 @@ func TestProcessor(t *testing.T) {
 		err := processor.Enqueue(newTestItem(4, clock.Now().Add(6*time.Second)))
 		require.NoError(t, err)
 
-		// Advance tickers by a few ms to start
-		advanceTickers(0, 0)
-
 		// Advance tickers and assert messages are coming in order
 		for i := 1; i <= 6; i++ {
+			clock.Step(time.Second)
+
 			if i == 4 {
 				// This item has been pushed down
 				t.Logf("Should not receive signal %d now", i)
-				advanceTickers(time.Second, 1)
 				assertNoExecutedItem(t)
 				continue
 			}
@@ -246,7 +233,6 @@ func TestProcessor(t *testing.T) {
 				expect = 4
 			}
 			t.Logf("Waiting for signal %d", expect)
-			advanceTickers(time.Second, 1)
 			received := assertExecutedItem(t)
 			assert.Equal(t, strconv.Itoa(expect), received.Name)
 		}
@@ -261,11 +247,10 @@ func TestProcessor(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		// Advance tickers by a few ms to start
-		advanceTickers(0, 0)
-
 		// Advance tickers and assert messages are coming in order
 		for i := 1; i <= 6; i++ {
+			assert.Eventually(t, clock.HasWaiters, time.Second, 100*time.Millisecond)
+
 			if i == 2 {
 				// Replace item 2, bumping its priority down, while it's at the front of the queue
 				err := processor.Enqueue(newTestItem(2, clock.Now().Add(5*time.Second)))
@@ -273,7 +258,7 @@ func TestProcessor(t *testing.T) {
 
 				// This item has been pushed down
 				t.Logf("Should not receive signal %d now", i)
-				advanceTickers(time.Second, 1)
+				clock.Step(time.Second)
 				assertNoExecutedItem(t)
 				continue
 			}
@@ -284,7 +269,7 @@ func TestProcessor(t *testing.T) {
 				expect = 2
 			}
 			t.Logf("Waiting for signal %d", expect)
-			advanceTickers(time.Second, 1)
+			clock.Sleep(time.Second)
 			received := assertExecutedItem(t)
 			assert.Equal(t, strconv.Itoa(expect), received.Name)
 		}
@@ -329,8 +314,7 @@ func TestProcessor(t *testing.T) {
 
 		// Advance tickers and assert messages are coming in order
 		for i := 0; i <= maxDelay; i++ {
-			advanceTickers(time.Second, 1)
-			time.Sleep(50 * time.Millisecond)
+			clock.Step(time.Second)
 		}
 
 		// Allow for synchronization
@@ -354,14 +338,13 @@ func TestProcessor(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		// Advance tickers by a few ms to start
-		advanceTickers(0, 0)
+		assert.Eventually(t, clock.HasWaiters, time.Second, 100*time.Millisecond)
 
 		// Stop the processor
 		require.NoError(t, processor.Close())
 
 		// Queue should not be processed
-		advanceTickers(time.Second, 2)
+		clock.Step(2 * time.Second)
 		assertNoExecutedItem(t)
 
 		// Enqueuing and dequeueing should fail
@@ -373,4 +356,73 @@ func TestProcessor(t *testing.T) {
 		// Stopping again is a nop (should not crash)
 		require.NoError(t, processor.Close())
 	})
+}
+
+func TestClose(t *testing.T) {
+	baseRoutines := runtime.NumGoroutine()
+
+	// Create the processor
+	clock := clocktesting.NewFakeClock(time.Now())
+	executeCh := make(chan *queueableItem)
+	processor := NewProcessor(func(r *queueableItem) {
+		executeCh <- r
+	})
+	processor.clock = clock
+
+	processor.Enqueue(newTestItem(1, clock.Now().Add(time.Second)))
+	processor.Enqueue(newTestItem(2, clock.Now().Add(time.Second*2)))
+	assert.Equal(t, 2, processor.queue.Len())
+
+	assert.Eventually(t, clock.HasWaiters, time.Second, 10*time.Millisecond)
+
+	assert.Eventually(t, func() bool {
+		// processor and Eventually should be the only goroutines.
+		return runtime.NumGoroutine() == baseRoutines+1+1
+	}, time.Second, 100*time.Millisecond)
+
+	clock.Step(time.Second)
+
+	select {
+	case <-executeCh:
+	case <-time.After(time.Second * 3):
+		t.Fatal("should receive item")
+	}
+
+	assert.Equal(t, 1, processor.queue.Len())
+
+	closeCh := make(chan error)
+	go func() {
+		closeCh <- processor.Close()
+	}()
+	go func() {
+		closeCh <- processor.Close()
+	}()
+	go func() {
+		closeCh <- processor.Close()
+	}()
+
+	assert.Eventually(t, func() bool {
+		// Eventually and the 3 above should be the only goroutine. The processor
+		// goroutine should have exited.
+		return runtime.NumGoroutine() == baseRoutines+1+3
+	}, time.Second, 100*time.Millisecond)
+
+	assert.False(t, clock.HasWaiters())
+
+	select {
+	case <-executeCh:
+		t.Fatal("should not receive item")
+	default:
+	}
+
+	for i := 0; i < 3; i++ {
+		select {
+		case err := <-closeCh:
+			assert.NoError(t, err)
+		case <-time.After(time.Second * 3):
+			t.Fatal("close should have returned")
+		}
+	}
+
+	assert.NoError(t, processor.Close())
 }

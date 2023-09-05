@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package eventqueue
+package queue
 
 import (
 	"errors"
@@ -31,6 +31,7 @@ type Processor[T queueable] struct {
 	queue              queue[T]
 	clock              kclock.Clock
 	lock               sync.Mutex
+	wg                 sync.WaitGroup
 	processorRunningCh chan struct{}
 	stopCh             chan struct{}
 	resetCh            chan struct{}
@@ -39,14 +40,14 @@ type Processor[T queueable] struct {
 
 // NewProcessor returns a new Processor object.
 // executeFn is the callback invoked when the item is to be executed; this will be invoked in a background goroutine.
-func NewProcessor[T queueable](executeFn func(r T), clock kclock.Clock) *Processor[T] {
+func NewProcessor[T queueable](executeFn func(r T)) *Processor[T] {
 	return &Processor[T]{
 		executeFn:          executeFn,
 		queue:              newQueue[T](),
 		processorRunningCh: make(chan struct{}, 1),
 		stopCh:             make(chan struct{}),
 		resetCh:            make(chan struct{}, 1),
-		clock:              clock,
+		clock:              kclock.RealClock{},
 	}
 }
 
@@ -93,16 +94,14 @@ func (p *Processor[T]) Dequeue(key string) error {
 // Close stops the processor.
 // This method blocks until the processor loop returns.
 func (p *Processor[T]) Close() error {
-	if !p.stopped.CompareAndSwap(false, true) {
-		// Already stopped
+	defer p.wg.Wait()
+	if p.stopped.CompareAndSwap(false, true) {
+		// Send a signal to stop
+		close(p.stopCh)
+		// Blocks until processor loop ends
+		p.processorRunningCh <- struct{}{}
 		return nil
 	}
-
-	// Send a signal to stop
-	close(p.stopCh)
-
-	// Blocks until processor loop ends
-	p.processorRunningCh <- struct{}{}
 
 	return nil
 }
@@ -127,7 +126,11 @@ func (p *Processor[T]) process(isNext bool) {
 		return
 	}
 
-	go p.processLoop()
+	p.wg.Add(1)
+	go func() {
+		defer p.wg.Done()
+		p.processLoop()
+	}()
 }
 
 // Processing loop.
