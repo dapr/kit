@@ -22,51 +22,6 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func TestActivateErrorCodesFeature(t *testing.T) {
-	tests := []struct {
-		name     string
-		md       map[string]string
-		enabled  bool
-		expected bool
-	}{
-		{
-			name:     "ActivateErrorCodesFeature_OK",
-			md:       map[string]string{},
-			enabled:  true,
-			expected: true,
-		},
-		{
-			name:     "ActivateErrorCodesFeature_Enabled_False",
-			md:       map[string]string{},
-			enabled:  false,
-			expected: false,
-		},
-		{
-			name:     "ActivateErrorCodesFeature_Nil_Map_False",
-			md:       nil,
-			enabled:  true,
-			expected: false,
-		},
-		{
-			name:     "ActivateErrorCodesFeature_Disabled_Nil_Map_False",
-			md:       nil,
-			enabled:  false,
-			expected: false,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if test.enabled {
-				EnableComponentErrorCode(test.md)
-			}
-			if _, ok := test.md[ErrorCodesFeatureMetadataKey]; ok != test.expected {
-				t.Errorf("unexpected result - expected %t, but got %t", ok, test.expected)
-			}
-		})
-	}
-}
-
 func TestNewErrorReason(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -77,20 +32,16 @@ func TestNewErrorReason(t *testing.T) {
 		expectedReason    string
 	}{
 		{
-			name:  "Error_New_OK_No_Reason",
-			inErr: &Error{},
-			inMetadata: map[string]string{
-				ErrorCodesFeatureMetadataKey: "true",
-			},
+			name:              "Error_New_OK_No_Reason",
+			inErr:             &Error{},
+			inMetadata:        map[string]string{},
 			expectedDaprError: true,
 			expectedReason:    "UNKNOWN_REASON",
 		},
 		{
-			name:  "DaprError_New_OK_StateETagMismatchReason",
-			inErr: &Error{},
-			inMetadata: map[string]string{
-				ErrorCodesFeatureMetadataKey: "true",
-			},
+			name:              "DaprError_New_OK_StateETagMismatchReason",
+			inErr:             &Error{},
+			inMetadata:        map[string]string{},
 			expectedDaprError: true,
 			inOptions: []Option{
 				WithErrorReason("StateETagMismatchReason", 404, codes.NotFound),
@@ -98,11 +49,9 @@ func TestNewErrorReason(t *testing.T) {
 			expectedReason: "StateETagMismatchReason",
 		},
 		{
-			name:  "DaprError_New_OK_StateETagInvalidReason",
-			inErr: &Error{},
-			inMetadata: map[string]string{
-				ErrorCodesFeatureMetadataKey: "true",
-			},
+			name:              "DaprError_New_OK_StateETagInvalidReason",
+			inErr:             &Error{},
+			inMetadata:        map[string]string{},
 			expectedDaprError: true,
 			inOptions: []Option{
 				WithErrorReason("StateETagInvalidReason", 400, codes.Aborted),
@@ -110,11 +59,9 @@ func TestNewErrorReason(t *testing.T) {
 			expectedReason: "StateETagInvalidReason",
 		},
 		{
-			name:  "DaprError_New_Nil_Error",
-			inErr: nil,
-			inMetadata: map[string]string{
-				ErrorCodesFeatureMetadataKey: "true",
-			},
+			name:              "DaprError_New_Nil_Error",
+			inErr:             nil,
+			inMetadata:        map[string]string{},
 			expectedDaprError: false,
 		},
 		{
@@ -144,9 +91,7 @@ func TestNewErrorReason(t *testing.T) {
 }
 
 func TestNewError(t *testing.T) {
-	md := map[string]string{
-		ErrorCodesFeatureMetadataKey: "true",
-	}
+	md := map[string]string{}
 	tests := []struct {
 		name                 string
 		de                   *Error
@@ -194,9 +139,7 @@ func TestNewError(t *testing.T) {
 }
 
 func TestToHTTP(t *testing.T) {
-	md := map[string]string{
-		ErrorCodesFeatureMetadataKey: "true",
-	}
+	md := map[string]string{}
 	tests := []struct {
 		name                 string
 		de                   *Error
@@ -238,9 +181,7 @@ func TestToHTTP(t *testing.T) {
 }
 
 func TestGRPCStatus(t *testing.T) {
-	md := map[string]string{
-		ErrorCodesFeatureMetadataKey: "true",
-	}
+	md := map[string]string{}
 	tests := []struct {
 		name          string
 		de            *Error
@@ -263,40 +204,6 @@ func TestGRPCStatus(t *testing.T) {
 			// assert.NotNil(t, st, i, "want %d, got = %d", test.expectedCode, i)
 			// assert.Equal(t, test.expectedBytes, len(b), "want  %d bytes, got = %d", test.expectedBytes, len(b))
 			// assert.Equal(t, test.expectedJSON, string(b), "want JSON %s , got = %s", test.expectedJSON, string(b))
-		})
-	}
-}
-
-func TestFeatureEnabled(t *testing.T) {
-	tests := []struct {
-		name     string
-		md       map[string]string
-		expected bool
-	}{
-		{
-			name: "FeatureEnabled_OK",
-			md: map[string]string{
-				ErrorCodesFeatureMetadataKey: "true",
-			},
-			expected: true,
-		},
-		{
-			name:     "FeatureEnabled_NoMap",
-			expected: false,
-		},
-		{
-			name: "FeatureEnabled_Map_MissingKey",
-			md: map[string]string{
-				"other": "1",
-			},
-			expected: false,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			b := featureEnabled(test.md)
-			assert.Equal(t, test.expected, b)
 		})
 	}
 }

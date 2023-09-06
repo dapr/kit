@@ -25,10 +25,9 @@ import (
 )
 
 const (
-	ErrorCodesFeatureMetadataKey = "error_codes_feature"
-	Owner                        = "components-contrib"
-	Domain                       = "dapr.io"
-	unknown                      = "UNKNOWN_REASON"
+	Owner   = "components-contrib"
+	Domain  = "dapr.io"
+	unknown = "UNKNOWN_REASON"
 )
 
 const (
@@ -43,9 +42,18 @@ type ResourceInfo struct {
 	Name string
 }
 
-// call this function to apply option
+// Option allows passing additional information
+// to the Error struct.
+// See With* functions for further details.
 type Option func(*Error)
 
+// Error encapsulates error information
+// with additional details like:
+//   - http code
+//   - grpcStatus code
+//   - error reason
+//   - metadata information
+//   - optional resourceInfo (componenttype/name)
 type Error struct {
 	err            error
 	description    string
@@ -56,31 +64,11 @@ type Error struct {
 	resourceInfo   *ResourceInfo
 }
 
-// EnableComponentErrorCode stores an indicator for
-// components to determine if the ErrorCodes Feature
-// is enable.
-func EnableComponentErrorCode(metadata map[string]string) {
-	if metadata != nil {
-		metadata[ErrorCodesFeatureMetadataKey] = "true"
-	}
-}
-
-func featureEnabled(metadata map[string]string) bool {
-	_, ok := metadata[ErrorCodesFeatureMetadataKey]
-	return ok
-}
-
 // New create a new Error using the supplied metadata and Options
 // **Note**: As this code is in `Feature Preview`, it will only continue processing
 // if the ErrorCodes is enabled
 // TODO: @robertojrojas update when feature is ready.
 func New(err error, metadata map[string]string, options ...Option) *Error {
-	// The following condition can be removed once the
-	// Error Codes Feature is GA
-	if !featureEnabled(metadata) {
-		return nil
-	}
-
 	if err == nil {
 		return nil
 	}
@@ -123,6 +111,8 @@ func (e *Error) Description() string {
 	return e.err.Error()
 }
 
+// WithErrorReason used to pass reason, httpCode, and
+// grpcStatus code to the Error struct.
 func WithErrorReason(reason string, httpCode int, grpcStatusCode codes.Code) Option {
 	return func(err *Error) {
 		err.reason = reason
@@ -131,6 +121,7 @@ func WithErrorReason(reason string, httpCode int, grpcStatusCode codes.Code) Opt
 	}
 }
 
+// WithResourceInfo used to pass ResourceInfo to the Error struct.
 func WithResourceInfo(resourceInfo *ResourceInfo) Option {
 	f := func(e *Error) {
 		e.resourceInfo = resourceInfo
@@ -138,6 +129,8 @@ func WithResourceInfo(resourceInfo *ResourceInfo) Option {
 	return f
 }
 
+// WithDescription used to pass a description
+// to the Error struct.
 func WithDescription(description string) Option {
 	f := func(e *Error) {
 		e.description = description
@@ -145,6 +138,8 @@ func WithDescription(description string) Option {
 	return f
 }
 
+// WithMetadata used to pass a Metadata[string]string
+// to the Error struct.
 func WithMetadata(md map[string]string) Option {
 	f := func(e *Error) {
 		e.metadata = md
@@ -198,7 +193,7 @@ func (e *Error) GRPCStatus() *status.Status {
 // It assumes if the supplied error is of type Error.
 // Otherwise, returns the original error.
 func (e *Error) ToHTTP() (int, []byte) {
-	if resp, sej := protojson.Marshal(e.GRPCStatus().Proto()); sej == nil {
+	if resp, err := protojson.Marshal(e.GRPCStatus().Proto()); err == nil {
 		return e.httpCode, resp
 	}
 	return http.StatusInternalServerError, nil
