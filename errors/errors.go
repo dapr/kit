@@ -70,7 +70,7 @@ func featureEnabled(metadata map[string]string) bool {
 	return ok
 }
 
-// New create a new Error using the supplied metadata and ErrorOptions
+// New create a new Error using the supplied metadata and Options
 // **Note**: As this code is in `Feature Preview`, it will only continue processing
 // if the ErrorCodes is enabled
 // TODO: @robertojrojas update when feature is ready.
@@ -124,12 +124,11 @@ func (e *Error) Description() string {
 }
 
 func WithErrorReason(reason string, httpCode int, grpcStatusCode codes.Code) Option {
-	f := func(er *Error) {
-		er.reason = reason
-		er.grpcStatusCode = grpcStatusCode
-		er.httpCode = httpCode
+	return func(err *Error) {
+		err.reason = reason
+		err.grpcStatusCode = grpcStatusCode
+		err.httpCode = httpCode
 	}
-	return f
 }
 
 func WithResourceInfo(resourceInfo *ResourceInfo) Option {
