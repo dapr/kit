@@ -14,7 +14,6 @@ limitations under the License.
 package errors
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -131,29 +130,26 @@ func WithResourceInfo(resourceInfo *ResourceInfo) Option {
 // WithDescription used to pass a description
 // to the Error struct.
 func WithDescription(description string) Option {
-	f := func(e *Error) {
+	return func(e *Error) {
 		e.description = description
 	}
-	return f
 }
 
 // WithMetadata used to pass a Metadata[string]string
 // to the Error struct.
 func WithMetadata(md map[string]string) Option {
-	f := func(e *Error) {
+	return func(e *Error) {
 		e.metadata = md
 	}
-	return f
 }
 
 func newErrorInfo(reason string, md map[string]string) *errdetails.ErrorInfo {
-	ei := errdetails.ErrorInfo{
+	return &errdetails.ErrorInfo{
 		Domain:   Domain,
 		Reason:   reason,
 		Metadata: md,
 	}
 
-	return &ei
 }
 
 func newResourceInfo(rid *ResourceInfo, err error) *errdetails.ResourceInfo {
@@ -192,10 +188,12 @@ func (e *Error) GRPCStatus() *status.Status {
 // It assumes if the supplied error is of type Error.
 // Otherwise, returns the original error.
 func (e *Error) ToHTTP() (int, []byte) {
-	if resp, err := protojson.Marshal(e.GRPCStatus().Proto()); err == nil {
-		return e.httpCode, resp
+	resp, err := protojson.Marshal(e.GRPCStatus().Proto())
+	if err != nil {
+		return http.StatusInternalServerError, []byte(err.Error())
 	}
-	return http.StatusInternalServerError, nil
+
+	return e.httpCode, resp
 }
 
 // HTTPCode returns the value of the HTTPCode property.
@@ -208,6 +206,9 @@ func (e *Error) HTTPCode() int {
 
 // JSONErrorValue implements the errorResponseValue interface.
 func (e *Error) JSONErrorValue() []byte {
-	b, _ := json.Marshal(e.GRPCStatus().Proto())
+	b, err := protojson.Marshal(e.GRPCStatus().Proto())
+	if err != nil {
+		return []byte(err.Error())
+	}
 	return b
 }
