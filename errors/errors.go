@@ -36,6 +36,8 @@ const (
 
 var UnknownErrorReason = WithErrorReason(unknown, unknownHTTPCode, codes.Unknown)
 
+// ResourceInfo is meant to be used by Dapr components
+// to indicate the Type and Name.
 type ResourceInfo struct {
 	Type string
 	Name string
@@ -64,9 +66,6 @@ type Error struct {
 }
 
 // New create a new Error using the supplied metadata and Options
-// **Note**: As this code is in `Feature Preview`, it will only continue processing
-// if the ErrorCodes is enabled
-// TODO: @robertojrojas update when feature is ready.
 func New(err error, metadata map[string]string, options ...Option) *Error {
 	if err == nil {
 		return nil
