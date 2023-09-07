@@ -123,10 +123,9 @@ func WithErrorReason(reason string, httpCode int, grpcStatusCode codes.Code) Opt
 
 // WithResourceInfo used to pass ResourceInfo to the Error struct.
 func WithResourceInfo(resourceInfo *ResourceInfo) Option {
-	f := func(e *Error) {
+	return func(e *Error) {
 		e.resourceInfo = resourceInfo
 	}
-	return f
 }
 
 // WithDescription used to pass a description
