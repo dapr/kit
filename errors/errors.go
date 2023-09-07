@@ -149,7 +149,6 @@ func newErrorInfo(reason string, md map[string]string) *errdetails.ErrorInfo {
 		Reason:   reason,
 		Metadata: md,
 	}
-
 }
 
 func newResourceInfo(rid *ResourceInfo, err error) *errdetails.ResourceInfo {
