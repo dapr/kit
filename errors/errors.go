@@ -98,11 +98,17 @@ func (e *Error) Error() string {
 
 // Unwrap implements the error unwrapping interface.
 func (e *Error) Unwrap() error {
+    if e == nil {
+        return nil
+    }
 	return e.err
 }
 
 // Description returns the description of the error.
 func (e *Error) Description() string {
+    if e == nil {
+        return ""
+    }
 	if e.description != "" {
 		return e.description
 	}
@@ -163,17 +169,15 @@ func newResourceInfo(rid *ResourceInfo, err error) *errdetails.ResourceInfo {
 
 // GRPCStatus returns the gRPC status.Status object.
 func (e *Error) GRPCStatus() *status.Status {
-	messages := []protoiface.MessageV1{
-		newErrorInfo(e.reason, e.metadata),
-	}
-
+	var stErr error
+	ste := status.New(e.grpcStatusCode, e.description)
 	if e.resourceInfo != nil {
-		messages = append(messages, newResourceInfo(e.resourceInfo, e.err))
+		ste, stErr = ste.WithDetails(newErrorInfo(e.reason, e.metadata), newResourceInfo(e.resourceInfo, e.err))
+	} else {
+		ste, stErr = ste.WithDetails(newErrorInfo(e.reason, e.metadata))
 	}
-
-	ste, stErr := status.New(e.grpcStatusCode, e.description).WithDetails(messages...)
 	if stErr != nil {
-		return status.New(e.grpcStatusCode, e.description)
+		return status.New(codes.Internal, fmt.Sprintf("failed to create gRPC status message: %v", stErr))
 	}
 
 	return ste
@@ -188,7 +192,8 @@ func (e *Error) GRPCStatus() *status.Status {
 func (e *Error) ToHTTP() (int, []byte) {
 	resp, err := protojson.Marshal(e.GRPCStatus().Proto())
 	if err != nil {
-		return http.StatusInternalServerError, []byte(err.Error())
+        errJSON, _ := json.Marshal(fmt.Sprintf("failed to encode proto to JSON: %v", err))
+		return http.StatusInternalServerError, errJSON
 	}
 
 	return e.httpCode, resp
@@ -196,17 +201,21 @@ func (e *Error) ToHTTP() (int, []byte) {
 
 // HTTPCode returns the value of the HTTPCode property.
 func (e *Error) HTTPCode() int {
+    if e == nil {
+        return http.StatusOK
+    }
 	if e.httpCode == 0 {
 		return http.StatusInternalServerError
 	}
 	return e.httpCode
 }
 
-// JSONErrorValue implements the errorResponseValue interface.
+// JSONErrorValue implements the errorResponseValue interface (used by `github.com/dapr/dapr/pkg/http`).
 func (e *Error) JSONErrorValue() []byte {
 	b, err := protojson.Marshal(e.GRPCStatus().Proto())
 	if err != nil {
-		return []byte(err.Error())
+        errJSON, _ := json.Marshal(fmt.Sprintf("failed to encode proto to JSON: %v", err))
+		return errJSON
 	}
 	return b
 }
