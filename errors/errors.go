@@ -30,11 +30,6 @@ const (
 	unknown = "UNKNOWN_REASON"
 )
 
-const (
-	// gRPC to HTTP Mapping: 500 Internal Server Error
-	unknownHTTPCode = http.StatusInternalServerError
-)
-
 var UnknownErrorReason = WithErrorReason(unknown, codes.Unknown)
 
 // ResourceInfo is meant to be used by Dapr components
