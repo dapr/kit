@@ -51,6 +51,12 @@ func NewProcessor[T queueable](executeFn func(r T)) *Processor[T] {
 	}
 }
 
+// WithClock sets the clock used by the processor. Used for testing.
+func (p *Processor[T]) WithClock(clock kclock.Clock) *Processor[T] {
+	p.clock = clock
+	return p
+}
+
 // Enqueue adds a new item to the queue.
 // If a item with the same ID already exists, it'll be replaced.
 func (p *Processor[T]) Enqueue(r T) error {
