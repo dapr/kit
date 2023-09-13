@@ -52,6 +52,11 @@ func New[T key](interval time.Duration) *Batcher[T] {
 	}
 }
 
+// WithClock sets the clock used by the batcher. Used for testing.
+func (b *Batcher[T]) WithClock(clock clock.WithDelayedExecution) {
+	b.clock = clock
+}
+
 // Subscribe adds a new event channel subscriber. If the batcher is closed, the
 // subscriber is silently dropped.
 func (b *Batcher[T]) Subscribe(eventCh ...chan<- struct{}) {

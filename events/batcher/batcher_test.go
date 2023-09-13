@@ -30,6 +30,13 @@ func TestNew(t *testing.T) {
 	assert.False(t, b.closed.Load())
 }
 
+func TestWithClock(t *testing.T) {
+	b := New[string](time.Millisecond * 10)
+	fakeClock := testingclock.NewFakeClock(time.Now())
+	b.WithClock(fakeClock)
+	assert.Equal(t, fakeClock, b.clock)
+}
+
 func TestSubscribe(t *testing.T) {
 	t.Parallel()
 
