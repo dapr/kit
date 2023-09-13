@@ -18,11 +18,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dapr/kit/grpccodes"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
+
+	"github.com/dapr/kit/grpccodes"
 )
 
 const (
