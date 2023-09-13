@@ -15,6 +15,7 @@ package errors
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -44,7 +45,7 @@ func TestNewErrorReason(t *testing.T) {
 			inMetadata:        map[string]string{},
 			expectedDaprError: true,
 			inOptions: []Option{
-				WithErrorReason("StateETagMismatchReason", 404, codes.NotFound),
+				WithErrorReason("StateETagMismatchReason", codes.NotFound),
 			},
 			expectedReason: "StateETagMismatchReason",
 		},
@@ -54,7 +55,7 @@ func TestNewErrorReason(t *testing.T) {
 			inMetadata:        map[string]string{},
 			expectedDaprError: true,
 			inOptions: []Option{
-				WithErrorReason("StateETagInvalidReason", 400, codes.Aborted),
+				WithErrorReason("StateETagInvalidReason", codes.Aborted),
 			},
 			expectedReason: "StateETagInvalidReason",
 		},
@@ -111,7 +112,7 @@ func TestNewError(t *testing.T) {
 		},
 		{
 			name:                 "ResourceInfo_Empty",
-			de:                   New(fmt.Errorf("some error"), md, WithDescription("some"), WithErrorReason("StateETagInvalidReason", 400, codes.Aborted)),
+			de:                   New(fmt.Errorf("some error"), md, WithDescription("some"), WithErrorReason("StateETagInvalidReason", codes.Aborted)),
 			expectedDetailsCount: 1,
 			expectedResourceInfo: false,
 			expectedError:        fmt.Errorf("some error"),
@@ -152,7 +153,7 @@ func TestToHTTP(t *testing.T) {
 			name: "WithResourceInfo_OK",
 			de: New(fmt.Errorf("some error"), md,
 				WithResourceInfo(&ResourceInfo{Type: "testResourceType", Name: "testResourceName"})),
-			expectedCode:         500,
+			expectedCode:         http.StatusInternalServerError,
 			expectedReason:       "UNKNOWN_REASON",
 			expectedResourceType: "testResourceType",
 			expectedResourceName: "testResourceName",
@@ -160,9 +161,9 @@ func TestToHTTP(t *testing.T) {
 		{
 			name: "WithResourceInfo_OK",
 			de: New(fmt.Errorf("some error"), md,
-				WithErrorReason("RedisFailure", 503, codes.Internal),
+				WithErrorReason("RedisFailure", codes.Internal),
 				WithResourceInfo(&ResourceInfo{Type: "testResourceType", Name: "testResourceName"})),
-			expectedCode:         503,
+			expectedCode:         http.StatusInternalServerError,
 			expectedReason:       "RedisFailure",
 			expectedResourceType: "testResourceType",
 			expectedResourceName: "testResourceName",
@@ -204,6 +205,238 @@ func TestGRPCStatus(t *testing.T) {
 			// assert.NotNil(t, st, i, "want %d, got = %d", test.expectedCode, i)
 			// assert.Equal(t, test.expectedBytes, len(b), "want  %d bytes, got = %d", test.expectedBytes, len(b))
 			// assert.Equal(t, test.expectedJSON, string(b), "want JSON %s , got = %s", test.expectedJSON, string(b))
+		})
+	}
+}
+
+func TestHTTPStatusFromCode(t *testing.T) {
+	tests := []struct {
+		name   string
+		code   codes.Code
+		result int
+	}{
+		{
+			name:   "codes.OK-http.StatusOK",
+			code:   codes.OK,
+			result: http.StatusOK,
+		},
+		{
+			name:   "codes.Canceled-http.StatusRequestTimeout",
+			code:   codes.Canceled,
+			result: http.StatusRequestTimeout,
+		},
+		{
+			name:   "codes.Unknown-http.StatusInternalServerError",
+			code:   codes.Unknown,
+			result: http.StatusInternalServerError,
+		},
+		{
+			name:   "codes.InvalidArgument-http.StatusBadRequest",
+			code:   codes.InvalidArgument,
+			result: http.StatusBadRequest,
+		},
+		{
+			name:   "codes.DeadlineExceeded-http.StatusGatewayTimeout",
+			code:   codes.DeadlineExceeded,
+			result: http.StatusGatewayTimeout,
+		},
+		{
+			name:   "codes.NotFound-http.StatusNotFound",
+			code:   codes.NotFound,
+			result: http.StatusNotFound,
+		},
+		{
+			name:   "codes.AlreadyExists-http.StatusConflict",
+			code:   codes.AlreadyExists,
+			result: http.StatusConflict,
+		},
+		{
+			name:   "codes.PermissionDenied-http.StatusForbidden",
+			code:   codes.PermissionDenied,
+			result: http.StatusForbidden,
+		},
+		{
+			name:   "codes.Unauthenticated-http.StatusUnauthorized",
+			code:   codes.Unauthenticated,
+			result: http.StatusUnauthorized,
+		},
+		{
+			name:   "codes.ResourceExhausted-http.StatusTooManyRequests",
+			code:   codes.ResourceExhausted,
+			result: http.StatusTooManyRequests,
+		},
+		{
+			name:   "codes.FailedPrecondition-http.StatusBadRequest",
+			code:   codes.FailedPrecondition,
+			result: http.StatusBadRequest,
+		},
+		{
+			name:   "codes.Aborted-http.StatusConflict",
+			code:   codes.Aborted,
+			result: http.StatusConflict,
+		},
+		{
+			name:   "codes.OutOfRange-http.StatusBadRequest",
+			code:   codes.OutOfRange,
+			result: http.StatusBadRequest,
+		},
+		{
+			name:   "codes.Unimplemented-http.StatusNotImplemented",
+			code:   codes.Unimplemented,
+			result: http.StatusNotImplemented,
+		},
+		{
+			name:   "codes.Internal-http.StatusInternalServerError",
+			code:   codes.Internal,
+			result: http.StatusInternalServerError,
+		},
+		{
+			name:   "codes.Unavailable-http.StatusServiceUnavailable",
+			code:   codes.Unavailable,
+			result: http.StatusServiceUnavailable,
+		},
+		{
+			name:   "codes.DataLoss-http.StatusInternalServerError",
+			code:   codes.DataLoss,
+			result: http.StatusInternalServerError,
+		},
+		{
+			name:   "codes.InvalidCode-http.StatusInternalServerError",
+			code:   57, // codes.Code Does not exist
+			result: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rt := HTTPStatusFromCode(tt.code)
+			assert.Equal(t, tt.result, rt)
+		})
+	}
+}
+
+func TestCodeFromHTTPStatus(t *testing.T) {
+	tests := []struct {
+		name     string
+		httpcode int
+		result   codes.Code
+	}{
+		{
+			name:     "http.OK-codes.OK",
+			httpcode: http.StatusOK,
+			result:   codes.OK,
+		},
+		{
+			name:     "http.StatusCreated-codes.OK",
+			httpcode: http.StatusCreated,
+			result:   codes.OK,
+		},
+		{
+			name:     "http.StatusAccepted-codes.OK",
+			httpcode: http.StatusAccepted,
+			result:   codes.OK,
+		},
+		{
+			name:     "http.StatusNonAuthoritativeInfo-codes.OK",
+			httpcode: http.StatusNonAuthoritativeInfo,
+			result:   codes.OK,
+		},
+		{
+			name:     "http.StatusNoContent-codes.OK",
+			httpcode: http.StatusNoContent,
+			result:   codes.OK,
+		},
+		{
+			name:     "http.StatusResetContent-codes.OK",
+			httpcode: http.StatusResetContent,
+			result:   codes.OK,
+		},
+		{
+			name:     "http.StatusPartialContent-codes.OK",
+			httpcode: http.StatusPartialContent,
+			result:   codes.OK,
+		},
+		{
+			name:     "http.StatusMultiStatus-codes.OK",
+			httpcode: http.StatusMultiStatus,
+			result:   codes.OK,
+		},
+		{
+			name:     "http.StatusAlreadyReported-codes.OK",
+			httpcode: http.StatusAlreadyReported,
+			result:   codes.OK,
+		},
+		{
+			name:     "http.StatusIMUsed-codes.OK",
+			httpcode: http.StatusOK,
+			result:   codes.OK,
+		},
+		{
+			name:     "http.StatusRequestTimeout-codes.Canceled",
+			httpcode: http.StatusRequestTimeout,
+			result:   codes.Canceled,
+		},
+		{
+			name:     "http.StatusInternalServerError-codes.Unknown",
+			httpcode: http.StatusInternalServerError,
+			result:   codes.Unknown,
+		},
+		{
+			name:     "http.StatusBadRequest-codes.Internal",
+			httpcode: http.StatusBadRequest,
+			result:   codes.Internal,
+		},
+		{
+			name:     "http.StatusGatewayTimeout-codes.DeadlineExceeded",
+			httpcode: http.StatusGatewayTimeout,
+			result:   codes.DeadlineExceeded,
+		},
+		{
+			name:     "http.StatusNotFound-codes.NotFound",
+			httpcode: http.StatusNotFound,
+			result:   codes.NotFound,
+		},
+		{
+			name:     "http.StatusConflict-codes.AlreadyExists",
+			httpcode: http.StatusConflict,
+			result:   codes.AlreadyExists,
+		},
+		{
+			name:     "http.StatusForbidden-codes.PermissionDenied",
+			httpcode: http.StatusForbidden,
+			result:   codes.PermissionDenied,
+		},
+		{
+			name:     "http.StatusUnauthorized-codes.Unauthenticated",
+			httpcode: http.StatusUnauthorized,
+			result:   codes.Unauthenticated,
+		},
+		{
+			name:     "http.StatusTooManyRequests-codes.ResourceExhausted",
+			httpcode: http.StatusTooManyRequests,
+			result:   codes.ResourceExhausted,
+		},
+		{
+			name:     "http.StatusNotImplemented-codes.Unimplemented",
+			httpcode: http.StatusNotImplemented,
+			result:   codes.Unimplemented,
+		},
+		{
+			name:     "http.StatusServiceUnavailable-codes.Unavailable",
+			httpcode: http.StatusServiceUnavailable,
+			result:   codes.Unavailable,
+		},
+		{
+			name:     "HTTPStatusDoesNotExist-codes.Unavailable",
+			httpcode: 999,
+			result:   codes.Unknown,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rt := CodeFromHTTPStatus(tt.httpcode)
+			assert.Equal(t, tt.result, rt)
 		})
 	}
 }

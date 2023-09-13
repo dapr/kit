@@ -14,18 +14,19 @@ limitations under the License.
 package errors
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/runtime/protoiface"
 )
 
 const (
-	Owner   = "components-contrib"
-	Domain  = "dapr.io"
+	owner   = "dapr-components"
+	domain  = "dapr.io"
 	unknown = "UNKNOWN_REASON"
 )
 
@@ -34,13 +35,14 @@ const (
 	unknownHTTPCode = http.StatusInternalServerError
 )
 
-var UnknownErrorReason = WithErrorReason(unknown, unknownHTTPCode, codes.Unknown)
+var UnknownErrorReason = WithErrorReason(unknown, codes.Unknown)
 
 // ResourceInfo is meant to be used by Dapr components
 // to indicate the Type and Name.
 type ResourceInfo struct {
-	Type string
-	Name string
+	Type  string
+	Name  string
+	Owner string
 }
 
 // Option allows passing additional information
@@ -75,7 +77,7 @@ func New(err error, metadata map[string]string, options ...Option) *Error {
 	de := &Error{
 		err:            err,
 		reason:         unknown,
-		httpCode:       unknownHTTPCode,
+		httpCode:       HTTPStatusFromCode(codes.Unknown),
 		grpcStatusCode: codes.Unknown,
 	}
 
@@ -98,30 +100,30 @@ func (e *Error) Error() string {
 
 // Unwrap implements the error unwrapping interface.
 func (e *Error) Unwrap() error {
-    if e == nil {
-        return nil
-    }
+	if e == nil {
+		return nil
+	}
 	return e.err
 }
 
 // Description returns the description of the error.
 func (e *Error) Description() string {
-    if e == nil {
-        return ""
-    }
+	if e == nil {
+		return ""
+	}
 	if e.description != "" {
 		return e.description
 	}
 	return e.err.Error()
 }
 
-// WithErrorReason used to pass reason, httpCode, and
+// WithErrorReason used to pass reason and
 // grpcStatus code to the Error struct.
-func WithErrorReason(reason string, httpCode int, grpcStatusCode codes.Code) Option {
+func WithErrorReason(reason string, grpcStatusCode codes.Code) Option {
 	return func(err *Error) {
 		err.reason = reason
 		err.grpcStatusCode = grpcStatusCode
-		err.httpCode = httpCode
+		err.httpCode = HTTPStatusFromCode(grpcStatusCode)
 	}
 }
 
@@ -150,17 +152,21 @@ func WithMetadata(md map[string]string) Option {
 
 func newErrorInfo(reason string, md map[string]string) *errdetails.ErrorInfo {
 	return &errdetails.ErrorInfo{
-		Domain:   Domain,
+		Domain:   domain,
 		Reason:   reason,
 		Metadata: md,
 	}
 }
 
 func newResourceInfo(rid *ResourceInfo, err error) *errdetails.ResourceInfo {
+	owner := owner
+	if rid.Owner != "" {
+		owner = rid.Owner
+	}
 	return &errdetails.ResourceInfo{
 		ResourceType: rid.Type,
 		ResourceName: rid.Name,
-		Owner:        Owner,
+		Owner:        owner,
 		Description:  err.Error(),
 	}
 }
@@ -192,7 +198,7 @@ func (e *Error) GRPCStatus() *status.Status {
 func (e *Error) ToHTTP() (int, []byte) {
 	resp, err := protojson.Marshal(e.GRPCStatus().Proto())
 	if err != nil {
-        errJSON, _ := json.Marshal(fmt.Sprintf("failed to encode proto to JSON: %v", err))
+		errJSON, _ := json.Marshal(fmt.Sprintf("failed to encode proto to JSON: %v", err))
 		return http.StatusInternalServerError, errJSON
 	}
 
@@ -201,12 +207,10 @@ func (e *Error) ToHTTP() (int, []byte) {
 
 // HTTPCode returns the value of the HTTPCode property.
 func (e *Error) HTTPCode() int {
-    if e == nil {
-        return http.StatusOK
-    }
-	if e.httpCode == 0 {
-		return http.StatusInternalServerError
+	if e == nil {
+		return http.StatusOK
 	}
+
 	return e.httpCode
 }
 
@@ -214,8 +218,88 @@ func (e *Error) HTTPCode() int {
 func (e *Error) JSONErrorValue() []byte {
 	b, err := protojson.Marshal(e.GRPCStatus().Proto())
 	if err != nil {
-        errJSON, _ := json.Marshal(fmt.Sprintf("failed to encode proto to JSON: %v", err))
+		errJSON, _ := json.Marshal(fmt.Sprintf("failed to encode proto to JSON: %v", err))
 		return errJSON
 	}
 	return b
+}
+
+// HTTPStatusFromCode converts a gRPC error code into the corresponding HTTP response status.
+// https://github.com/grpc-ecosystem/grpc-gateway/blob/master/runtime/errors.go#L15
+// See: https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
+func HTTPStatusFromCode(code codes.Code) int {
+	switch code {
+	case codes.OK:
+		return http.StatusOK
+	case codes.Canceled:
+		return http.StatusRequestTimeout
+	case codes.Unknown:
+		return http.StatusInternalServerError
+	case codes.InvalidArgument:
+		return http.StatusBadRequest
+	case codes.DeadlineExceeded:
+		return http.StatusGatewayTimeout
+	case codes.NotFound:
+		return http.StatusNotFound
+	case codes.AlreadyExists:
+		return http.StatusConflict
+	case codes.PermissionDenied:
+		return http.StatusForbidden
+	case codes.Unauthenticated:
+		return http.StatusUnauthorized
+	case codes.ResourceExhausted:
+		return http.StatusTooManyRequests
+	case codes.FailedPrecondition:
+		// Note, this deliberately doesn't translate to the similarly named '412 Precondition Failed' HTTP response status.
+		return http.StatusBadRequest
+	case codes.Aborted:
+		return http.StatusConflict
+	case codes.OutOfRange:
+		return http.StatusBadRequest
+	case codes.Unimplemented:
+		return http.StatusNotImplemented
+	case codes.Internal:
+		return http.StatusInternalServerError
+	case codes.Unavailable:
+		return http.StatusServiceUnavailable
+	case codes.DataLoss:
+		return http.StatusInternalServerError
+	}
+
+	return http.StatusInternalServerError
+}
+
+// CodeFromHTTPStatus converts http status code to gRPC status code
+// See: https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md
+func CodeFromHTTPStatus(httpStatusCode int) codes.Code {
+	switch httpStatusCode {
+	case http.StatusRequestTimeout:
+		return codes.Canceled
+	case http.StatusInternalServerError:
+		return codes.Unknown
+	case http.StatusBadRequest:
+		return codes.Internal
+	case http.StatusGatewayTimeout:
+		return codes.DeadlineExceeded
+	case http.StatusNotFound:
+		return codes.NotFound
+	case http.StatusConflict:
+		return codes.AlreadyExists
+	case http.StatusForbidden:
+		return codes.PermissionDenied
+	case http.StatusUnauthorized:
+		return codes.Unauthenticated
+	case http.StatusTooManyRequests:
+		return codes.ResourceExhausted
+	case http.StatusNotImplemented:
+		return codes.Unimplemented
+	case http.StatusServiceUnavailable:
+		return codes.Unavailable
+	}
+
+	if httpStatusCode >= 200 && httpStatusCode < 300 {
+		return codes.OK
+	}
+
+	return codes.Unknown
 }
