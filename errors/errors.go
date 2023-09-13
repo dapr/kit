@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/dapr/kit/grpccodes"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -72,7 +73,7 @@ func New(err error, metadata map[string]string, options ...Option) *Error {
 	de := &Error{
 		err:            err,
 		reason:         unknown,
-		httpCode:       HTTPStatusFromCode(codes.Unknown),
+		httpCode:       grpccodes.HTTPStatusFromCode(codes.Unknown),
 		grpcStatusCode: codes.Unknown,
 	}
 
@@ -118,7 +119,7 @@ func WithErrorReason(reason string, grpcStatusCode codes.Code) Option {
 	return func(err *Error) {
 		err.reason = reason
 		err.grpcStatusCode = grpcStatusCode
-		err.httpCode = HTTPStatusFromCode(grpcStatusCode)
+		err.httpCode = grpccodes.HTTPStatusFromCode(grpcStatusCode)
 	}
 }
 
@@ -217,84 +218,4 @@ func (e *Error) JSONErrorValue() []byte {
 		return errJSON
 	}
 	return b
-}
-
-// HTTPStatusFromCode converts a gRPC error code into the corresponding HTTP response status.
-// https://github.com/grpc-ecosystem/grpc-gateway/blob/master/runtime/errors.go#L15
-// See: https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
-func HTTPStatusFromCode(code codes.Code) int {
-	switch code {
-	case codes.OK:
-		return http.StatusOK
-	case codes.Canceled:
-		return http.StatusRequestTimeout
-	case codes.Unknown:
-		return http.StatusInternalServerError
-	case codes.InvalidArgument:
-		return http.StatusBadRequest
-	case codes.DeadlineExceeded:
-		return http.StatusGatewayTimeout
-	case codes.NotFound:
-		return http.StatusNotFound
-	case codes.AlreadyExists:
-		return http.StatusConflict
-	case codes.PermissionDenied:
-		return http.StatusForbidden
-	case codes.Unauthenticated:
-		return http.StatusUnauthorized
-	case codes.ResourceExhausted:
-		return http.StatusTooManyRequests
-	case codes.FailedPrecondition:
-		// Note, this deliberately doesn't translate to the similarly named '412 Precondition Failed' HTTP response status.
-		return http.StatusBadRequest
-	case codes.Aborted:
-		return http.StatusConflict
-	case codes.OutOfRange:
-		return http.StatusBadRequest
-	case codes.Unimplemented:
-		return http.StatusNotImplemented
-	case codes.Internal:
-		return http.StatusInternalServerError
-	case codes.Unavailable:
-		return http.StatusServiceUnavailable
-	case codes.DataLoss:
-		return http.StatusInternalServerError
-	}
-
-	return http.StatusInternalServerError
-}
-
-// CodeFromHTTPStatus converts http status code to gRPC status code
-// See: https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md
-func CodeFromHTTPStatus(httpStatusCode int) codes.Code {
-	switch httpStatusCode {
-	case http.StatusRequestTimeout:
-		return codes.Canceled
-	case http.StatusInternalServerError:
-		return codes.Unknown
-	case http.StatusBadRequest:
-		return codes.Internal
-	case http.StatusGatewayTimeout:
-		return codes.DeadlineExceeded
-	case http.StatusNotFound:
-		return codes.NotFound
-	case http.StatusConflict:
-		return codes.AlreadyExists
-	case http.StatusForbidden:
-		return codes.PermissionDenied
-	case http.StatusUnauthorized:
-		return codes.Unauthenticated
-	case http.StatusTooManyRequests:
-		return codes.ResourceExhausted
-	case http.StatusNotImplemented:
-		return codes.Unimplemented
-	case http.StatusServiceUnavailable:
-		return codes.Unavailable
-	}
-
-	if httpStatusCode >= 200 && httpStatusCode < 300 {
-		return codes.OK
-	}
-
-	return codes.Unknown
 }
