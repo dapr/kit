@@ -27,12 +27,12 @@ import (
 )
 
 const (
-	resourceInfoDefaultOwner   = "dapr-components"
-	errorInfoDefaultDomain  = "dapr.io"
-	errorInfoResonUnknown = "UNKNOWN_REASON"
+	resourceInfoDefaultOwner = "dapr-components"
+	errorInfoDefaultDomain   = "dapr.io"
+	errorInfoResonUnknown    = "UNKNOWN_REASON"
 )
 
-var UnknownErrorReason = WithErrorReason(unknown, codes.Unknown)
+var UnknownErrorReason = WithErrorReason(errorInfoResonUnknown, codes.Unknown)
 
 // ResourceInfo is meant to be used by Dapr components
 // to indicate the Type and Name.
@@ -73,7 +73,7 @@ func New(err error, metadata map[string]string, options ...Option) *Error {
 	// Use default values
 	de := &Error{
 		err:            err,
-		reason:         unknown,
+		reason:         errorInfoResonUnknown,
 		httpCode:       grpccodes.HTTPStatusFromCode(codes.Unknown),
 		grpcStatusCode: codes.Unknown,
 	}
@@ -149,14 +149,14 @@ func WithMetadata(md map[string]string) Option {
 
 func newErrorInfo(reason string, md map[string]string) *errdetails.ErrorInfo {
 	return &errdetails.ErrorInfo{
-		Domain:   domain,
+		Domain:   errorInfoDefaultDomain,
 		Reason:   reason,
 		Metadata: md,
 	}
 }
 
 func newResourceInfo(rid *ResourceInfo, err error) *errdetails.ResourceInfo {
-	owner := owner
+	owner := resourceInfoDefaultOwner
 	if rid.Owner != "" {
 		owner = rid.Owner
 	}
