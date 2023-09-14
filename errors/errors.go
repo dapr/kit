@@ -27,9 +27,9 @@ import (
 )
 
 const (
-	owner   = "dapr-components"
-	domain  = "dapr.io"
-	unknown = "UNKNOWN_REASON"
+	resourceInfoDefaultOwner   = "dapr-components"
+	errorInfoDefaultDomain  = "dapr.io"
+	errorInfoResonUnknown = "UNKNOWN_REASON"
 )
 
 var UnknownErrorReason = WithErrorReason(unknown, codes.Unknown)
