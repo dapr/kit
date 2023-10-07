@@ -64,6 +64,17 @@ func (p *Processor[T]) Enqueue(r T) error {
 		return ErrProcessorStopped
 	}
 
+	// If the deadline is less than 0.5ms away, execute it right away
+	// We can skip the queue in this case
+	if r.ScheduledTime().Sub(p.clock.Now()) < 500*time.Microsecond {
+		// Still need to make sure we don't need to remove the item from the queue first
+		err := p.Dequeue(r.Key())
+		if err != nil {
+			return err
+		}
+		go p.execute(r)
+	}
+
 	// Insert or replace the item in the queue
 	// If the item added or replaced is the first one in the queue, we need to know that
 	p.lock.Lock()

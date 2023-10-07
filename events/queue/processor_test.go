@@ -92,6 +92,31 @@ func TestProcessor(t *testing.T) {
 		assert.Equal(t, "1", received.Name)
 	})
 
+	t.Run("item that was in the queue is now executed right away", func(t *testing.T) {
+		err := processor.Enqueue(
+			newTestItem(1, clock.Now().Add(time.Minute)),
+		)
+		require.NoError(t, err)
+
+		assert.Eventually(t, clock.HasWaiters, time.Second, 100*time.Millisecond)
+		assert.Equal(t, 1, processor.queue.Len())
+
+		err = processor.Enqueue(
+			newTestItem(1, clock.Now()),
+		)
+		require.NoError(t, err)
+
+		clock.Step(100 * time.Millisecond)
+
+		received := assertExecutedItem(t)
+		assert.Equal(t, "1", received.Name)
+
+		assert.Equal(t, 0, processor.queue.Len())
+
+		clock.Step(time.Minute)
+		assertNoExecutedItem(t)
+	})
+
 	t.Run("enqueue item at the front of the queue", func(t *testing.T) {
 		// Enqueue 4 items
 		for i := 1; i <= 4; i++ {
