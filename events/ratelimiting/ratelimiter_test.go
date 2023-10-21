@@ -15,7 +15,7 @@ package ratelimiting
 
 import "testing"
 
-func TestRateLimiters(t *testing.T) {
+func TestRateLimiters(*testing.T) {
 	var _ RateLimiter = new(coalescing)
 	var _ RateLimiterWithTicker = new(coalescing)
 }

@@ -18,11 +18,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dapr/kit/ptr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/clock"
 	clocktesting "k8s.io/utils/clock/testing"
+
+	"github.com/dapr/kit/ptr"
 )
 
 func TestCoalescing(t *testing.T) {
@@ -32,7 +33,7 @@ func TestCoalescing(t *testing.T) {
 		require.NoError(t, err)
 
 		if clock != nil {
-			c.WithTicker(clock)
+			c.(RateLimiterWithTicker).WithTicker(clock)
 		}
 
 		ch := make(chan struct{})
@@ -52,7 +53,7 @@ func TestCoalescing(t *testing.T) {
 			}
 		})
 
-		return c, ch
+		return c.(*coalescing), ch
 	}
 
 	assertChannel := func(t *testing.T, ch chan struct{}) {
@@ -333,7 +334,7 @@ func TestCoalescing(t *testing.T) {
 		assertChannel(t, ch)
 	})
 
-	t.Run("lots of events fired in the first rate limiting window will trigger 2 event ommited", func(t *testing.T) {
+	t.Run("lots of events fired in the first rate limiting window will trigger 2 event omitted", func(t *testing.T) {
 		clock := clocktesting.NewFakeClock(time.Now())
 		c, ch := runCoalescingTests(t, clock, OptionsCoalescing{
 			InitialDelay: ptr.Of(time.Second),

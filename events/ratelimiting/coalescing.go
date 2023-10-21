@@ -64,7 +64,7 @@ type coalescing struct {
 	closed  atomic.Bool
 }
 
-func NewCoalescing(opts OptionsCoalescing) (*coalescing, error) {
+func NewCoalescing(opts OptionsCoalescing) (RateLimiter, error) {
 	initialDelay := time.Millisecond * 500
 	if opts.InitialDelay != nil {
 		initialDelay = *opts.InitialDelay
@@ -148,8 +148,6 @@ func (c *coalescing) Run(ctx context.Context, ch chan<- struct{}) error {
 			}
 		}
 	}
-
-	return nil
 }
 
 func (c *coalescing) handleInputCh(ctx context.Context, ch chan<- struct{}) {
