@@ -65,6 +65,10 @@ endif
 ################################################################################
 .PHONY: test
 test:
+	go test -tags unit ./... $(COVERAGE_OPTS) $(BUILDMODE)
+
+.PHONY: test-race
+test-race:
 	CGO_ENABLED=1 go test -race -tags unit ./... $(COVERAGE_OPTS) $(BUILDMODE)
 
 ################################################################################
