@@ -31,6 +31,10 @@ else ifeq ($(shell echo $(LOCAL_ARCH) | head -c 5),armv8)
 	TARGET_ARCH_LOCAL=arm64
 else ifeq ($(shell echo $(LOCAL_ARCH) | head -c 4),armv)
 	TARGET_ARCH_LOCAL=arm
+else ifeq ($(shell echo $(LOCAL_ARCH) | head -c 5),arm64)
+	TARGET_ARCH_LOCAL=arm64
+else ifeq ($(shell echo $(LOCAL_ARCH) | head -c 7),aarch64)
+	TARGET_ARCH_LOCAL=arm64
 else
 	TARGET_ARCH_LOCAL=amd64
 endif
@@ -61,7 +65,7 @@ endif
 ################################################################################
 .PHONY: test
 test:
-	go test ./... $(COVERAGE_OPTS) $(BUILDMODE)
+	CGO_ENABLED=1 go test -race -tags unit ./... $(COVERAGE_OPTS) $(BUILDMODE)
 
 ################################################################################
 # Target: lint                                                                 #
