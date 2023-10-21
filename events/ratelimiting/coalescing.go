@@ -69,7 +69,7 @@ func NewCoalescing(opts OptionsCoalescing) (RateLimiter, error) {
 	if opts.InitialDelay != nil {
 		initialDelay = *opts.InitialDelay
 	}
-	if initialDelay < 0 {
+	if initialDelay <= 0 {
 		return nil, errors.New("initial delay must be > 0")
 	}
 
@@ -77,7 +77,7 @@ func NewCoalescing(opts OptionsCoalescing) (RateLimiter, error) {
 	if opts.MaxDelay != nil {
 		maxDelay = *opts.MaxDelay
 	}
-	if maxDelay < 0 {
+	if maxDelay <= 0 {
 		return nil, errors.New("max delay must be > 0")
 	}
 
@@ -120,32 +120,25 @@ func (c *coalescing) Run(ctx context.Context, ch chan<- struct{}) error {
 	for {
 		// If the timer doesn't exist yet, we're waiting for the first event (which
 		// will fire immediately when received).
-		if !c.hasTimer.Load() {
-			select {
-			case <-ctx.Done():
-				return nil
-			case <-c.closeCh:
-				cancel()
-				return nil
+		var timerCh <-chan time.Time
+		c.lock.RLock()
+		if c.hasTimer.Load() {
+			timerCh = c.timer.C()
+		}
+		c.lock.RUnlock()
 
-			case <-c.inputCh:
-				c.handleInputCh(ctx, ch)
-			}
-		} else {
-			// We already have a timer running, so we're waiting for either the timer
-			// to fire, or for a new event to arrive.
-			select {
-			case <-ctx.Done():
-				return nil
-			case <-c.closeCh:
-				cancel()
-				return nil
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-c.closeCh:
+			cancel()
+			return nil
 
-			case <-c.inputCh:
-				c.handleInputCh(ctx, ch)
-			case <-c.timer.C():
-				c.handleTimerFired(ctx, ch)
-			}
+		case <-c.inputCh:
+			c.handleInputCh(ctx, ch)
+
+		case <-timerCh:
+			c.handleTimerFired(ctx, ch)
 		}
 	}
 }
