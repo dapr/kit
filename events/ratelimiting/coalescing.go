@@ -247,3 +247,5 @@ func (c *coalescing) Close() {
 		close(c.closeCh)
 	}
 }
+
+var _ RateLimiter = new(coalescing)
