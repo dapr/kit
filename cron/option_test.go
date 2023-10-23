@@ -14,7 +14,6 @@ You can check the original license at:
 		https://github.com/robfig/cron/blob/master/LICENSE
 */
 
-//nolint
 package cron
 
 import (
@@ -22,6 +21,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	clocktesting "k8s.io/utils/clock/testing"
 )
 
 func TestWithLocation(t *testing.T) {
@@ -42,18 +44,22 @@ func TestWithParser(t *testing.T) {
 func TestWithVerboseLogger(t *testing.T) {
 	var buf syncWriter
 	logger := log.New(&buf, "", log.LstdFlags)
-	c := New(WithLogger(VerbosePrintfLogger(logger)))
+	clock := clocktesting.NewFakeClock(time.Now())
+	c := New(WithLogger(VerbosePrintfLogger(logger)), WithClock(clock))
 	if c.logger.(printfLogger).logger != logger {
 		t.Error("expected provided logger")
 	}
 
 	c.AddFunc("@every 1s", func() {})
 	c.Start()
-	time.Sleep(OneSecond)
+	assert.Eventually(t, clock.HasWaiters, OneSecond, time.Millisecond*10)
+	clock.Step(OneSecond)
 	c.Stop()
-	out := buf.String()
-	if !strings.Contains(out, "schedule,") ||
-		!strings.Contains(out, "run,") {
-		t.Error("expected to see some actions, got:", out)
-	}
+	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+		out := buf.String()
+		if !strings.Contains(out, "schedule,") ||
+			!strings.Contains(out, "run,") {
+			c.Errorf("expected to see some actions, got: %v", out)
+		}
+	}, time.Second, time.Millisecond*10)
 }

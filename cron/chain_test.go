@@ -23,6 +23,9 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	clocktesting "k8s.io/utils/clock/testing"
 )
 
 func appendingJob(slice *[]int, value int) Job {
@@ -88,6 +91,7 @@ func TestChainRecover(t *testing.T) {
 type countJob struct {
 	m       sync.Mutex
 	started int
+	clock   clocktesting.FakeClock
 	done    int
 	delay   time.Duration
 }
@@ -96,7 +100,7 @@ func (j *countJob) Run() {
 	j.m.Lock()
 	j.started++
 	j.m.Unlock()
-	time.Sleep(j.delay)
+	<-j.clock.After(j.delay)
 	j.m.Lock()
 	j.done++
 	j.m.Unlock()
@@ -119,10 +123,11 @@ func TestChainDelayIfStillRunning(t *testing.T) {
 		var j countJob
 		wrappedJob := NewChain(DelayIfStillRunning(DiscardLogger)).Then(&j)
 		go wrappedJob.Run()
-		time.Sleep(50 * time.Millisecond) // Give the job 50 ms to complete.
-		if c := j.Done(); c != 1 {
-			t.Errorf("expected job run once, immediately, got %d", c)
-		}
+		assert.Eventually(t, j.clock.HasWaiters, 100*time.Millisecond, 10*time.Millisecond)
+		j.clock.Step(1)
+		assert.Eventually(t, func() bool {
+			return j.Done() == 1
+		}, 100*time.Millisecond, 10*time.Millisecond)
 	})
 
 	t.Run("second run immediate if first done", func(t *testing.T) {
@@ -130,13 +135,13 @@ func TestChainDelayIfStillRunning(t *testing.T) {
 		wrappedJob := NewChain(DelayIfStillRunning(DiscardLogger)).Then(&j)
 		go func() {
 			go wrappedJob.Run()
-			time.Sleep(10 * time.Millisecond)
 			go wrappedJob.Run()
 		}()
-		time.Sleep(100 * time.Millisecond) // Give both jobs 100 ms to complete.
-		if c := j.Done(); c != 2 {
-			t.Errorf("expected job run twice, immediately, got %d", c)
-		}
+		assert.Eventually(t, j.clock.HasWaiters, 100*time.Millisecond, 10*time.Millisecond)
+		assert.Eventually(t, func() bool {
+			j.clock.Step(1)
+			return j.Done() == 2
+		}, 100*time.Millisecond, 10*time.Millisecond)
 	})
 
 	t.Run("second run delayed if first not done", func(t *testing.T) {
@@ -145,24 +150,29 @@ func TestChainDelayIfStillRunning(t *testing.T) {
 		wrappedJob := NewChain(DelayIfStillRunning(DiscardLogger)).Then(&j)
 		go func() {
 			go wrappedJob.Run()
-			time.Sleep(10 * time.Millisecond)
 			go wrappedJob.Run()
 		}()
 
 		// After 50 ms, the first job is still in progress, and the second job was
 		// run but should be waiting for it to finish.
-		time.Sleep(50 * time.Millisecond)
+		assert.Eventually(t, j.clock.HasWaiters, 50*time.Millisecond, 10*time.Millisecond)
+		j.clock.Step(50 * time.Millisecond)
 		started, done := j.Started(), j.Done()
 		if started != 1 || done != 0 {
 			t.Error("expected first job started, but not finished, got", started, done)
 		}
 
 		// Verify that the second job completes.
-		time.Sleep(200 * time.Millisecond)
-		started, done = j.Started(), j.Done()
-		if started != 2 || done != 2 {
-			t.Error("expected both jobs done, got", started, done)
-		}
+		assert.Eventually(t, j.clock.HasWaiters, 50*time.Millisecond, 10*time.Millisecond)
+		j.clock.Step(50 * time.Millisecond)
+		assert.Eventually(t, j.clock.HasWaiters, 50*time.Millisecond, 10*time.Millisecond)
+		j.clock.Step(200 * time.Millisecond)
+		assert.EventuallyWithT(t, func(c *assert.CollectT) {
+			started, done = j.Started(), j.Done()
+			if started != 2 || done != 2 {
+				c.Errorf("expected both jobs done, got %v %v", started, done)
+			}
+		}, 100*time.Millisecond, 10*time.Millisecond)
 	})
 }
 
@@ -171,24 +181,25 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 		var j countJob
 		wrappedJob := NewChain(SkipIfStillRunning(DiscardLogger)).Then(&j)
 		go wrappedJob.Run()
-		time.Sleep(50 * time.Millisecond) // Give the job 50ms to complete.
-		if c := j.Done(); c != 1 {
-			t.Errorf("expected job run once, immediately, got %d", c)
-		}
+		assert.Eventually(t, j.clock.HasWaiters, 50*time.Millisecond, 10*time.Millisecond)
+		j.clock.Step(1)
+		assert.Eventually(t, func() bool { return j.Done() == 1 }, 50*time.Millisecond, 10*time.Millisecond)
 	})
 
 	t.Run("second run immediate if first done", func(t *testing.T) {
 		var j countJob
 		wrappedJob := NewChain(SkipIfStillRunning(DiscardLogger)).Then(&j)
-		go func() {
-			go wrappedJob.Run()
-			time.Sleep(10 * time.Millisecond)
-			go wrappedJob.Run()
-		}()
-		time.Sleep(100 * time.Millisecond) // Give both jobs 100ms to complete.
-		if c := j.Done(); c != 2 {
-			t.Errorf("expected job run twice, immediately, got %d", c)
-		}
+		go wrappedJob.Run()
+
+		assert.Eventually(t, j.clock.HasWaiters, 50*time.Millisecond, 10*time.Millisecond)
+		j.clock.Step(1)
+		assert.Eventually(t, func() bool { return j.Done() == 1 }, 100*time.Millisecond, 10*time.Millisecond)
+
+		go wrappedJob.Run()
+
+		assert.Eventually(t, j.clock.HasWaiters, 50*time.Millisecond, 10*time.Millisecond)
+		j.clock.Step(1)
+		assert.Eventually(t, func() bool { return j.Done() == 2 }, 100*time.Millisecond, 10*time.Millisecond)
 	})
 
 	t.Run("second run skipped if first not done", func(t *testing.T) {
@@ -197,24 +208,22 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 		wrappedJob := NewChain(SkipIfStillRunning(DiscardLogger)).Then(&j)
 		go func() {
 			go wrappedJob.Run()
-			time.Sleep(10 * time.Millisecond)
 			go wrappedJob.Run()
 		}()
 
 		// After 50ms, the first job is still in progress, and the second job was
 		// aleady skipped.
-		time.Sleep(50 * time.Millisecond)
-		started, done := j.Started(), j.Done()
-		if started != 1 || done != 0 {
-			t.Error("expected first job started, but not finished, got", started, done)
-		}
+		assert.Eventually(t, j.clock.HasWaiters, 50*time.Millisecond, 10*time.Millisecond)
+		j.clock.Step(50 * time.Millisecond)
+		assert.Eventually(t, func() bool {
+			return j.Started() == 1 && j.Done() == 0
+		}, 50*time.Millisecond, 10*time.Millisecond)
 
 		// Verify that the first job completes and second does not run.
-		time.Sleep(200 * time.Millisecond)
-		started, done = j.Started(), j.Done()
-		if started != 1 || done != 1 {
-			t.Error("expected second job skipped, got", started, done)
-		}
+		j.clock.Step(200 * time.Millisecond)
+		assert.Eventually(t, func() bool {
+			return j.Started() == 1 && j.Done() == 1
+		}, 50*time.Millisecond, 10*time.Millisecond)
 	})
 
 	t.Run("skip 10 jobs on rapid fire", func(t *testing.T) {
@@ -224,11 +233,12 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 		for i := 0; i < 11; i++ {
 			go wrappedJob.Run()
 		}
-		time.Sleep(200 * time.Millisecond)
-		done := j.Done()
-		if done != 1 {
-			t.Error("expected 1 jobs executed, 10 jobs dropped, got", done)
-		}
+		assert.Eventually(t, j.clock.HasWaiters, 50*time.Millisecond, 10*time.Millisecond)
+		j.clock.Step(200 * time.Millisecond)
+		assert.False(t, j.clock.HasWaiters())
+		assert.Eventually(t, func() bool {
+			return j.Started() == 1 && j.Done() == 1
+		}, 50*time.Millisecond, 10*time.Millisecond)
 	})
 
 	t.Run("different jobs independent", func(t *testing.T) {
@@ -242,13 +252,12 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 			go wrappedJob1.Run()
 			go wrappedJob2.Run()
 		}
-		time.Sleep(100 * time.Millisecond)
-		var (
-			done1 = j1.Done()
-			done2 = j2.Done()
-		)
-		if done1 != 1 || done2 != 1 {
-			t.Error("expected both jobs executed once, got", done1, "and", done2)
-		}
+		assert.Eventually(t, j1.clock.HasWaiters, 50*time.Millisecond, 10*time.Millisecond)
+		assert.Eventually(t, j2.clock.HasWaiters, 50*time.Millisecond, 10*time.Millisecond)
+		j1.clock.Step(10 * time.Millisecond)
+		j2.clock.Step(10 * time.Millisecond)
+		assert.Eventually(t, func() bool {
+			return j1.Started() == 1 && j1.Done() == 1
+		}, 50*time.Millisecond, 10*time.Millisecond)
 	})
 }
