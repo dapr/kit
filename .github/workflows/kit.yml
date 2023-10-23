@@ -55,6 +55,7 @@ jobs:
         with:
           version: ${{ env.GOLANGCI_LINT_VER }}
           skip-cache: true
+          args: --build-tags=unit
       - name: Run make go.mod check-diff
         if: matrix.target_arch != 'arm'
         run: make go.mod check-diff
