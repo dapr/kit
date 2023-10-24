@@ -248,4 +248,4 @@ func (c *coalescing) Close() {
 	}
 }
 
-var _ RateLimiter = new(coalescing)
+var _ RateLimiter = (*coalescing)(nil)

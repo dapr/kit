@@ -29,4 +29,4 @@ func (c *coalescing) WithTicker(clock clock.WithTicker) {
 	c.clock = clock
 }
 
-var _ RateLimiterWithTicker = new(coalescing)
+var _ RateLimiterWithTicker = (*coalescing)(nil)
