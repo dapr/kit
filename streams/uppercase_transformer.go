@@ -43,9 +43,9 @@ func RuneToUppercase(c rune) []byte {
 		b := byte(c)
 		if 'a' <= b && b <= 'z' {
 			return []byte{b - 0x20}
-		} else {
-			return []byte{b}
 		}
+
+		return []byte{b}
 	}
 
 	// Unicode
