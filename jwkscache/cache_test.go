@@ -157,7 +157,7 @@ func TestJWKSCache(t *testing.T) {
 
 		// Canceling the context should make Start() return
 		cancel()
-		require.Nil(t, <-errCh)
+		require.NoError(t, <-errCh)
 	})
 
 	t.Run("start and init fails", func(t *testing.T) {
@@ -186,7 +186,7 @@ func TestJWKSCache(t *testing.T) {
 		// Wait for initialization
 		err := cache.WaitForCacheReady(ctx)
 		require.Error(t, err)
-		assert.ErrorContains(t, err, "failed to fetch JWKS")
+		require.ErrorContains(t, err, "failed to fetch JWKS")
 
 		// Canceling the context should make Start() return with the init error
 		cancel()
@@ -225,8 +225,8 @@ func TestJWKSCache(t *testing.T) {
 		// Wait for initialization
 		err := cache.WaitForCacheReady(context.Background())
 		require.Error(t, err)
-		assert.ErrorContains(t, err, "failed to fetch JWKS")
-		assert.ErrorIs(t, err, context.DeadlineExceeded)
+		require.ErrorContains(t, err, "failed to fetch JWKS")
+		require.ErrorIs(t, err, context.DeadlineExceeded)
 
 		// Canceling the context should make Start() return with the init error
 		cancel()

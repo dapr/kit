@@ -170,7 +170,7 @@ func TestChainDelayIfStillRunning(t *testing.T) {
 		assert.EventuallyWithT(t, func(c *assert.CollectT) {
 			started, done = j.Started(), j.Done()
 			if started != 2 || done != 2 {
-				c.Errorf("expected both jobs done, got %v %v", started, done)
+				c.Errorf("expected both jobs done, got %v %v", started, done) //nolint:testifylint
 			}
 		}, 100*time.Millisecond, 10*time.Millisecond)
 	})

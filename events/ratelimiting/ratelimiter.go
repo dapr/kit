@@ -19,7 +19,7 @@ import "context"
 type RateLimiter interface {
 	// Run starts the rate limiter. The given channel will have events sent to
 	// it, according to the rate limited parameters.
-	Run(context.Context, chan<- struct{}) error
+	Run(ctx context.Context, eventCh chan<- struct{}) error
 
 	// Add adds a new event to the rate limiter.
 	Add()

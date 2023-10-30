@@ -85,12 +85,12 @@ func TestWrapRfc3394Vectors(t *testing.T) {
 		exp := mustHexDecode(v.Expected)
 
 		cipher, err := aes.NewCipher(kek)
-		if !assert.NoError(t, err, "NewCipher should not fail!") {
+		if !assert.NoError(t, err, "NewCipher should not fail!") { //nolint:testifylint
 			continue
 		}
 
 		actual, err := Wrap(cipher, data)
-		if !assert.NoError(t, err, "Wrap should not throw error with valid input") {
+		if !assert.NoError(t, err, "Wrap should not throw error with valid input") { //nolint:testifylint
 			continue
 		}
 		if !assert.Equal(t, exp, actual, "Wrap Mismatch: Actual wrapped ciphertext should equal expected for test case '%s'", v.Case) {
@@ -98,7 +98,7 @@ func TestWrapRfc3394Vectors(t *testing.T) {
 		}
 
 		actualUnwrapped, err := Unwrap(cipher, actual)
-		if !assert.NoError(t, err, "Unwrap should not throw error with valid input") {
+		if !assert.NoError(t, err, "Unwrap should not throw error with valid input") { //nolint:testifylint
 			continue
 		}
 		if !assert.Equal(t, data, actualUnwrapped, "Unwrap Mismatch: Actual unwrapped ciphertext should equal the original data for test case '%s'", v.Case) {

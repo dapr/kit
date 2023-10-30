@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/dapr/kit/config"
 )
@@ -60,9 +61,8 @@ func TestPrefixedBy(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			actual, err := config.PrefixedBy(tc.input, tc.prefix)
 			if tc.err != "" {
-				if assert.Error(t, err) {
-					assert.Equal(t, tc.err, err.Error())
-				}
+				require.Error(t, err)
+				assert.Equal(t, tc.err, err.Error())
 			} else {
 				assert.Equal(t, tc.expected, actual, "unexpected output")
 			}

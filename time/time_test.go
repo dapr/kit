@@ -194,7 +194,7 @@ func TestParseTime(t *testing.T) {
 	})
 	t.Run("parse ISO 8601 duration with repetition", func(t *testing.T) {
 		_, err := ParseTime("R5/PT30M", nil)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 	t.Run("parse ISO 8601 duration without repetition", func(t *testing.T) {
 		now, _ := time.Parse("2006-01-02 15:04:05", "2021-12-06 17:43:46")
@@ -214,6 +214,6 @@ func TestParseTime(t *testing.T) {
 	})
 	t.Run("parse empty string", func(t *testing.T) {
 		_, err := ParseTime("", nil)
-		assert.ErrorContains(t, err, "unsupported time/duration format")
+		require.ErrorContains(t, err, "unsupported time/duration format")
 	})
 }
