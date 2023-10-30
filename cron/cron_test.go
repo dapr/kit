@@ -228,7 +228,7 @@ func TestRemoveWhileRunning(t *testing.T) {
 	defer cron.Stop()
 
 	id, err := cron.AddFunc("* * * * * ?", func() { wg.Done() })
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Eventually(t, clock.HasWaiters, OneSecond, 10*time.Millisecond)
 
 	cron.Remove(id)

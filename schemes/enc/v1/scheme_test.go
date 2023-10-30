@@ -876,15 +876,16 @@ func (f *failingReader) Read(p []byte) (n int, err error) {
 
 	if f.data != nil {
 		n, err := f.data.Read(p)
-		if err == nil {
+		switch {
+		case err == nil:
 			return n, nil
-		} else if errors.Is(err, io.EOF) {
+		case errors.Is(err, io.EOF):
 			// Do not return io.EOF as error
 			// Instead, just delete the stream
 			// On the next call, we will return an error
 			f.data = nil
 			return n, nil
-		} else {
+		default:
 			// Should not happen
 			panic(err)
 		}

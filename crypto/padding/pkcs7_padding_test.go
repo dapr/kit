@@ -97,7 +97,7 @@ func TestPkcs7(t *testing.T) {
 	t.Run("Invalid length while unpadding", func(t *testing.T) {
 		unpadded, err := UnpadPKCS7([]byte("1234567890\x06\x06\x06\x06"), blockSize)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrInvalidPKCS7Padding)
+		require.ErrorIs(t, err, ErrInvalidPKCS7Padding)
 		assert.Nil(t, unpadded)
 	})
 
@@ -112,7 +112,7 @@ func TestPkcs7(t *testing.T) {
 		for _, tt := range tests {
 			unpadded, err := UnpadPKCS7(tt, blockSize)
 			require.Error(t, err)
-			assert.ErrorIs(t, err, ErrInvalidPKCS7Padding)
+			require.ErrorIs(t, err, ErrInvalidPKCS7Padding)
 			assert.Nil(t, unpadded)
 		}
 	})
@@ -120,12 +120,12 @@ func TestPkcs7(t *testing.T) {
 	t.Run("Invalid block size", func(t *testing.T) {
 		res, err := PadPKCS7([]byte("1234567890ABCDEF"), 260)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrInvalidPKCS7BlockSize)
+		require.ErrorIs(t, err, ErrInvalidPKCS7BlockSize)
 		assert.Nil(t, res)
 
 		res, err = UnpadPKCS7([]byte("1234567890ABCDEF"), 260)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrInvalidPKCS7BlockSize)
+		require.ErrorIs(t, err, ErrInvalidPKCS7BlockSize)
 		assert.Nil(t, res)
 	})
 
