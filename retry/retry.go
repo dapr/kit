@@ -159,7 +159,7 @@ func NotifyRecover(operation backoff.Operation, b backoff.BackOff, notify backof
 	return backoff.RetryNotify(func() error {
 		err := operation()
 
-		if err == nil && notified.CompareAndSwap(true, false) {
+		if err == nil && notified.Load() {
 			recovered()
 		}
 
@@ -178,7 +178,7 @@ func NotifyRecoverWithData[T any](operation backoff.OperationWithData[T], b back
 	return backoff.RetryNotifyWithData(func() (T, error) {
 		res, err := operation()
 
-		if err == nil && notified.CompareAndSwap(true, false) {
+		if err == nil && notified.Load() {
 			recovered()
 		}
 
