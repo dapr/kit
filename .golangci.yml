@@ -304,6 +304,7 @@ linters:
     - cyclop
     - varnamelen
     - gosec
+    - tagalign
     - errorlint
     - forcetypeassert
     - ifshort
