@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestContext(t *testing.T) {
@@ -35,7 +35,7 @@ func TestContext(t *testing.T) {
 		onlyOneSignalHandler = make(chan struct{})
 
 		ctx := Context()
-		assert.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGINT))
+		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGINT))
 		select {
 		case <-ctx.Done():
 		case <-time.After(1 * time.Second):
