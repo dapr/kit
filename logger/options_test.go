@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOptions(t *testing.T) {
@@ -78,7 +79,7 @@ func TestApplyOptionsToLoggers(t *testing.T) {
 		l.SetOutputLevel(InfoLevel)
 	}
 
-	assert.NoError(t, ApplyOptionsToLoggers(&testOptions))
+	require.NoError(t, ApplyOptionsToLoggers(&testOptions))
 
 	for _, l := range testLoggers {
 		assert.Equal(

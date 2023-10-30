@@ -21,6 +21,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/dapr/kit/retry"
 )
@@ -135,9 +136,8 @@ func TestDecode(t *testing.T) {
 			var actual retry.Config
 			err := retry.DecodeConfigWithPrefix(&actual, tc.config, "backOff")
 			if tc.err != "" {
-				if assert.Error(t, err) {
-					assert.Equal(t, tc.err, err.Error())
-				}
+				require.Error(t, err)
+				assert.Equal(t, tc.err, err.Error())
 			} else {
 				b := actual.NewBackOff()
 				config := retry.DefaultConfig()
@@ -174,8 +174,8 @@ func TestRetryNotifyRecoverNoetries(t *testing.T) {
 		recoveryCalls++
 	})
 
-	assert.Error(t, err)
-	assert.Equal(t, errRetry, err)
+	require.Error(t, err)
+	require.ErrorIs(t, err, errRetry)
 	assert.Equal(t, 1, operationCalls)
 	assert.Equal(t, 0, notifyCalls)
 	assert.Equal(t, 0, recoveryCalls)
@@ -199,7 +199,7 @@ func TestRetryNotifyRecoverMaxRetries(t *testing.T) {
 		recoveryCalls++
 	})
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, errRetry, err)
 	assert.Equal(t, 4, operationCalls)
 	assert.Equal(t, 1, notifyCalls)
@@ -228,7 +228,7 @@ func TestRetryNotifyRecoverRecovery(t *testing.T) {
 		recoveryCalls++
 	})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 2, operationCalls)
 	assert.Equal(t, 1, notifyCalls)
 	assert.Equal(t, 1, recoveryCalls)
@@ -261,8 +261,8 @@ func TestRetryNotifyRecoverCancel(t *testing.T) {
 	cancel()
 
 	err := <-errC
-	assert.Error(t, err)
-	assert.True(t, errors.Is(err, context.Canceled))
+	require.Error(t, err)
+	require.ErrorIs(t, err, context.Canceled)
 	assert.Equal(t, 1, notifyCalls)
 	assert.Equal(t, 0, recoveryCalls)
 }
@@ -270,7 +270,7 @@ func TestRetryNotifyRecoverCancel(t *testing.T) {
 func TestCheckEmptyConfig(t *testing.T) {
 	var config retry.Config
 	err := retry.DecodeConfig(&config, map[string]interface{}{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defaultConfig := retry.DefaultConfig()
 	assert.Equal(t, config, defaultConfig)
 }

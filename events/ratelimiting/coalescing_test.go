@@ -47,9 +47,9 @@ func TestCoalescing(t *testing.T) {
 
 			select {
 			case err := <-errCh:
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			case <-time.After(time.Second):
-				assert.Fail(t, "timeout")
+				require.Fail(t, "timeout")
 			}
 		})
 
@@ -61,7 +61,7 @@ func TestCoalescing(t *testing.T) {
 		select {
 		case <-ch:
 		case <-time.After(time.Second):
-			assert.Fail(t, "timeout")
+			require.Fail(t, "timeout")
 		}
 	}
 
@@ -69,14 +69,14 @@ func TestCoalescing(t *testing.T) {
 		t.Helper()
 		select {
 		case <-ch:
-			assert.Fail(t, "should not have received event")
+			require.Fail(t, "should not have received event")
 		case <-time.After(time.Millisecond * 10):
 		}
 	}
 
 	t.Run("closing context should return Run", func(t *testing.T) {
 		c, err := NewCoalescing(OptionsCoalescing{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		errCh := make(chan error)
@@ -88,15 +88,15 @@ func TestCoalescing(t *testing.T) {
 
 		select {
 		case err := <-errCh:
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		case <-time.After(time.Second):
-			assert.Fail(t, "timeout")
+			require.Fail(t, "timeout")
 		}
 	})
 
 	t.Run("calling Close should return Run", func(t *testing.T) {
 		c, err := NewCoalescing(OptionsCoalescing{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		errCh := make(chan error)
 		go func() {
@@ -107,15 +107,15 @@ func TestCoalescing(t *testing.T) {
 
 		select {
 		case err := <-errCh:
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		case <-time.After(time.Second):
-			assert.Fail(t, "timeout")
+			require.Fail(t, "timeout")
 		}
 	})
 
 	t.Run("calling Run twice should error", func(t *testing.T) {
 		c, err := NewCoalescing(OptionsCoalescing{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		errCh := make(chan error)
 		go func() {
@@ -126,9 +126,9 @@ func TestCoalescing(t *testing.T) {
 
 		select {
 		case err := <-errCh:
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		case <-time.After(time.Second):
-			assert.Fail(t, "timeout")
+			require.Fail(t, "timeout")
 		}
 
 		go func() {
@@ -137,9 +137,9 @@ func TestCoalescing(t *testing.T) {
 
 		select {
 		case err := <-errCh:
-			assert.Error(t, err)
+			require.Error(t, err)
 		case <-time.After(time.Second):
-			assert.Fail(t, "timeout")
+			require.Fail(t, "timeout")
 		}
 	})
 
@@ -147,34 +147,34 @@ func TestCoalescing(t *testing.T) {
 		_, err := NewCoalescing(OptionsCoalescing{
 			InitialDelay: ptr.Of(-time.Second),
 		})
-		assert.Error(t, err)
+		require.Error(t, err)
 
 		_, err = NewCoalescing(OptionsCoalescing{
 			MaxDelay: ptr.Of(-time.Second),
 		})
-		assert.Error(t, err)
+		require.Error(t, err)
 
 		_, err = NewCoalescing(OptionsCoalescing{
 			MaxPendingEvents: ptr.Of(0),
 		})
-		assert.Error(t, err)
+		require.Error(t, err)
 		_, err = NewCoalescing(OptionsCoalescing{
 			MaxPendingEvents: ptr.Of(-1),
 		})
-		assert.Error(t, err)
+		require.Error(t, err)
 
 		_, err = NewCoalescing(OptionsCoalescing{
 			InitialDelay: ptr.Of(time.Second),
 			MaxDelay:     ptr.Of(time.Second / 2),
 		})
-		assert.Error(t, err)
+		require.Error(t, err)
 
 		_, err = NewCoalescing(OptionsCoalescing{
 			InitialDelay:     ptr.Of(time.Second),
 			MaxDelay:         ptr.Of(time.Second * 2),
 			MaxPendingEvents: ptr.Of(2),
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("sending a single event initially should immediately send it", func(t *testing.T) {
@@ -184,7 +184,7 @@ func TestCoalescing(t *testing.T) {
 		select {
 		case <-ch:
 		case <-time.After(time.Second):
-			assert.Fail(t, "timeout")
+			require.Fail(t, "timeout")
 		}
 	})
 

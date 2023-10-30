@@ -1,3 +1,6 @@
+//go:build unit
+// +build unit
+
 /*
 Copyright 2023 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,19 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ratelimiting
+package concurrency
 
-import "context"
-
-// RateLimiter is the interface for rate limiting events.
-type RateLimiter interface {
-	// Run starts the rate limiter. The given channel will have events sent to
-	// it, according to the rate limited parameters.
-	Run(ctx context.Context, eventCh chan<- struct{}) error
-
-	// Add adds a new event to the rate limiter.
-	Add()
-
-	// Close closes the rate limiter and waits for all resources to be released.
-	Close()
+// WithFatalShutdown sets the fatal shutdown function for the closer manager.
+// Used for testing.
+func (c *RunnerCloserManager) WithFatalShutdown(fn func()) {
+	c.fatalShutdownFn = fn
 }

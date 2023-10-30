@@ -22,7 +22,7 @@ import "k8s.io/utils/clock"
 // Used for testing.
 type RateLimiterWithTicker interface {
 	RateLimiter
-	WithTicker(clock.WithTicker)
+	WithTicker(c clock.WithTicker)
 }
 
 func (c *coalescing) WithTicker(clock clock.WithTicker) {

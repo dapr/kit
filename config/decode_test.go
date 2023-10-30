@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/dapr/kit/config"
 	"github.com/dapr/kit/ptr"
@@ -187,7 +188,7 @@ func TestDecode(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			var actual testConfig
 			err := config.Decode(tc, &actual)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, expected, actual)
 		})
 	}
@@ -231,61 +232,60 @@ func TestDecodeErrors(t *testing.T) {
 		"string":      1234,
 		"stringPtr":   1234,
 	}, &actual)
-	if assert.Error(t, err) {
-		errMsg := err.Error()
-		expectedNumErrors := 32
-		expectedPrefix := " error(s) decoding:"
-		assert.True(t, strings.HasPrefix(errMsg, fmt.Sprintf("%d%s", expectedNumErrors, expectedPrefix)), errMsg)
-		prefixIndex := strings.Index(errMsg, expectedPrefix)
-		if assert.True(t, prefixIndex != -1) {
-			errMsg = errMsg[prefixIndex+len(expectedPrefix):]
-			errMsg = strings.TrimSpace(errMsg)
-			errors := strings.Split(errMsg, "\n")
-			errorSet := make(map[string]struct{}, len(errors))
-			for _, e := range errors {
-				errorSet[e] = struct{}{}
-			}
-			expectedErrors := []string{
-				"* error decoding 'int': invalid int \"-badval\"",
-				"* error decoding 'intPtr': invalid int \"-badval\"",
-				"* error decoding 'int16': invalid int16 \"-badval\"",
-				"* error decoding 'int16Ptr': invalid int16 \"-badval\"",
-				"* error decoding 'int32': invalid int32 \"-badval\"",
-				"* error decoding 'int32Ptr': invalid int32 \"-badval\"",
-				"* error decoding 'int64': invalid int64 \"-badval\"",
-				"* error decoding 'int64Ptr': invalid int64 \"-badval\"",
-				"* error decoding 'int8': invalid int8 \"-badval\"",
-				"* error decoding 'int8Ptr': invalid int8 \"-badval\"",
-				"* error decoding 'uint': invalid uint \"-9999\"",
-				"* error decoding 'uintPtr': invalid uint \"-9999\"",
-				"* error decoding 'uint64': invalid uint64 \"-1234\"",
-				"* error decoding 'uint64Ptr': invalid uint64 \"-1234\"",
-				"* error decoding 'uint32': invalid uint32 \"-5678\"",
-				"* error decoding 'uint32Ptr': invalid uint32 \"-5678\"",
-				"* error decoding 'uint16': invalid uint16 \"-9012\"",
-				"* error decoding 'uint16Ptr': invalid uint16 \"-9012\"",
-				"* error decoding 'byte': invalid uint8 \"-1\"",
-				"* error decoding 'bytePtr': invalid uint8 \"-1\"",
-				"* error decoding 'float32': invalid float32 \"badval.5\"",
-				"* error decoding 'float32Ptr': invalid float32 \"badval.5\"",
-				"* error decoding 'float64': invalid float64 \"badval.5\"",
-				"* error decoding 'float64Ptr': invalid float64 \"badval.5\"",
-				"* error decoding 'duration': invalid duration \"badval\"",
-				"* error decoding 'durationPtr': invalid duration \"badval\"",
-				"* error decoding 'time': invalid time \"badval\"",
-				"* error decoding 'timePtr': invalid time \"badval\"",
-				"* error decoding 'decoded': invalid Decoded \"badval\": strconv.Atoi: parsing \"badval\": invalid syntax",
-				"* error decoding 'decodedPtr': invalid Decoded \"badval\": strconv.Atoi: parsing \"badval\": invalid syntax",
-				"* error decoding 'bool': invalid bool \"badval\"",
-				"* error decoding 'boolPtr': invalid bool \"badval\"",
-			}
-			for _, expectedError := range expectedErrors {
-				assert.Contains(t, errors, expectedError)
-				delete(errorSet, expectedError)
-			}
-			assert.Empty(t, errorSet)
-		}
+	require.Error(t, err)
+
+	errMsg := err.Error()
+	expectedNumErrors := 32
+	expectedPrefix := " error(s) decoding:"
+	assert.True(t, strings.HasPrefix(errMsg, fmt.Sprintf("%d%s", expectedNumErrors, expectedPrefix)), errMsg)
+	prefixIndex := strings.Index(errMsg, expectedPrefix)
+	require.NotEqual(t, -1, prefixIndex)
+	errMsg = errMsg[prefixIndex+len(expectedPrefix):]
+	errMsg = strings.TrimSpace(errMsg)
+	errors := strings.Split(errMsg, "\n")
+	errorSet := make(map[string]struct{}, len(errors))
+	for _, e := range errors {
+		errorSet[e] = struct{}{}
 	}
+	expectedErrors := []string{
+		"* error decoding 'int': invalid int \"-badval\"",
+		"* error decoding 'intPtr': invalid int \"-badval\"",
+		"* error decoding 'int16': invalid int16 \"-badval\"",
+		"* error decoding 'int16Ptr': invalid int16 \"-badval\"",
+		"* error decoding 'int32': invalid int32 \"-badval\"",
+		"* error decoding 'int32Ptr': invalid int32 \"-badval\"",
+		"* error decoding 'int64': invalid int64 \"-badval\"",
+		"* error decoding 'int64Ptr': invalid int64 \"-badval\"",
+		"* error decoding 'int8': invalid int8 \"-badval\"",
+		"* error decoding 'int8Ptr': invalid int8 \"-badval\"",
+		"* error decoding 'uint': invalid uint \"-9999\"",
+		"* error decoding 'uintPtr': invalid uint \"-9999\"",
+		"* error decoding 'uint64': invalid uint64 \"-1234\"",
+		"* error decoding 'uint64Ptr': invalid uint64 \"-1234\"",
+		"* error decoding 'uint32': invalid uint32 \"-5678\"",
+		"* error decoding 'uint32Ptr': invalid uint32 \"-5678\"",
+		"* error decoding 'uint16': invalid uint16 \"-9012\"",
+		"* error decoding 'uint16Ptr': invalid uint16 \"-9012\"",
+		"* error decoding 'byte': invalid uint8 \"-1\"",
+		"* error decoding 'bytePtr': invalid uint8 \"-1\"",
+		"* error decoding 'float32': invalid float32 \"badval.5\"",
+		"* error decoding 'float32Ptr': invalid float32 \"badval.5\"",
+		"* error decoding 'float64': invalid float64 \"badval.5\"",
+		"* error decoding 'float64Ptr': invalid float64 \"badval.5\"",
+		"* error decoding 'duration': invalid duration \"badval\"",
+		"* error decoding 'durationPtr': invalid duration \"badval\"",
+		"* error decoding 'time': invalid time \"badval\"",
+		"* error decoding 'timePtr': invalid time \"badval\"",
+		"* error decoding 'decoded': invalid Decoded \"badval\": strconv.Atoi: parsing \"badval\": invalid syntax",
+		"* error decoding 'decodedPtr': invalid Decoded \"badval\": strconv.Atoi: parsing \"badval\": invalid syntax",
+		"* error decoding 'bool': invalid bool \"badval\"",
+		"* error decoding 'boolPtr': invalid bool \"badval\"",
+	}
+	for _, expectedError := range expectedErrors {
+		assert.Contains(t, errors, expectedError)
+		delete(errorSet, expectedError)
+	}
+	assert.Empty(t, errorSet)
 }
 
 func getTimeVal() time.Time {

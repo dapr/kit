@@ -150,7 +150,7 @@ func TestJSONLoggerFields(t *testing.T) {
 
 			b, _ := buf.ReadBytes('\n')
 			var o map[string]interface{}
-			assert.NoError(t, json.Unmarshal(b, &o))
+			require.NoError(t, json.Unmarshal(b, &o))
 
 			// assert
 			assert.Equal(t, tt.appID, o[logFieldAppID])
@@ -160,7 +160,7 @@ func TestJSONLoggerFields(t *testing.T) {
 			assert.Equal(t, fakeLoggerName, o[logFieldScope])
 			assert.Equal(t, tt.message, o[logFieldMessage])
 			_, err := time.Parse(time.RFC3339, o[logFieldTimeStamp].(string))
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 	}
 }

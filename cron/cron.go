@@ -59,7 +59,7 @@ type Job interface {
 type Schedule interface {
 	// Next returns the next activation time, later than the given time.
 	// Next is invoked initially, and then each time the job is run.
-	Next(time.Time) time.Time
+	Next(t time.Time) time.Time
 }
 
 // EntryID identifies an entry within a Cron instance
@@ -140,7 +140,7 @@ func New(opts ...Option) *Cron {
 		running:   false,
 		runningMu: sync.Mutex{},
 		logger:    DefaultLogger,
-		location:  time.Local,
+		location:  time.Local, //nolint:gosmopolitan
 		parser:    standardParser,
 		clk:       clock.RealClock{},
 	}

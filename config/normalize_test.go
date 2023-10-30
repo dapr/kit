@@ -96,7 +96,7 @@ func TestNormalize(t *testing.T) {
 			actual, err := config.Normalize(tc.input)
 			if tc.err != "" {
 				require.Error(t, err)
-				assert.EqualError(t, err, tc.err)
+				require.EqualError(t, err, tc.err)
 			} else {
 				require.NoError(t, err)
 			}

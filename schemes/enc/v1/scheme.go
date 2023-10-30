@@ -171,7 +171,7 @@ func Encrypt(in io.Reader, opts EncryptOptions) (io.Reader, error) {
 		}
 
 		// Proceed with processing all segments
-		processSegments(fk, in, outW, fk.EncryptSegment, SegmentSize)
+		processSegments(in, outW, fk.EncryptSegment, SegmentSize)
 	}()
 
 	return outR, nil
@@ -238,13 +238,13 @@ func Decrypt(in io.Reader, opts DecryptOptions) (io.Reader, error) {
 	// Start a background goroutine to perform the encryption, and return the stream to the caller
 	// From now on, errors are returned as errors on the stream
 	outR, outW := io.Pipe()
-	go processSegments(fk, in, outW, fk.DecryptSegment, SegmentSize+SegmentOverhead)
+	go processSegments(in, outW, fk.DecryptSegment, SegmentSize+SegmentOverhead)
 
 	return outR, nil
 }
 
 // Reads all segment from the input stream, either plaintext or ciphertext, and process them (encrypt or decrypt them)
-func processSegments(fk fileKey, in io.Reader, out *io.PipeWriter, processFn processSegmentFn, segmentSize int) {
+func processSegments(in io.Reader, out *io.PipeWriter, processFn processSegmentFn, segmentSize int) {
 	// Get a buffer from the pool
 	buf := BufPool.Get().(*[]byte)
 	defer func() {
