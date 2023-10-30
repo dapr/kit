@@ -76,6 +76,7 @@ func New(err error, metadata map[string]string, options ...Option) *Error {
 		reason:         errorInfoResonUnknown,
 		httpCode:       grpccodes.HTTPStatusFromCode(codes.Unknown),
 		grpcStatusCode: codes.Unknown,
+		metadata:       metadata,
 	}
 
 	// Now apply any requested options

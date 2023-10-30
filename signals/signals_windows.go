@@ -11,19 +11,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ratelimiting
+package signals
 
-import "context"
+import (
+	"os"
+)
 
-// RateLimiter is the interface for rate limiting events.
-type RateLimiter interface {
-	// Run starts the rate limiter. The given channel will have events sent to
-	// it, according to the rate limited parameters.
-	Run(ctx context.Context, eventCh chan<- struct{}) error
-
-	// Add adds a new event to the rate limiter.
-	Add()
-
-	// Close closes the rate limiter and waits for all resources to be released.
-	Close()
-}
+var shutdownSignals = []os.Signal{os.Interrupt}

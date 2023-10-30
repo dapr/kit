@@ -32,7 +32,7 @@ func TestNewAESCBCAEAD(t *testing.T) {
 
 			aead, err := NewAESCBC128SHA256(key)
 			require.NoError(t, err)
-			require.Equal(t, len(nonce), aead.NonceSize())
+			require.Len(t, nonce, aead.NonceSize())
 			require.Equal(t, 16, aead.Overhead())
 
 			gotCiphertext := aead.Seal(nil, nonce, plaintext, aad)
@@ -52,7 +52,7 @@ func TestNewAESCBCAEAD(t *testing.T) {
 
 			aead, err := NewAESCBC192SHA384(key)
 			require.NoError(t, err)
-			require.Equal(t, len(nonce), aead.NonceSize())
+			require.Len(t, nonce, aead.NonceSize())
 			require.Equal(t, 24, aead.Overhead())
 
 			gotCiphertext := aead.Seal(nil, nonce, plaintext, aad)
@@ -72,7 +72,7 @@ func TestNewAESCBCAEAD(t *testing.T) {
 
 			aead, err := NewAESCBC256SHA384(key)
 			require.NoError(t, err)
-			require.Equal(t, len(nonce), aead.NonceSize())
+			require.Len(t, nonce, aead.NonceSize())
 			require.Equal(t, 24, aead.Overhead())
 
 			gotCiphertext := aead.Seal(nil, nonce, plaintext, aad)
@@ -92,7 +92,7 @@ func TestNewAESCBCAEAD(t *testing.T) {
 
 			aead, err := NewAESCBC256SHA512(key)
 			require.NoError(t, err)
-			require.Equal(t, len(nonce), aead.NonceSize())
+			require.Len(t, nonce, aead.NonceSize())
 			require.Equal(t, 32, aead.Overhead())
 
 			gotCiphertext := aead.Seal(nil, nonce, plaintext, aad)

@@ -191,7 +191,7 @@ func encryptSymmetricAESGCM(plaintext []byte, algorithm string, key []byte, nonc
 		return nil, nil, ErrKeyTypeMismatch
 	}
 
-	return encryptSymmetricAEAD(aead, plaintext, algorithm, key, nonce, associatedData)
+	return encryptSymmetricAEAD(aead, plaintext, nonce, associatedData)
 }
 
 func encryptSymmetricAESCBCHMAC(plaintext []byte, algorithm string, key []byte, nonce []byte, associatedData []byte) (ciphertext []byte, tag []byte, err error) {
@@ -200,10 +200,10 @@ func encryptSymmetricAESCBCHMAC(plaintext []byte, algorithm string, key []byte, 
 		return nil, nil, err
 	}
 
-	return encryptSymmetricAEAD(aead, plaintext, algorithm, key, nonce, associatedData)
+	return encryptSymmetricAEAD(aead, plaintext, nonce, associatedData)
 }
 
-func encryptSymmetricAEAD(aead cipher.AEAD, plaintext []byte, algorithm string, key []byte, nonce []byte, associatedData []byte) (ciphertext []byte, tag []byte, err error) {
+func encryptSymmetricAEAD(aead cipher.AEAD, plaintext []byte, nonce []byte, associatedData []byte) (ciphertext []byte, tag []byte, err error) {
 	if len(nonce) != aead.NonceSize() {
 		return nil, nil, ErrInvalidNonce
 	}
@@ -229,7 +229,7 @@ func decryptSymmetricAESGCM(ciphertext []byte, algorithm string, key []byte, non
 		return nil, ErrKeyTypeMismatch
 	}
 
-	return decryptSymmetricAEAD(aead, ciphertext, algorithm, key, nonce, tag, associatedData)
+	return decryptSymmetricAEAD(aead, ciphertext, nonce, tag, associatedData)
 }
 
 func decryptSymmetricAESCBCHMAC(ciphertext []byte, algorithm string, key []byte, nonce []byte, tag []byte, associatedData []byte) (plaintext []byte, err error) {
@@ -238,10 +238,10 @@ func decryptSymmetricAESCBCHMAC(ciphertext []byte, algorithm string, key []byte,
 		return nil, err
 	}
 
-	return decryptSymmetricAEAD(aead, ciphertext, algorithm, key, nonce, tag, associatedData)
+	return decryptSymmetricAEAD(aead, ciphertext, nonce, tag, associatedData)
 }
 
-func decryptSymmetricAEAD(aead cipher.AEAD, ciphertext []byte, algorithm string, key []byte, nonce []byte, tag []byte, associatedData []byte) (plaintext []byte, err error) {
+func decryptSymmetricAEAD(aead cipher.AEAD, ciphertext []byte, nonce []byte, tag []byte, associatedData []byte) (plaintext []byte, err error) {
 	if len(nonce) != aead.NonceSize() {
 		return nil, ErrInvalidNonce
 	}

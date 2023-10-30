@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 )
@@ -124,7 +125,7 @@ func TestNewError(t *testing.T) {
 			st := test.de.GRPCStatus()
 			assert.NotNil(t, st, "want nil, got = %v", st)
 			assert.NotNil(t, st.Details())
-			assert.Equal(t, test.expectedDetailsCount, len(st.Details()), "want 2, got = %d", len(st.Details()))
+			assert.Len(t, st.Details(), test.expectedDetailsCount, "want 2, got = %d", len(st.Details()))
 			gotResourceInfo := false
 			for _, detail := range st.Details() {
 				switch detail.(type) {
@@ -133,7 +134,7 @@ func TestNewError(t *testing.T) {
 				}
 			}
 			assert.Equal(t, test.expectedResourceInfo, gotResourceInfo, "expected ResourceInfo, but got none")
-			assert.EqualError(t, test.expectedError, test.de.Error())
+			require.EqualError(t, test.expectedError, test.de.Error())
 			assert.Equal(t, test.expectedDescription, test.de.Description())
 		})
 	}

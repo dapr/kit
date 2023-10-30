@@ -418,11 +418,11 @@ func TestClose(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		select {
 		case err := <-closeCh:
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		case <-time.After(time.Second * 3):
 			t.Fatal("close should have returned")
 		}
 	}
 
-	assert.NoError(t, processor.Close())
+	require.NoError(t, processor.Close())
 }

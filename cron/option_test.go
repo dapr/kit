@@ -59,7 +59,7 @@ func TestWithVerboseLogger(t *testing.T) {
 		out := buf.String()
 		if !strings.Contains(out, "schedule,") ||
 			!strings.Contains(out, "run,") {
-			c.Errorf("expected to see some actions, got: %v", out)
+			c.Errorf("expected to see some actions, got: %v", out) //nolint:testifylint
 		}
 	}, time.Second, time.Millisecond*10)
 }
