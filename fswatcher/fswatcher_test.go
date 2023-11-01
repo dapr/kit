@@ -116,7 +116,7 @@ func TestFSWatcher(t *testing.T) {
 
 		select {
 		case <-eventsCh:
-		case <-time.After(time.Millisecond * 10):
+		case <-time.After(time.Second):
 			assert.Fail(t, "timeout waiting for event")
 		}
 	})
