@@ -19,6 +19,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -107,7 +108,12 @@ func TestFSWatcher(t *testing.T) {
 		}, nil)
 		assert.Empty(t, eventsCh)
 
+		if runtime.GOOS == "windows" {
+			// If running in windows, wait for notify to be ready.
+			time.Sleep(time.Second)
+		}
 		require.NoError(t, os.WriteFile(fp, []byte{}, 0o644))
+
 		select {
 		case <-eventsCh:
 		case <-time.After(time.Millisecond * 10):
@@ -146,6 +152,10 @@ func TestFSWatcher(t *testing.T) {
 			Targets:  []string{fp1, fp2},
 			Interval: ptr.Of(time.Duration(1)),
 		}, nil)
+		if runtime.GOOS == "windows" {
+			// If running in windows, wait for notify to be ready.
+			time.Sleep(time.Second)
+		}
 		assert.Empty(t, eventsCh)
 		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o644))
 		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o644))
@@ -189,6 +199,11 @@ func TestFSWatcher(t *testing.T) {
 		fp2 := filepath.Join(dir2, "test2.txt")
 		eventsCh := runWatcher(t, Options{Targets: []string{dir1, dir2}}, batcher)
 		assert.Empty(t, eventsCh)
+
+		if runtime.GOOS == "windows" {
+			// If running in windows, wait for notify to be ready.
+			time.Sleep(time.Second)
+		}
 
 		for i := 0; i < 10; i++ {
 			require.NoError(t, os.WriteFile(fp1, []byte{}, 0o644))
