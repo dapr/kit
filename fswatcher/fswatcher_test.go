@@ -70,14 +70,14 @@ func TestFSWatcher(t *testing.T) {
 		_, err := New(Options{
 			Interval: ptr.Of(time.Duration(0)),
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("creating fswatcher with negative interval should error", func(t *testing.T) {
 		_, err := New(Options{
 			Interval: ptr.Of(time.Duration(-1)),
 		})
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("running Run twice should error", func(t *testing.T) {
@@ -85,7 +85,7 @@ func TestFSWatcher(t *testing.T) {
 		require.NoError(t, err)
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		assert.NoError(t, fs.Run(ctx, make(chan struct{})))
+		require.NoError(t, fs.Run(ctx, make(chan struct{})))
 		assert.Error(t, fs.Run(ctx, make(chan struct{})))
 	})
 
