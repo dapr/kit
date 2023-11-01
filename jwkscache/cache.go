@@ -223,10 +223,16 @@ func (c *JWKSCache) initJWKSFromFile(ctx context.Context, file string) error {
 	eventCh := make(chan struct{})
 	loaded := make(chan error, 1) // Needs to be buffered to prevent a goroutine leak
 	go func() {
-		watchErr := fswatcher.Watch(ctx, path, eventCh)
-		if watchErr != nil && !errors.Is(watchErr, context.Canceled) {
-			// Log errors only
-			c.logger.Errorf("Error while watching for changes to the local JWKS file: %v", watchErr)
+		// Log errors only
+		fw, err := fswatcher.New(fswatcher.Options{
+			Targets: []string{path},
+		})
+		if err != nil {
+			c.logger.Errorf("Error while watching for changes to the local JWKS file: %v", err)
+			return
+		}
+		if err = fw.Run(ctx, eventCh); err != nil {
+			c.logger.Errorf("Error while watching for changes to the local JWKS file: %v", err)
 		}
 	}()
 	go func() {
