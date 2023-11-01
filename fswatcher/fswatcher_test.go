@@ -86,7 +86,7 @@ func TestFSWatcher(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 		require.NoError(t, fs.Run(ctx, make(chan struct{})))
-		assert.Error(t, fs.Run(ctx, make(chan struct{})))
+		require.Error(t, fs.Run(ctx, make(chan struct{})))
 	})
 
 	t.Run("creating fswatcher with non-existent directory should error", func(t *testing.T) {
@@ -95,7 +95,7 @@ func TestFSWatcher(t *testing.T) {
 		_, err := New(Options{
 			Targets: []string{dir},
 		})
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("should fire event when event occurs on target file", func(t *testing.T) {
@@ -107,7 +107,7 @@ func TestFSWatcher(t *testing.T) {
 		}, nil)
 		assert.Empty(t, eventsCh)
 
-		assert.NoError(t, os.WriteFile(fp, []byte{}, 0o644))
+		require.NoError(t, os.WriteFile(fp, []byte{}, 0o644))
 		select {
 		case <-eventsCh:
 		case <-time.After(time.Millisecond * 10):
