@@ -56,7 +56,6 @@ func TestError_WithVars(t *testing.T) {
 				httpCode: http.StatusTeapot,
 				message:  "fake_message",
 				metadata: map[string]string{"fake": "test"},
-				reason:   "FAKE_REASON",
 				tag:      "DAPR_FAKE_TAG",
 			},
 			args: args{a: []any{}},
@@ -66,7 +65,6 @@ func TestError_WithVars(t *testing.T) {
 				HttpCode: http.StatusTeapot,
 				Message:  "fake_message",
 				Metadata: map[string]string{"fake": "test"},
-				Reason:   "FAKE_REASON",
 				Tag:      "DAPR_FAKE_TAG",
 			},
 		},
@@ -78,7 +76,6 @@ func TestError_WithVars(t *testing.T) {
 				httpCode: http.StatusTeapot,
 				message:  "fake_message: %s",
 				metadata: map[string]string{"fake": "test"},
-				reason:   "FAKE_REASON",
 				tag:      "DAPR_FAKE_TAG",
 			},
 			args: args{a: []any{"myFakeMsg"}},
@@ -88,12 +85,11 @@ func TestError_WithVars(t *testing.T) {
 				HttpCode: http.StatusTeapot,
 				Message:  "fake_message: myFakeMsg",
 				Metadata: map[string]string{"fake": "test"},
-				Reason:   "FAKE_REASON",
 				Tag:      "DAPR_FAKE_TAG",
 			},
 		},
 		{
-			name: "Multiple_Parameter",
+			name: "Multiple_Parameters",
 			fields: fields{
 				details:  []proto.Message{},
 				grpcCode: grpcCodes.ResourceExhausted,
@@ -108,7 +104,7 @@ func TestError_WithVars(t *testing.T) {
 				Details:  []proto.Message{},
 				GrpcCode: grpcCodes.ResourceExhausted,
 				HttpCode: http.StatusTeapot,
-				Message:  "fake_message",
+				Message:  "fake_messages: myFakeMsg1, myFakeMsg2, 12",
 				Metadata: map[string]string{"fake": "test"},
 				Reason:   "FAKE_REASON",
 				Tag:      "DAPR_FAKE_TAG",
@@ -128,25 +124,13 @@ func TestError_WithVars(t *testing.T) {
 				Tag:      test.fields.tag,
 			}
 
-			if got := kitErr.WithVars(test.args.a...); !helperSlicesEqual(got.Details, test.want.Details) {
-				t.Errorf("Error.WithVars() = %v, want %v", got, test.want)
+			if got := kitErr.WithVars(test.args.a...); !reflect.DeepEqual(got, &test.want) {
+				t.Errorf("Error.WithVars() = %v, want %v\n", got, test.want)
 			}
+
 			assert.True(t, kitErr.Is(&kitErr))
 		})
 	}
-}
-
-// helperSlicesEqual compares slices element by element
-func helperSlicesEqual(a, b []proto.Message) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if !reflect.DeepEqual(a[i], b[i]) {
-			return false
-		}
-	}
-	return true
 }
 
 func TestError_Message(t *testing.T) {
@@ -248,56 +232,6 @@ func TestError_HttpCode(t *testing.T) {
 	}
 }
 
-/*
-func TestError_GRPCStatus(t *testing.T) {
-	type fields struct {
-		message  string
-		grpcCode grpcCodes.Code
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   *status.Status
-	}{
-		{
-			name: "Has_GrpcCode_And_Message",
-			fields: fields{
-				message:  "Msg",
-				grpcCode: grpcCodes.ResourceExhausted,
-			},
-			want: status.New(grpcCodes.ResourceExhausted, "Msg"),
-		},
-		{
-			name: "Has_Only_Message",
-			fields: fields{
-				message: "Msg",
-			},
-			// The default code is 0, i.e. OK
-			want: status.New(grpcCodes.OK, "Msg"),
-		},
-		{
-			name: "Has_Only_GrpcCode",
-			fields: fields{
-				grpcCode: grpcCodes.Canceled,
-			},
-			want: status.New(grpcCodes.Canceled, ""),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			kitErr := Error{
-				Message:  tt.fields.message,
-				GrpcCode: tt.fields.grpcCode,
-			}
-			if got := kitErr.GRPCStatus(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Error.GRPCStatus = %v, want %v", got, tt.want)
-			}
-			assert.True(t, kitErr.Is(&kitErr))
-		})
-	}
-}
-*/
-
 // Ensure Err fmt to not break users expecting this format
 func TestError_Error(t *testing.T) {
 	type fields struct {
@@ -345,6 +279,19 @@ func TestError_Error(t *testing.T) {
 			assert.True(t, kitErr.Is(&kitErr))
 		})
 	}
+}
+
+// helperSlicesEqual compares slices element by element
+func helperSlicesEqual(a, b []proto.Message) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !reflect.DeepEqual(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
 }
 
 func TestError_WithErrorInfo(t *testing.T) {
@@ -660,46 +607,50 @@ func TestError_GRPCStatus(t *testing.T) {
 				return s
 			}(),
 		},
-		//TODO(Cassie) confirm with reason output is correct and fix test, or adjust reason accordingly
-		// {
-		// 	name: "With_Details_And_Reason",
-		// 	fields: fields{
-		// 		details: []proto.Message{
-		// 			&errdetails.ErrorInfo{
-		// 				Domain:   domain,
-		// 				Reason:   "FAKE_REASON",
-		// 				Metadata: map[string]string{"key": "value"},
-		// 			},
-		// 			&errdetails.PreconditionFailure_Violation{
-		// 				Type:        "TOS",
-		// 				Subject:     "google.com/cloud",
-		// 				Description: "test_description",
-		// 			},
-		// 		},
-		// 		grpcCode: grpcCodes.ResourceExhausted,
-		// 		httpCode: http.StatusTeapot,
-		// 		message:  "fake_message",
-		// 		metadata: map[string]string{"fake": "test"},
-		// 		reason:   "FAKE_REASON",
-		// 		tag:      "DAPR_FAKE_TAG",
-		// 	},
-		// 	want: func() *status.Status {
-		// 		s, _ := status.New(grpcCodes.ResourceExhausted, "fake_message").
-		// 			WithDetails(
-		// 				&errdetails.ErrorInfo{
-		// 					Domain:   domain,
-		// 					Reason:   "FAKE_REASON",
-		// 					Metadata: map[string]string{"key": "value"},
-		// 				},
-		// 				&errdetails.PreconditionFailure_Violation{
-		// 					Type:        "TOS",
-		// 					Subject:     "google.com/cloud",
-		// 					Description: "test_description",
-		// 				},
-		// 			)
-		// 		return s
-		// 	}(),
-		// },
+		{
+			name: "With_Details_And_Reason",
+			fields: fields{
+				details: []proto.Message{
+					&errdetails.ErrorInfo{
+						Domain:   domain,
+						Reason:   "FAKE_REASON",
+						Metadata: map[string]string{"key": "value"},
+					},
+					&errdetails.PreconditionFailure_Violation{
+						Type:        "TOS",
+						Subject:     "google.com/cloud",
+						Description: "test_description",
+					},
+				},
+				grpcCode: grpcCodes.ResourceExhausted,
+				httpCode: http.StatusTeapot,
+				message:  "fake_message",
+				metadata: map[string]string{"fake": "test"},
+				reason:   "FAKE_REASON",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: func() *status.Status {
+				s, _ := status.New(grpcCodes.ResourceExhausted, "fake_message").
+					WithDetails(
+						&errdetails.ErrorInfo{
+							Domain:   domain,
+							Reason:   "FAKE_REASON",
+							Metadata: map[string]string{"fake": "test"},
+						},
+						&errdetails.ErrorInfo{
+							Domain:   domain,
+							Reason:   "FAKE_REASON",
+							Metadata: map[string]string{"key": "value"},
+						},
+						&errdetails.PreconditionFailure_Violation{
+							Type:        "TOS",
+							Subject:     "google.com/cloud",
+							Description: "test_description",
+						},
+					)
+				return s
+			}(),
+		},
 	}
 
 	for _, test := range tests {
@@ -717,10 +668,7 @@ func TestError_GRPCStatus(t *testing.T) {
 			got := kitErr.GRPCStatus()
 
 			if !reflect.DeepEqual(got.Proto(), test.want.Proto()) {
-				//TODO(Cassie): change this back once confirmed
-				t.Errorf("\nhave %v \n\n want %v", got.Proto(), test.want.Proto())
-
-				// t.Errorf("Error.GRPCStatus() = %v, want %v", got.Proto(), test.want.Proto())
+				t.Errorf("Error.GRPCStatus() = %v, want %v", got.Proto(), test.want.Proto())
 			}
 		})
 	}
