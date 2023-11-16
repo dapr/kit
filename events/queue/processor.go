@@ -19,7 +19,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	kclock "k8s.io/utils/clock"
+	"k8s.io/utils/clock"
 )
 
 // ErrProcessorStopped is returned when the processor is not running.
@@ -29,7 +29,7 @@ var ErrProcessorStopped = errors.New("processor is stopped")
 type Processor[T queueable] struct {
 	executeFn          func(r T)
 	queue              queue[T]
-	clock              kclock.Clock
+	clock              clock.Clock
 	lock               sync.Mutex
 	wg                 sync.WaitGroup
 	processorRunningCh chan struct{}
@@ -47,14 +47,8 @@ func NewProcessor[T queueable](executeFn func(r T)) *Processor[T] {
 		processorRunningCh: make(chan struct{}, 1),
 		stopCh:             make(chan struct{}),
 		resetCh:            make(chan struct{}, 1),
-		clock:              kclock.RealClock{},
+		clock:              clock.RealClock{},
 	}
-}
-
-// WithClock sets the clock used by the processor. Used for testing.
-func (p *Processor[T]) WithClock(clock kclock.Clock) *Processor[T] {
-	p.clock = clock
-	return p
 }
 
 // Enqueue adds a new item to the queue.
@@ -149,7 +143,7 @@ func (p *Processor[T]) processLoop() {
 	var (
 		r             T
 		ok            bool
-		t             kclock.Timer
+		t             clock.Timer
 		scheduledTime time.Time
 		deadline      time.Duration
 	)
