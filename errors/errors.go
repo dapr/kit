@@ -23,6 +23,7 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	grpcCodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/runtime/protoiface"
 )
@@ -53,14 +54,22 @@ type Error struct {
 	// Message is the human-readable error message.
 	Message string
 
-	// ErrorInfo Metadata
-	Metadata map[string]string
-
-	// ErrorInfo Reason
-	Reason string
-
 	// Tag is a string identifying the error, used with HTTP responses only.
 	Tag string
+}
+
+// New create a new Error using the supplied metadata and Options
+func New(grpcCode grpcCodes.Code, httpCode int, message string, tag string) *Error {
+	// Use default values
+	kitError := &Error{
+		Details:  make([]proto.Message, 0),
+		GrpcCode: grpcCode,
+		HttpCode: httpCode,
+		Message:  message,
+		Tag:      tag,
+	}
+
+	return kitError
 }
 
 // Error implements the error interface.
@@ -73,7 +82,7 @@ func (e *Error) Error() string {
 
 // String returns the string representation, useful for debugging.
 func (e Error) String() string {
-	return fmt.Sprintf(errStringFormat, e.GrpcCode, e.Message)
+	return fmt.Sprintf(errStringFormat, e.GrpcCode.String(), e.Message)
 }
 
 // WithResourceInfo used to pass ResourceInfo to the Error struct.
@@ -86,6 +95,7 @@ func (e *Error) WithResourceInfo(resourceType string, resourceName string, owner
 	}
 
 	e.Details = append(e.Details, resourceInfo)
+
 	return e
 }
 
@@ -97,19 +107,25 @@ func (e *Error) WithErrorInfo(reason string, metadata map[string]string) *Error 
 		Metadata: metadata,
 	}
 	e.Details = append(e.Details, errorInfo)
+
 	return e
 }
 
 // WithVars returns a copy of the error with the message going through fmt.Sprintf with the arguments passed to this method.
 func (e *Error) WithVars(a ...any) *Error {
-	newErr := *e
-	newErr.Message = fmt.Sprintf(e.Message, a...)
-	return &newErr
+	eCopy := *e
+	eCopy.Message = fmt.Sprintf(e.Message, a...)
+
+	return &eCopy
 }
 
 func (e *Error) WithDetails(details ...proto.Message) *Error {
 	e.Details = append(e.Details, details...)
+
 	return e
+
+	//TODO ensure proto.message in Details is actually a correct proto type
+	//TODO add test for it
 }
 
 // *** GRPC Methods ***
@@ -118,22 +134,13 @@ func (e *Error) WithDetails(details ...proto.Message) *Error {
 func (e *Error) GRPCStatus() *status.Status {
 	status := status.New(e.GrpcCode, e.Message)
 
-	if e.Reason != "" {
-		errorInfo := &errdetails.ErrorInfo{
-			Domain:   domain,
-			Reason:   e.Reason,
-			Metadata: e.Metadata,
-		}
-		status, _ = status.WithDetails(errorInfo)
-	}
-
 	// convert details from proto.Msg -> protoiface.MsgV1
 	var convertedDetails []protoiface.MessageV1
 	for _, detail := range e.Details {
 		if v1, ok := detail.(protoiface.MessageV1); ok {
 			convertedDetails = append(convertedDetails, v1)
 		} else {
-			log.Debug("Failed to convert error details: %s", detail)
+			log.Debugf("Failed to convert error details: %s", detail)
 		}
 	}
 
@@ -141,26 +148,24 @@ func (e *Error) GRPCStatus() *status.Status {
 		var err error
 		status, err = status.WithDetails(convertedDetails...)
 		if err != nil {
-			log.Debug("Failed to add error details to status: %s", status)
+			log.Debugf("Failed to add error details: %s to status: %s", err, status)
 		}
 	}
 
 	return status
+
 }
 
 // *** HTTP Methods ***
 
 // JSONErrorValue implements the errorResponseValue interface.
 func (e *Error) JSONErrorValue() []byte {
-	errBytes, _ := json.Marshal(struct {
-		ErrorCode string          `json:"errorCode"`
-		Message   string          `json:"message"`
-		Details   []proto.Message `json:"details"`
-	}{
-		ErrorCode: e.Tag,
-		Message:   e.Message,
-		Details:   e.Details,
-	})
+	//TODO make httpcode readable by the user
+	errBytes, err := protojson.Marshal(e.GRPCStatus().Proto())
+	if err != nil {
+		errJSON, _ := json.Marshal(fmt.Sprintf("failed to encode proto to JSON: %v", err))
+		return errJSON
+	}
 	return errBytes
 }
 
