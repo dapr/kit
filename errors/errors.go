@@ -132,7 +132,7 @@ func (e *Error) WithDetails(details ...proto.Message) *Error {
 
 // GRPCStatus returns the gRPC status.Status object.
 func (e *Error) GRPCStatus() *status.Status {
-	status := status.New(e.GrpcCode, e.Message)
+	stat := status.New(e.GrpcCode, e.Message)
 
 	// convert details from proto.Msg -> protoiface.MsgV1
 	var convertedDetails []protoiface.MessageV1
@@ -146,13 +146,13 @@ func (e *Error) GRPCStatus() *status.Status {
 
 	if len(e.Details) > 0 {
 		var err error
-		status, err = status.WithDetails(convertedDetails...)
+		stat, err = stat.WithDetails(convertedDetails...)
 		if err != nil {
-			log.Debugf("Failed to add error details: %s to status: %s", err, status)
+			log.Debugf("Failed to add error details: %s to status: %s", err, stat)
 		}
 	}
 
-	return status
+	return stat
 
 }
 
