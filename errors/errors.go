@@ -17,13 +17,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/dapr/kit/logger"
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	grpcCodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/runtime/protoiface"
 )
@@ -160,8 +160,66 @@ func (e *Error) GRPCStatus() *status.Status {
 
 // JSONErrorValue implements the errorResponseValue interface.
 func (e *Error) JSONErrorValue() []byte {
-	//TODO make httpcode readable by the user
-	errBytes, err := protojson.Marshal(e.GRPCStatus().Proto())
+	grpcStatus := e.GRPCStatus().Proto()
+
+	// Make httpCode human readable
+	httpStatus := http.StatusText(e.HttpCode)
+
+	// Change output to match prior output to not break users
+	errJson := map[string]interface{}{
+		"errorCode": httpStatus,
+		"message":   grpcStatus.GetMessage(),
+	}
+
+	// Handle err details
+	details := e.Details
+	if len(details) > 0 {
+		errJson["details"] = make([]interface{}, len(details))
+		for i, detail := range details {
+			// cast to interface to be able to do type switch
+			// over all possible error_details defined
+			// https://github.com/googleapis/go-genproto/blob/main/googleapis/rpc/errdetails/error_details.pb.go
+			switch typedDetail := detail.(type) {
+			case *errdetails.ErrorInfo:
+				detailMap := map[string]interface{}{
+					"reason":   typedDetail.Reason,
+					"domain":   typedDetail.Domain,
+					"metadata": typedDetail.Metadata, //TODO: fix this
+				}
+				errJson["details"].([]interface{})[i] = detailMap
+			case *errdetails.RetryInfo:
+			case *errdetails.DebugInfo:
+			case *errdetails.QuotaFailure:
+			case *errdetails.PreconditionFailure:
+			case *errdetails.BadRequest:
+			case *errdetails.RequestInfo:
+			case *errdetails.ResourceInfo:
+				detailMap := map[string]interface{}{
+					"resourceType": typedDetail.ResourceType,
+					"resourceName": typedDetail.ResourceName,
+					"owner":        typedDetail.Owner,
+					"description":  typedDetail.Description, //TODO: fix this not being set if description is err.Message
+				}
+				errJson["details"].([]interface{})[i] = detailMap
+			case *errdetails.Help:
+			case *errdetails.LocalizedMessage:
+			case *errdetails.QuotaFailure_Violation:
+			case *errdetails.PreconditionFailure_Violation:
+			case *errdetails.BadRequest_FieldViolation:
+			case *errdetails.Help_Link:
+
+			default:
+				log.Debugf("Failed to convert error details due to incorrect type. \nSee types here: https://github.com/googleapis/googleapis/blob/master/google/rpc/error_details.proto. \nDetail: %s", detail)
+				// Handle unknown detail types
+				unknownDetail := map[string]interface{}{
+					"unknownDetailType": fmt.Sprintf("%T", typedDetail),
+				}
+				errJson["details"].([]interface{})[i] = unknownDetail
+			}
+		}
+	}
+
+	errBytes, err := json.Marshal(errJson)
 	if err != nil {
 		errJSON, _ := json.Marshal(fmt.Sprintf("failed to encode proto to JSON: %v", err))
 		return errJSON
