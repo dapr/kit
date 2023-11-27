@@ -17,21 +17,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-
 	"github.com/dapr/kit/logger"
+	"net/http"
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	grpcCodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/runtime/protoiface"
-)
-
-const (
-	domain = "dapr.io"
-
-	errStringFormat = "api error: code = %s desc = %s"
 )
 
 var (
@@ -102,7 +95,7 @@ func (e *Error) WithResourceInfo(resourceType string, resourceName string, owner
 // WithErrorInfo adds error information to the Error struct.
 func (e *Error) WithErrorInfo(reason string, metadata map[string]string) *Error {
 	errorInfo := &errdetails.ErrorInfo{
-		Domain:   domain,
+		Domain:   ErrMsgDomain,
 		Reason:   reason,
 		Metadata: metadata,
 	}
@@ -163,7 +156,13 @@ func (e *Error) JSONErrorValue() []byte {
 	grpcStatus := e.GRPCStatus().Proto()
 
 	// Make httpCode human readable
-	httpStatus := http.StatusText(e.HttpCode)
+
+	// If there is no http legacy code, use the http status text
+	// This will get overwritten later if there is an ErrorInfo code
+	httpStatus := e.Tag
+	if httpStatus == "" {
+		httpStatus = http.StatusText(e.HttpCode)
+	}
 
 	// Change output to match prior output to not break users
 	errJson := map[string]interface{}{
@@ -187,6 +186,12 @@ func (e *Error) JSONErrorValue() []byte {
 					"metadata": typedDetail.Metadata, //TODO: fix this
 				}
 				errJson["details"].([]interface{})[i] = detailMap
+
+				// If there is an ErrorInfo Reason, but no legacy Tag code, use the ErrorInfo Reason as the error code
+				if e.Tag == "" && typedDetail.Reason != "" {
+					errJson["errorCode"] = typedDetail.Reason
+				}
+
 			case *errdetails.RetryInfo:
 			case *errdetails.DebugInfo:
 			case *errdetails.QuotaFailure:

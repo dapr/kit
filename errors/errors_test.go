@@ -64,7 +64,6 @@ func TestError_WithVars(t *testing.T) {
 				GrpcCode: grpcCodes.ResourceExhausted,
 				HttpCode: http.StatusTeapot,
 				Message:  "fake_message",
-				Metadata: map[string]string{"fake": "test"},
 				Tag:      "DAPR_FAKE_TAG",
 			},
 		},
@@ -84,7 +83,6 @@ func TestError_WithVars(t *testing.T) {
 				GrpcCode: grpcCodes.ResourceExhausted,
 				HttpCode: http.StatusTeapot,
 				Message:  "fake_message: myFakeMsg",
-				Metadata: map[string]string{"fake": "test"},
 				Tag:      "DAPR_FAKE_TAG",
 			},
 		},
@@ -105,8 +103,6 @@ func TestError_WithVars(t *testing.T) {
 				GrpcCode: grpcCodes.ResourceExhausted,
 				HttpCode: http.StatusTeapot,
 				Message:  "fake_messages: myFakeMsg1, myFakeMsg2, 12",
-				Metadata: map[string]string{"fake": "test"},
-				Reason:   "FAKE_REASON",
 				Tag:      "DAPR_FAKE_TAG",
 			},
 		},
@@ -119,8 +115,6 @@ func TestError_WithVars(t *testing.T) {
 				GrpcCode: test.fields.grpcCode,
 				HttpCode: test.fields.httpCode,
 				Message:  test.fields.message,
-				Metadata: test.fields.metadata,
-				Reason:   test.fields.reason,
 				Tag:      test.fields.tag,
 			}
 
@@ -332,8 +326,6 @@ func TestError_WithErrorInfo(t *testing.T) {
 				GrpcCode: grpcCodes.ResourceExhausted,
 				HttpCode: http.StatusTeapot,
 				Message:  "fake_message",
-				Metadata: map[string]string{"fake": "test"},
-				Reason:   "FAKE_REASON",
 				Tag:      "DAPR_FAKE_TAG",
 			},
 		},
@@ -366,8 +358,6 @@ func TestError_WithErrorInfo(t *testing.T) {
 				GrpcCode: grpcCodes.ResourceExhausted,
 				HttpCode: http.StatusTeapot,
 				Message:  "fake_message",
-				Metadata: map[string]string{"fake": "test"},
-				Reason:   "FAKE_REASON",
 				Tag:      "DAPR_FAKE_TAG",
 			},
 		},
@@ -384,7 +374,7 @@ func TestError_WithErrorInfo(t *testing.T) {
 			},
 			args: args{a: []proto.Message{
 				&errdetails.ErrorInfo{
-					Domain:   domain,
+					Domain:   ErrMsgDomain,
 					Reason:   "example_reason",
 					Metadata: map[string]string{"key": "value"},
 				},
@@ -397,7 +387,7 @@ func TestError_WithErrorInfo(t *testing.T) {
 			want: Error{
 				Details: []proto.Message{
 					&errdetails.ErrorInfo{
-						Domain:   domain,
+						Domain:   ErrMsgDomain,
 						Reason:   "example_reason",
 						Metadata: map[string]string{"key": "value"},
 					},
@@ -410,8 +400,6 @@ func TestError_WithErrorInfo(t *testing.T) {
 				GrpcCode: grpcCodes.ResourceExhausted,
 				HttpCode: http.StatusTeapot,
 				Message:  "fake_message",
-				Metadata: map[string]string{"fake": "test"},
-				Reason:   "FAKE_REASON",
 				Tag:      "DAPR_FAKE_TAG",
 			},
 		},
@@ -424,8 +412,6 @@ func TestError_WithErrorInfo(t *testing.T) {
 				GrpcCode: test.fields.grpcCode,
 				HttpCode: test.fields.httpCode,
 				Message:  test.fields.message,
-				Metadata: test.fields.metadata,
-				Reason:   test.fields.reason,
 				Tag:      test.fields.tag,
 			}
 
@@ -471,7 +457,7 @@ func TestError_JSONErrorValue(t *testing.T) {
 			fields: fields{
 				details: []proto.Message{
 					&errdetails.ErrorInfo{
-						Domain:   domain,
+						Domain:   ErrMsgDomain,
 						Reason:   "test_reason",
 						Metadata: map[string]string{"key": "value"},
 					},
@@ -499,8 +485,6 @@ func TestError_JSONErrorValue(t *testing.T) {
 				GrpcCode: test.fields.grpcCode,
 				HttpCode: test.fields.httpCode,
 				Message:  test.fields.message,
-				Metadata: test.fields.metadata,
-				Reason:   test.fields.reason,
 				Tag:      test.fields.tag,
 			}
 
@@ -561,7 +545,7 @@ func TestError_GRPCStatus(t *testing.T) {
 			want: func() *status.Status {
 				s, _ := status.New(grpcCodes.ResourceExhausted, "fake_message").WithDetails(
 					&errdetails.ErrorInfo{
-						Domain:   domain,
+						Domain:   ErrMsgDomain,
 						Reason:   "FAKE_REASON",
 						Metadata: map[string]string{"fake": "test"},
 					},
@@ -574,7 +558,7 @@ func TestError_GRPCStatus(t *testing.T) {
 			fields: fields{
 				details: []proto.Message{
 					&errdetails.ErrorInfo{
-						Domain:   domain,
+						Domain:   ErrMsgDomain,
 						Reason:   "FAKE_REASON",
 						Metadata: map[string]string{"key": "value"},
 					},
@@ -594,7 +578,7 @@ func TestError_GRPCStatus(t *testing.T) {
 				s, _ := status.New(grpcCodes.ResourceExhausted, "fake_message").
 					WithDetails(
 						&errdetails.ErrorInfo{
-							Domain:   domain,
+							Domain:   ErrMsgDomain,
 							Reason:   "FAKE_REASON",
 							Metadata: map[string]string{"key": "value"},
 						},
@@ -612,7 +596,7 @@ func TestError_GRPCStatus(t *testing.T) {
 			fields: fields{
 				details: []proto.Message{
 					&errdetails.ErrorInfo{
-						Domain:   domain,
+						Domain:   ErrMsgDomain,
 						Reason:   "FAKE_REASON",
 						Metadata: map[string]string{"key": "value"},
 					},
@@ -633,12 +617,12 @@ func TestError_GRPCStatus(t *testing.T) {
 				s, _ := status.New(grpcCodes.ResourceExhausted, "fake_message").
 					WithDetails(
 						&errdetails.ErrorInfo{
-							Domain:   domain,
+							Domain:   ErrMsgDomain,
 							Reason:   "FAKE_REASON",
 							Metadata: map[string]string{"fake": "test"},
 						},
 						&errdetails.ErrorInfo{
-							Domain:   domain,
+							Domain:   ErrMsgDomain,
 							Reason:   "FAKE_REASON",
 							Metadata: map[string]string{"key": "value"},
 						},
@@ -660,8 +644,6 @@ func TestError_GRPCStatus(t *testing.T) {
 				GrpcCode: test.fields.grpcCode,
 				HttpCode: test.fields.httpCode,
 				Message:  test.fields.message,
-				Metadata: test.fields.metadata,
-				Reason:   test.fields.reason,
 				Tag:      test.fields.tag,
 			}
 
