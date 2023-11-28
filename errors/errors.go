@@ -18,13 +18,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dapr/kit/logger"
-	"net/http"
-
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	grpcCodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/runtime/protoiface"
+	"net/http"
 )
 
 var (
@@ -180,7 +179,9 @@ func (e *Error) JSONErrorValue() []byte {
 			// https://github.com/googleapis/go-genproto/blob/main/googleapis/rpc/errdetails/error_details.pb.go
 			switch typedDetail := detail.(type) {
 			case *errdetails.ErrorInfo:
+				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
+					"type":     typeGoogleAPI + desc.FullName(),
 					"reason":   typedDetail.Reason,
 					"domain":   typedDetail.Domain,
 					"metadata": typedDetail.Metadata, //TODO: fix this
@@ -199,7 +200,9 @@ func (e *Error) JSONErrorValue() []byte {
 			case *errdetails.BadRequest:
 			case *errdetails.RequestInfo:
 			case *errdetails.ResourceInfo:
+				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
+					"type":         typeGoogleAPI + desc.FullName(),
 					"resourceType": typedDetail.ResourceType,
 					"resourceName": typedDetail.ResourceName,
 					"owner":        typedDetail.Owner,

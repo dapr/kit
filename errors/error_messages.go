@@ -18,13 +18,15 @@ const (
 
 	errStringFormat = "api error: code = %s desc = %s"
 
-	// MESSAGES
+	typeGoogleAPI = "type.googleapis.com/"
+
+	// Messages
 	ErrMsgStateGet        = "fail to get %s from state store %s: %s"
 	ErrMsgStateDelete     = "failed deleting state with key %s: %s"
 	ErrMsgStateSave       = "failed saving state in state store %s: %s"
 	ErrMsgStateDeleteBulk = "failed deleting state in state store %s: %s"
 
-	// StateTransaction.
+	// StateTransaction
 	ErrMsgStateTransactionsNotSupported = "state store %s doesn't support transaction"
 	ErrMsgStateOperationNotSupported    = "operation type %s not supported"
 	ErrMsgStateTransaction              = "error while executing state transaction: %s"

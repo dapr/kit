@@ -30,12 +30,8 @@ const (
 	ErrCodeNameResolution     = "DAPR_NAME_RESOLUTION_"
 	ErrCodeMiddleware         = "DAPR_MIDDLEWARE_"
 
-	// State.
-	ErrCodeGetStateFailed = "GET_STATE_FAILED"
-
-	// State transaction
+	// State
+	ErrCodeGetStateFailed      = "GET_STATE_FAILED"
 	ErrCodeTooManyTransactions = "TOO_MANY_TRANSACTIONS"
-
-	// State query
-	ErrCodeQueryFailed = "QUERY_FAILED"
+	ErrCodeQueryFailed         = "QUERY_FAILED"
 )
