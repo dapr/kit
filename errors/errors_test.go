@@ -264,7 +264,7 @@ func TestError_HttpCode(t *testing.T) {
 	}
 }
 
-// Ensure Err fmt to not break users expecting this format
+// Ensure Err format does not break users expecting this format
 func TestError_Error(t *testing.T) {
 	type fields struct {
 		message  string
@@ -301,7 +301,6 @@ func TestError_Error(t *testing.T) {
 			fields: fields{
 				message: "Msg",
 			},
-			// The default code is 0, i.e. OK
 			want: fmt.Sprintf(errStringFormat, grpcCodes.OK, "Msg"),
 		},
 		{
