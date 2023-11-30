@@ -115,9 +115,6 @@ func (e *Error) WithDetails(details ...proto.Message) *Error {
 	e.Details = append(e.Details, details...)
 
 	return e
-
-	//TODO ensure proto.message in Details is actually a correct proto type
-	//TODO add test for it
 }
 
 // *** GRPC Methods ***
@@ -181,10 +178,10 @@ func (e *Error) JSONErrorValue() []byte {
 			case *errdetails.ErrorInfo:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
-					"type":     typeGoogleAPI + desc.FullName(),
+					"@type":    typeGoogleAPI + desc.FullName(),
 					"reason":   typedDetail.Reason,
 					"domain":   typedDetail.Domain,
-					"metadata": typedDetail.Metadata, //TODO: fix this
+					"metadata": typedDetail.Metadata,
 				}
 				errJson["details"].([]interface{})[i] = detailMap
 
@@ -192,35 +189,114 @@ func (e *Error) JSONErrorValue() []byte {
 				if e.Tag == "" && typedDetail.Reason != "" {
 					errJson["errorCode"] = typedDetail.Reason
 				}
-
 			case *errdetails.RetryInfo:
+				desc := typedDetail.ProtoReflect().Descriptor()
+				detailMap := map[string]interface{}{
+					"@type":       typeGoogleAPI + desc.FullName(),
+					"retry_delay": typedDetail.RetryDelay,
+				}
+				errJson["details"].([]interface{})[i] = detailMap
 			case *errdetails.DebugInfo:
+				desc := typedDetail.ProtoReflect().Descriptor()
+				detailMap := map[string]interface{}{
+					"@type":         typeGoogleAPI + desc.FullName(),
+					"stack_entries": typedDetail.StackEntries,
+					"detail":        typedDetail.Detail,
+				}
+				errJson["details"].([]interface{})[i] = detailMap
 			case *errdetails.QuotaFailure:
+				desc := typedDetail.ProtoReflect().Descriptor()
+				detailMap := map[string]interface{}{
+					"@type":      typeGoogleAPI + desc.FullName(),
+					"violations": typedDetail.Violations,
+				}
+				errJson["details"].([]interface{})[i] = detailMap
 			case *errdetails.PreconditionFailure:
+				desc := typedDetail.ProtoReflect().Descriptor()
+				detailMap := map[string]interface{}{
+					"@type":      typeGoogleAPI + desc.FullName(),
+					"violations": typedDetail.Violations,
+				}
+				errJson["details"].([]interface{})[i] = detailMap
 			case *errdetails.BadRequest:
+				desc := typedDetail.ProtoReflect().Descriptor()
+				detailMap := map[string]interface{}{
+					"@type":            typeGoogleAPI + desc.FullName(),
+					"field_violations": typedDetail.FieldViolations,
+				}
+				errJson["details"].([]interface{})[i] = detailMap
 			case *errdetails.RequestInfo:
+				desc := typedDetail.ProtoReflect().Descriptor()
+				detailMap := map[string]interface{}{
+					"@type":        typeGoogleAPI + desc.FullName(),
+					"request_id":   typedDetail.RequestId,
+					"serving_data": typedDetail.ServingData,
+				}
+				errJson["details"].([]interface{})[i] = detailMap
 			case *errdetails.ResourceInfo:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
-					"type":         typeGoogleAPI + desc.FullName(),
-					"resourceType": typedDetail.ResourceType,
-					"resourceName": typedDetail.ResourceName,
-					"owner":        typedDetail.Owner,
-					"description":  typedDetail.Description, //TODO: fix this not being set if description is err.Message
+					"@type":         typeGoogleAPI + desc.FullName(),
+					"resource_type": typedDetail.ResourceType,
+					"resource_name": typedDetail.ResourceName,
+					"owner":         typedDetail.Owner,
+					"description":   typedDetail.Description,
 				}
 				errJson["details"].([]interface{})[i] = detailMap
 			case *errdetails.Help:
+				desc := typedDetail.ProtoReflect().Descriptor()
+				detailMap := map[string]interface{}{
+					"@type": typeGoogleAPI + desc.FullName(),
+					"links": typedDetail.Links,
+				}
+				errJson["details"].([]interface{})[i] = detailMap
 			case *errdetails.LocalizedMessage:
+				desc := typedDetail.ProtoReflect().Descriptor()
+				detailMap := map[string]interface{}{
+					"@type":   typeGoogleAPI + desc.FullName(),
+					"locale":  typedDetail.Locale,
+					"message": typedDetail.Message,
+				}
+				errJson["details"].([]interface{})[i] = detailMap
 			case *errdetails.QuotaFailure_Violation:
+				desc := typedDetail.ProtoReflect().Descriptor()
+				detailMap := map[string]interface{}{
+					"@type":       typeGoogleAPI + desc.FullName(),
+					"subject":     typedDetail.Subject,
+					"description": typedDetail.Description,
+				}
+				errJson["details"].([]interface{})[i] = detailMap
 			case *errdetails.PreconditionFailure_Violation:
+				desc := typedDetail.ProtoReflect().Descriptor()
+				detailMap := map[string]interface{}{
+					"@type":       typeGoogleAPI + desc.FullName(),
+					"subject":     typedDetail.Subject,
+					"description": typedDetail.Description,
+					"type":        typedDetail.Type,
+				}
+				errJson["details"].([]interface{})[i] = detailMap
 			case *errdetails.BadRequest_FieldViolation:
+				desc := typedDetail.ProtoReflect().Descriptor()
+				detailMap := map[string]interface{}{
+					"@type":       typeGoogleAPI + desc.FullName(),
+					"field":       typedDetail.Field,
+					"description": typedDetail.Description,
+				}
+				errJson["details"].([]interface{})[i] = detailMap
 			case *errdetails.Help_Link:
-
+				desc := typedDetail.ProtoReflect().Descriptor()
+				detailMap := map[string]interface{}{
+					"@type":       typeGoogleAPI + desc.FullName(),
+					"description": typedDetail.Description,
+					"url":         typedDetail.Url,
+				}
+				errJson["details"].([]interface{})[i] = detailMap
 			default:
 				log.Debugf("Failed to convert error details due to incorrect type. \nSee types here: https://github.com/googleapis/googleapis/blob/master/google/rpc/error_details.proto. \nDetail: %s", detail)
 				// Handle unknown detail types
 				unknownDetail := map[string]interface{}{
 					"unknownDetailType": fmt.Sprintf("%T", typedDetail),
+					"unknownDetails":    fmt.Sprintf("%#v", typedDetail),
 				}
 				errJson["details"].([]interface{})[i] = unknownDetail
 			}

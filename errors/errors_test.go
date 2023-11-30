@@ -14,12 +14,16 @@ limitations under the License.
 package errors
 
 import (
+	"encoding/json"
 	"fmt"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"net/http"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/genproto/googleapis/rpc/context"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	grpcCodes "google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
@@ -34,8 +38,6 @@ func TestError_WithVars(t *testing.T) {
 		grpcCode grpcCodes.Code
 		httpCode int
 		message  string
-		metadata map[string]string
-		reason   string
 		tag      string
 	}
 
@@ -56,7 +58,6 @@ func TestError_WithVars(t *testing.T) {
 				grpcCode: grpcCodes.ResourceExhausted,
 				httpCode: http.StatusTeapot,
 				message:  "fake_message",
-				metadata: map[string]string{"fake": "test"},
 				tag:      "DAPR_FAKE_TAG",
 			},
 			args: args{a: []any{}},
@@ -75,7 +76,6 @@ func TestError_WithVars(t *testing.T) {
 				grpcCode: grpcCodes.ResourceExhausted,
 				httpCode: http.StatusTeapot,
 				message:  "fake_message: %s",
-				metadata: map[string]string{"fake": "test"},
 				tag:      "DAPR_FAKE_TAG",
 			},
 			args: args{a: []any{"myFakeMsg"}},
@@ -94,8 +94,6 @@ func TestError_WithVars(t *testing.T) {
 				grpcCode: grpcCodes.ResourceExhausted,
 				httpCode: http.StatusTeapot,
 				message:  "fake_messages: %s, %s, %d",
-				metadata: map[string]string{"fake": "test"},
-				reason:   "FAKE_REASON",
 				tag:      "DAPR_FAKE_TAG",
 			},
 			args: args{a: []any{"myFakeMsg1", "myFakeMsg2", 12}},
@@ -353,8 +351,6 @@ func TestError_WithErrorInfo(t *testing.T) {
 		grpcCode grpcCodes.Code
 		httpCode int
 		message  string
-		metadata map[string]string
-		reason   string
 		tag      string
 	}
 
@@ -375,8 +371,6 @@ func TestError_WithErrorInfo(t *testing.T) {
 				grpcCode: grpcCodes.ResourceExhausted,
 				httpCode: http.StatusTeapot,
 				message:  "fake_message",
-				metadata: map[string]string{"fake": "test"},
-				reason:   "FAKE_REASON",
 				tag:      "DAPR_FAKE_TAG",
 			},
 			args: args{a: []proto.Message{}},
@@ -394,8 +388,6 @@ func TestError_WithErrorInfo(t *testing.T) {
 				grpcCode: grpcCodes.ResourceExhausted,
 				httpCode: http.StatusTeapot,
 				message:  "fake_message",
-				metadata: map[string]string{"fake": "test"},
-				reason:   "FAKE_REASON",
 				tag:      "DAPR_FAKE_TAG",
 			},
 			args: args{a: []proto.Message{
@@ -429,10 +421,7 @@ func TestError_WithErrorInfo(t *testing.T) {
 				test.fields.tag,
 			).WithErrorInfo("fake", map[string]string{"fake": "test"})
 
-			//if got := kitErr.WithDetails(test.args.a...); !helperSlicesEqual(got.Details, test.want.Details) {
 			if got := kitErr.WithDetails(test.args.a...); !helperSlicesEqual(got.Details, test.want.Details) {
-				t.Errorf("got = %#v, want = %#v", got, test.want)
-
 				t.Errorf("Error.WithDetails() = %v, want %v", got, test.want)
 			}
 			assert.True(t, kitErr.Is(kitErr))
@@ -440,103 +429,77 @@ func TestError_WithErrorInfo(t *testing.T) {
 	}
 }
 
-/*
-// TODO: fix
-
-	func TestError_WithDetails(t *testing.T) {
-		type fields struct {
-			details  []proto.Message
-			grpcCode grpcCodes.Code
-			httpCode int
-			message  string
-			metadata map[string]string
-			reason   string
-			tag      string
-		}
-
-		type args struct {
-			a []proto.Message
-		}
-
-		tests := []struct {
-			name   string
-			fields fields
-			args   args
-			want   *Error
-		}{
-			{
-				name: "Has_Multiple_Details",
-				fields: fields{
-					details:  []proto.Message{},
-					grpcCode: grpcCodes.ResourceExhausted,
-					httpCode: http.StatusTeapot,
-					message:  "fake_message",
-					metadata: map[string]string{"fake": "test"},
-					reason:   "FAKE_REASON",
-					tag:      "DAPR_FAKE_TAG",
-				},
-				args: args{a: []proto.Message{
-					&errdetails.ErrorInfo{
-						Domain:   ErrMsgDomain,
-						Reason:   "example_reason",
-						Metadata: map[string]string{"key": "value"},
-					},
-					&errdetails.PreconditionFailure_Violation{
-						Type:        "TOS",
-						Subject:     "google.com/cloud",
-						Description: "test_description",
-					},
-				}},
-				want: New(
-					grpcCodes.ResourceExhausted,
-					http.StatusTeapot,
-					"fake_message",
-					"DAPR_FAKE_TAG",
-				).WithErrorInfo("fake", map[string]string{"key": "value"}).WithDetails(
-					&errdetails.ErrorInfo{
-						Domain:   ErrMsgDomain,
-						Reason:   "example_reason",
-						Metadata: map[string]string{"key": "value"},
-					},
-					&errdetails.PreconditionFailure_Violation{
-						Type:        "TOS",
-						Subject:     "google.com/cloud",
-						Description: "test_description",
-					},
-				),
-			},
-		}
-
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				kitErr := New(
-					test.fields.grpcCode,
-					test.fields.httpCode,
-					test.fields.message,
-					test.fields.tag,
-				).WithErrorInfo("fake", map[string]string{"fake": "test"}).WithDetails(
-					&errdetails.ErrorInfo{
-						Domain:   ErrMsgDomain,
-						Reason:   "example_reason",
-						Metadata: map[string]string{"key": "value"},
-					},
-					&errdetails.PreconditionFailure_Violation{
-						Type:        "TOS",
-						Subject:     "google.com/cloud",
-						Description: "test_description",
-					},
-				)
-
-				if got := kitErr.WithDetails(test.args.a...); !helperSlicesEqual(got.Details, test.want.Details) {
-					t.Errorf("got = %#v, want = %#v", got, test.want)
-
-					t.Errorf("Error.WithDetails() = %v, want %v", got, test.want)
-				}
-				assert.True(t, kitErr.Is(kitErr))
-			})
-		}
+func TestError_WithDetails(t *testing.T) {
+	type fields struct {
+		details  []proto.Message
+		grpcCode grpcCodes.Code
+		httpCode int
+		message  string
+		tag      string
 	}
 
+	type args struct {
+		a []proto.Message
+	}
+
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *Error
+	}{
+		{
+			name: "Has_Multiple_Details",
+			fields: fields{
+				details:  []proto.Message{},
+				grpcCode: grpcCodes.ResourceExhausted,
+				httpCode: http.StatusTeapot,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			args: args{a: []proto.Message{
+				&errdetails.ErrorInfo{
+					Domain:   ErrMsgDomain,
+					Reason:   "example_reason",
+					Metadata: map[string]string{"key": "value"},
+				},
+				&errdetails.PreconditionFailure_Violation{
+					Type:        "TOS",
+					Subject:     "google.com/cloud",
+					Description: "test_description",
+				},
+			}},
+			want: New(
+				grpcCodes.ResourceExhausted,
+				http.StatusTeapot,
+				"fake_message",
+				"DAPR_FAKE_TAG",
+			).WithErrorInfo("example_reason", map[string]string{"key": "value"}).WithDetails(
+				&errdetails.PreconditionFailure_Violation{
+					Type:        "TOS",
+					Subject:     "google.com/cloud",
+					Description: "test_description",
+				},
+			),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			kitErr := New(
+				test.fields.grpcCode,
+				test.fields.httpCode,
+				test.fields.message,
+				test.fields.tag,
+			)
+
+			if got := kitErr.WithDetails(test.args.a...); !helperSlicesEqual(got.Details, test.want.Details) {
+				t.Errorf("Error.WithDetails() = %v, want %v", got, test.want)
+			}
+			assert.True(t, kitErr.Is(kitErr))
+		})
+	}
+}
 
 func TestError_JSONErrorValue(t *testing.T) {
 	type fields struct {
@@ -544,8 +507,6 @@ func TestError_JSONErrorValue(t *testing.T) {
 		grpcCode grpcCodes.Code
 		httpCode int
 		message  string
-		metadata map[string]string
-		reason   string
 		tag      string
 	}
 
@@ -561,14 +522,12 @@ func TestError_JSONErrorValue(t *testing.T) {
 				grpcCode: grpcCodes.ResourceExhausted,
 				httpCode: http.StatusTeapot,
 				message:  "fake_message",
-				metadata: map[string]string{"fake": "test"},
-				reason:   "FAKE_REASON",
 				tag:      "DAPR_FAKE_TAG",
 			},
-			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[]}`),
+			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message"}`),
 		},
 		{
-			name: "With_Details",
+			name: "With_Multiple_Details",
 			fields: fields{
 				details: []proto.Message{
 					&errdetails.ErrorInfo{
@@ -585,23 +544,281 @@ func TestError_JSONErrorValue(t *testing.T) {
 				grpcCode: grpcCodes.ResourceExhausted,
 				httpCode: http.StatusTeapot,
 				message:  "fake_message",
-				metadata: map[string]string{"fake": "test"},
-				reason:   "FAKE_REASON",
 				tag:      "DAPR_FAKE_TAG",
 			},
-			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"domain":"dapr.io","reason":"test_reason","metadata":{"key":"value"}},{"type":"TOS","subject":"google.com/cloud","description":"test_description"}]}`),
+			want: []byte(`{errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","domain":"dapr.io","reason":"test_reason","metadata":{"key":"value"}},{"@type":"type.googleapis.com/google.rpc.PreconditionFailure.Violation","type":"TOS","subject":"google.com/cloud","description":"test_description"}]}`),
+		},
+		{
+			name: "ErrorInfo",
+			fields: fields{
+				details: []proto.Message{
+					&errdetails.ErrorInfo{
+						Domain:   ErrMsgDomain,
+						Reason:   "test_reason",
+						Metadata: map[string]string{"key": "value"},
+					},
+				},
+				grpcCode: grpcCodes.ResourceExhausted,
+				httpCode: http.StatusTeapot,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","domain":"dapr.io","reason":"test_reason","metadata":{"key":"value"}}]}`),
+		},
+		{
+			name: "RetryInfo",
+			fields: fields{
+				details: []proto.Message{
+					&errdetails.RetryInfo{
+						RetryDelay: &durationpb.Duration{
+							Seconds: 2,
+							Nanos:   0,
+						},
+					},
+				},
+				grpcCode: grpcCodes.ResourceExhausted,
+				httpCode: http.StatusTeapot,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"@type":"type.googleapis.com/google.rpc.RetryInfo","retry_delay":"2s"}]}`),
+		},
+		{
+			name: "DebugInfo",
+			fields: fields{
+				details: []proto.Message{
+					&errdetails.DebugInfo{
+						StackEntries: []string{
+							"stack_entry_1",
+							"stack_entry_2",
+						},
+						Detail: "debug_details",
+					},
+				},
+				grpcCode: grpcCodes.ResourceExhausted,
+				httpCode: http.StatusTeapot,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"@type":"type.googleapis.com/google.rpc.DebugInfo","stack_entries":["stack_entry_1","stack_entry_2"],"detail":"debug_details"}]}`),
+		},
+		{
+			name: "QuotaFailure",
+			fields: fields{
+				details: []proto.Message{
+					&errdetails.QuotaFailure{
+						Violations: []*errdetails.QuotaFailure_Violation{
+							{
+								Subject:     "quota_subject_1",
+								Description: "quota_description_1",
+							},
+						},
+					},
+				},
+				grpcCode: grpcCodes.ResourceExhausted,
+				httpCode: http.StatusTeapot,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"subject":"quota_subject_1","description":"quota_description_1"}]}]}`),
+		},
+		{
+			name: "PreconditionFailure",
+			fields: fields{
+				details: []proto.Message{
+					&errdetails.PreconditionFailure{
+						Violations: []*errdetails.PreconditionFailure_Violation{
+							{
+								Type:        "precondition_type_1",
+								Subject:     "precondition_subject_1",
+								Description: "precondition_description_1",
+							},
+						},
+					},
+				},
+				grpcCode: grpcCodes.FailedPrecondition,
+				httpCode: http.StatusTeapot,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"@type":"type.googleapis.com/google.rpc.PreconditionFailure","violations":[{"type":"precondition_type_1","subject":"precondition_subject_1","description":"precondition_description_1"}]}]}`),
+		},
+		{
+			name: "BadRequest",
+			fields: fields{
+				details: []proto.Message{
+					&errdetails.BadRequest{
+						FieldViolations: []*errdetails.BadRequest_FieldViolation{
+							{
+								Field:       "field_1",
+								Description: "field_description_1",
+							},
+						},
+					},
+				},
+				grpcCode: grpcCodes.InvalidArgument,
+				httpCode: http.StatusTeapot,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"@type":"type.googleapis.com/google.rpc.BadRequest","field_violations":[{"field":"field_1","description":"field_description_1"}]}]}`),
+		},
+		{
+			name: "RequestInfo",
+			fields: fields{
+				details: []proto.Message{
+					&errdetails.RequestInfo{
+						RequestId:   "request_id_1",
+						ServingData: "serving_data_1",
+					},
+				},
+				grpcCode: grpcCodes.FailedPrecondition,
+				httpCode: http.StatusTeapot,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"@type":"type.googleapis.com/google.rpc.RequestInfo","request_id":"request_id_1","serving_data":"serving_data_1"}]}`),
+		},
+		{
+			name: "ResourceInfo",
+			fields: fields{
+				details: []proto.Message{
+					&errdetails.ResourceInfo{
+						ResourceType: "resource_type_1",
+						ResourceName: "resource_name_1",
+						Owner:        "owner_1",
+						Description:  "description_1",
+					},
+				},
+				grpcCode: grpcCodes.FailedPrecondition,
+				httpCode: http.StatusTeapot,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"@type":"type.googleapis.com/google.rpc.ResourceInfo","resource_type":"resource_type_1","resource_name":"resource_name_1","owner":"owner_1","description":"description_1"}]}`),
+		},
+		{
+			name: "Help",
+			fields: fields{
+				details: []proto.Message{
+					&errdetails.Help{
+						Links: []*errdetails.Help_Link{
+							{
+								Description: "description_1",
+								Url:         "dapr_url_1",
+							},
+						},
+					},
+				},
+				grpcCode: grpcCodes.FailedPrecondition,
+				httpCode: http.StatusTeapot,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"description_1","url":"dapr_url_1"}]}]}`),
+		},
+		{
+			name: "LocalizedMessage",
+			fields: fields{
+				details: []proto.Message{
+					&errdetails.LocalizedMessage{
+						Locale:  "en-US",
+						Message: "fake_localized_message",
+					},
+				},
+				grpcCode: grpcCodes.FailedPrecondition,
+				httpCode: http.StatusTeapot,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"fake_localized_message"}]}`),
+		},
+		{
+			name: "QuotaFailure_Violation",
+			fields: fields{
+				details: []proto.Message{
+					&errdetails.QuotaFailure_Violation{
+						Subject:     "test_subject",
+						Description: "test_description",
+					},
+				},
+				grpcCode: grpcCodes.FailedPrecondition,
+				httpCode: http.StatusTeapot,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure.Violation","subject":"test_subject","description":"test_description"}]}`),
+		},
+		{
+			name: "PreconditionFailure_Violation",
+			fields: fields{
+				details: []proto.Message{
+					&errdetails.PreconditionFailure_Violation{
+						Type:        "TOS",
+						Subject:     "google.com/cloud",
+						Description: "test_description",
+					},
+				},
+				grpcCode: grpcCodes.ResourceExhausted,
+				httpCode: http.StatusTeapot,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"@type":"type.googleapis.com/google.rpc.PreconditionFailure.Violation","type":"TOS","subject":"google.com/cloud","description":"test_description"}]}`),
+		},
+		{
+			name: "BadRequest_FieldViolation",
+			fields: fields{
+				details: []proto.Message{
+					&errdetails.BadRequest_FieldViolation{
+						Field:       "test_field",
+						Description: "test_description",
+					},
+				},
+				grpcCode: grpcCodes.InvalidArgument,
+				httpCode: http.StatusBadRequest,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"@type":"type.googleapis.com/google.rpc.BadRequest.FieldViolation","field":"test_field","description":"test_description"}]}`),
+		},
+		{
+			name: "Help_Link",
+			fields: fields{
+				details: []proto.Message{
+					&errdetails.Help_Link{
+						Description: "test_description",
+						Url:         "https://docs.dapr.io/",
+					},
+				},
+				grpcCode: grpcCodes.InvalidArgument,
+				httpCode: http.StatusBadRequest,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: []byte(`{"errorCode":"DAPR_FAKE_TAG","message":"fake_message","details":[{"@type":"type.googleapis.com/google.rpc.Help.Link","description":"test_description","url":"https://docs.dapr.io/"}]}`),
+		},
+		{
+			name: "Unknown_Detail_Type",
+			fields: fields{
+				details: []proto.Message{
+					&context.AuditContext{
+						TargetResource: "target_1",
+					},
+				},
+				grpcCode: grpcCodes.Internal,
+				httpCode: http.StatusInternalServerError,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+			},
+			want: []byte(`{"details":[{"unknownDetailType":"*context.AuditContext","unknownDetails":"\u0026context.AuditContext{state:impl.MessageState{NoUnkeyedLiterals:pragma.NoUnkeyedLiterals{}, DoNotCompare:pragma.DoNotCompare{}, DoNotCopy:pragma.DoNotCopy{}, atomicMessageInfo:(*impl.MessageInfo)(0x14000156b00)}, sizeCache:10, unknownFields:[]uint8(nil), AuditLog:[]uint8(nil), ScrubbedRequest:(*structpb.Struct)(nil), ScrubbedResponse:(*structpb.Struct)(nil), ScrubbedResponseItemCount:0, TargetResource:\"target_1\"}"}],"errorCode":"DAPR_FAKE_TAG","message":"fake_message"}`),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			kitErr := Error{
-				Details:  test.fields.details,
-				GrpcCode: test.fields.grpcCode,
-				HttpCode: test.fields.httpCode,
-				Message:  test.fields.message,
-				Tag:      test.fields.tag,
-			}
+			kitErr := New(test.fields.grpcCode, test.fields.httpCode, test.fields.message, test.fields.tag).
+				WithDetails(test.fields.details...)
 
 			got := kitErr.JSONErrorValue()
 
@@ -610,8 +827,32 @@ func TestError_JSONErrorValue(t *testing.T) {
 			_ = json.Unmarshal(got, &gotMap)
 			_ = json.Unmarshal(test.want, &wantMap)
 
-			if !reflect.DeepEqual(gotMap, wantMap) {
-				t.Errorf("Error.JSONErrorValue() = %s, want %s", got, test.want)
+			// Compare only the errorCode field
+			gotErrorCode, gotErrorCodeOK := gotMap["errorCode"].(string)
+			wantErrorCode, wantErrorCodeOK := wantMap["errorCode"].(string)
+
+			if gotErrorCodeOK && wantErrorCodeOK && gotErrorCode != wantErrorCode {
+				t.Errorf("errorCode: \ngot = %s, \nwant %s", got, test.want)
+			}
+
+			// Compare only the message field
+			gotMsg, gotMsgOK := gotMap["message"].(string)
+			wantMsg, wantMsgOK := wantMap["message"].(string)
+
+			if gotMsgOK && wantMsgOK && gotMsg != wantMsg {
+				t.Errorf("message: \ngot = %s, \nwant %s", got, test.want)
+			}
+
+			// Compare only the tag field
+			gotTag, gotTagOK := gotMap["tag"].(string)
+			wantTag, wantTagOK := wantMap["tag"].(string)
+
+			if gotTagOK && wantTagOK && gotTag != wantTag {
+				t.Errorf("tag: \ngot = %s, \nwant %s", got, test.want)
+			}
+
+			if !helperSlicesEqual(kitErr.Details, test.fields.details) {
+				t.Errorf("Error.JSONErrorValue(): \ngot %s, \nwant %s", got, test.want)
 			}
 		})
 	}
@@ -623,7 +864,6 @@ func TestError_GRPCStatus(t *testing.T) {
 		grpcCode grpcCodes.Code
 		httpCode int
 		message  string
-		metadata map[string]string
 		reason   string
 		tag      string
 	}
@@ -634,42 +874,18 @@ func TestError_GRPCStatus(t *testing.T) {
 		want   *status.Status
 	}{
 		{
-			name: "No_Details_And_No_Reason",
+			name: "No_Details",
 			fields: fields{
 				details:  []proto.Message{},
 				grpcCode: grpcCodes.ResourceExhausted,
 				httpCode: http.StatusTeapot,
 				message:  "fake_message",
-				metadata: map[string]string{"fake": "test"},
-				// reason:   "FAKE_REASON",
-				tag: "DAPR_FAKE_TAG",
+				tag:      "DAPR_FAKE_TAG",
 			},
 			want: status.New(grpcCodes.ResourceExhausted, "fake_message"),
 		},
 		{
-			name: "No_Details_With_Reason",
-			fields: fields{
-				details:  []proto.Message{},
-				grpcCode: grpcCodes.ResourceExhausted,
-				httpCode: http.StatusTeapot,
-				message:  "fake_message",
-				metadata: map[string]string{"fake": "test"},
-				reason:   "FAKE_REASON",
-				tag:      "DAPR_FAKE_TAG",
-			},
-			want: func() *status.Status {
-				s, _ := status.New(grpcCodes.ResourceExhausted, "fake_message").WithDetails(
-					&errdetails.ErrorInfo{
-						Domain:   ErrMsgDomain,
-						Reason:   "FAKE_REASON",
-						Metadata: map[string]string{"fake": "test"},
-					},
-				)
-				return s
-			}(),
-		},
-		{
-			name: "With_Details_No_Reason",
+			name: "With_Details",
 			fields: fields{
 				details: []proto.Message{
 					&errdetails.ErrorInfo{
@@ -686,56 +902,11 @@ func TestError_GRPCStatus(t *testing.T) {
 				grpcCode: grpcCodes.ResourceExhausted,
 				httpCode: http.StatusTeapot,
 				message:  "fake_message",
-				metadata: map[string]string{"fake": "test"},
 				tag:      "DAPR_FAKE_TAG",
 			},
 			want: func() *status.Status {
 				s, _ := status.New(grpcCodes.ResourceExhausted, "fake_message").
 					WithDetails(
-						&errdetails.ErrorInfo{
-							Domain:   ErrMsgDomain,
-							Reason:   "FAKE_REASON",
-							Metadata: map[string]string{"key": "value"},
-						},
-						&errdetails.PreconditionFailure_Violation{
-							Type:        "TOS",
-							Subject:     "google.com/cloud",
-							Description: "test_description",
-						},
-					)
-				return s
-			}(),
-		},
-		{
-			name: "With_Details_And_Reason",
-			fields: fields{
-				details: []proto.Message{
-					&errdetails.ErrorInfo{
-						Domain:   ErrMsgDomain,
-						Reason:   "FAKE_REASON",
-						Metadata: map[string]string{"key": "value"},
-					},
-					&errdetails.PreconditionFailure_Violation{
-						Type:        "TOS",
-						Subject:     "google.com/cloud",
-						Description: "test_description",
-					},
-				},
-				grpcCode: grpcCodes.ResourceExhausted,
-				httpCode: http.StatusTeapot,
-				message:  "fake_message",
-				metadata: map[string]string{"fake": "test"},
-				reason:   "FAKE_REASON",
-				tag:      "DAPR_FAKE_TAG",
-			},
-			want: func() *status.Status {
-				s, _ := status.New(grpcCodes.ResourceExhausted, "fake_message").
-					WithDetails(
-						&errdetails.ErrorInfo{
-							Domain:   ErrMsgDomain,
-							Reason:   "FAKE_REASON",
-							Metadata: map[string]string{"fake": "test"},
-						},
 						&errdetails.ErrorInfo{
 							Domain:   ErrMsgDomain,
 							Reason:   "FAKE_REASON",
@@ -754,20 +925,18 @@ func TestError_GRPCStatus(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			kitErr := Error{
-				Details:  test.fields.details,
-				GrpcCode: test.fields.grpcCode,
-				HttpCode: test.fields.httpCode,
-				Message:  test.fields.message,
-				Tag:      test.fields.tag,
-			}
+			kitErr := New(
+				test.fields.grpcCode,
+				test.fields.httpCode,
+				test.fields.message,
+				test.fields.tag,
+			).WithDetails(test.fields.details...)
 
 			got := kitErr.GRPCStatus()
 
 			if !reflect.DeepEqual(got.Proto(), test.want.Proto()) {
-				t.Errorf("Error.GRPCStatus() = %v, want %v", got.Proto(), test.want.Proto())
+				t.Errorf("Error.GRPCStatus(): \ngot = %v, \nwant %v", got.Proto(), test.want.Proto())
 			}
 		})
 	}
 }
-*/

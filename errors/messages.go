@@ -21,13 +21,13 @@ const (
 	typeGoogleAPI = "type.googleapis.com/"
 
 	// Messages
-	ErrMsgStateGet        = "fail to get %s from state store %s: %s"
-	ErrMsgStateDelete     = "failed deleting state with key %s: %s"
-	ErrMsgStateSave       = "failed saving state in state store %s: %s"
-	ErrMsgStateDeleteBulk = "failed deleting state in state store %s: %s"
+	MsgStateGet        = "fail to get %s from state store %s: %s"
+	MsgStateDelete     = "failed deleting state with key %s: %s"
+	MsgStateSave       = "failed saving state in state store %s: %s"
+	MsgStateDeleteBulk = "failed deleting state in state store %s: %s"
 
 	// StateTransaction
-	ErrMsgStateTransactionsNotSupported = "state store %s doesn't support transaction"
-	ErrMsgStateOperationNotSupported    = "operation type %s not supported"
-	ErrMsgStateTransaction              = "error while executing state transaction: %s"
+	MsgStateTransactionsNotSupported = "state store %s doesn't support transaction"
+	MsgStateOperationNotSupported    = "operation type %s not supported"
+	MsgStateTransaction              = "error while executing state transaction: %s"
 )
