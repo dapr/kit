@@ -72,7 +72,7 @@ func (e *Error) Error() string {
 	return ""
 }
 
-// String returns the string representation, useful for debugging.
+// String returns the string representation.
 func (e Error) String() string {
 	return fmt.Sprintf(errStringFormat, e.GrpcCode.String(), e.Message)
 }
@@ -101,14 +101,6 @@ func (e *Error) WithErrorInfo(reason string, metadata map[string]string) *Error 
 	e.Details = append(e.Details, errorInfo)
 
 	return e
-}
-
-// WithVars returns a copy of the error with the message going through fmt.Sprintf with the arguments passed to this method.
-func (e *Error) WithVars(a ...any) *Error {
-	eCopy := *e
-	eCopy.Message = fmt.Sprintf(e.Message, a...)
-
-	return &eCopy
 }
 
 func (e *Error) WithDetails(details ...proto.Message) *Error {
@@ -142,10 +134,15 @@ func (e *Error) GRPCStatus() *status.Status {
 	}
 
 	return stat
-
 }
 
 // *** HTTP Methods ***
+
+type ErrorJSON struct {
+	ErrorCode string `json:"errorCode"`
+	Message   string `json:"message"`
+	Details   []any  `json:"details,omitempty"`
+}
 
 // JSONErrorValue implements the errorResponseValue interface.
 func (e *Error) JSONErrorValue() []byte {
@@ -160,16 +157,15 @@ func (e *Error) JSONErrorValue() []byte {
 		httpStatus = http.StatusText(e.HttpCode)
 	}
 
-	// Change output to match prior output to not break users
-	errJson := map[string]interface{}{
-		"errorCode": httpStatus,
-		"message":   grpcStatus.GetMessage(),
+	errJson := ErrorJSON{
+		ErrorCode: httpStatus,
+		Message:   grpcStatus.GetMessage(),
 	}
 
 	// Handle err details
 	details := e.Details
 	if len(details) > 0 {
-		errJson["details"] = make([]interface{}, len(details))
+		errJson.Details = make([]any, len(details))
 		for i, detail := range details {
 			// cast to interface to be able to do type switch
 			// over all possible error_details defined
@@ -183,11 +179,11 @@ func (e *Error) JSONErrorValue() []byte {
 					"domain":   typedDetail.Domain,
 					"metadata": typedDetail.Metadata,
 				}
-				errJson["details"].([]interface{})[i] = detailMap
+				errJson.Details[i] = detailMap
 
 				// If there is an ErrorInfo Reason, but no legacy Tag code, use the ErrorInfo Reason as the error code
 				if e.Tag == "" && typedDetail.Reason != "" {
-					errJson["errorCode"] = typedDetail.Reason
+					errJson.ErrorCode = typedDetail.Reason
 				}
 			case *errdetails.RetryInfo:
 				desc := typedDetail.ProtoReflect().Descriptor()
@@ -195,7 +191,7 @@ func (e *Error) JSONErrorValue() []byte {
 					"@type":       typeGoogleAPI + desc.FullName(),
 					"retry_delay": typedDetail.RetryDelay,
 				}
-				errJson["details"].([]interface{})[i] = detailMap
+				errJson.Details[i] = detailMap
 			case *errdetails.DebugInfo:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
@@ -203,28 +199,28 @@ func (e *Error) JSONErrorValue() []byte {
 					"stack_entries": typedDetail.StackEntries,
 					"detail":        typedDetail.Detail,
 				}
-				errJson["details"].([]interface{})[i] = detailMap
+				errJson.Details[i] = detailMap
 			case *errdetails.QuotaFailure:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":      typeGoogleAPI + desc.FullName(),
 					"violations": typedDetail.Violations,
 				}
-				errJson["details"].([]interface{})[i] = detailMap
+				errJson.Details[i] = detailMap
 			case *errdetails.PreconditionFailure:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":      typeGoogleAPI + desc.FullName(),
 					"violations": typedDetail.Violations,
 				}
-				errJson["details"].([]interface{})[i] = detailMap
+				errJson.Details[i] = detailMap
 			case *errdetails.BadRequest:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":            typeGoogleAPI + desc.FullName(),
 					"field_violations": typedDetail.FieldViolations,
 				}
-				errJson["details"].([]interface{})[i] = detailMap
+				errJson.Details[i] = detailMap
 			case *errdetails.RequestInfo:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
@@ -232,7 +228,7 @@ func (e *Error) JSONErrorValue() []byte {
 					"request_id":   typedDetail.RequestId,
 					"serving_data": typedDetail.ServingData,
 				}
-				errJson["details"].([]interface{})[i] = detailMap
+				errJson.Details[i] = detailMap
 			case *errdetails.ResourceInfo:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
@@ -242,14 +238,14 @@ func (e *Error) JSONErrorValue() []byte {
 					"owner":         typedDetail.Owner,
 					"description":   typedDetail.Description,
 				}
-				errJson["details"].([]interface{})[i] = detailMap
+				errJson.Details[i] = detailMap
 			case *errdetails.Help:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type": typeGoogleAPI + desc.FullName(),
 					"links": typedDetail.Links,
 				}
-				errJson["details"].([]interface{})[i] = detailMap
+				errJson.Details[i] = detailMap
 			case *errdetails.LocalizedMessage:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
@@ -257,7 +253,7 @@ func (e *Error) JSONErrorValue() []byte {
 					"locale":  typedDetail.Locale,
 					"message": typedDetail.Message,
 				}
-				errJson["details"].([]interface{})[i] = detailMap
+				errJson.Details[i] = detailMap
 			case *errdetails.QuotaFailure_Violation:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
@@ -265,7 +261,7 @@ func (e *Error) JSONErrorValue() []byte {
 					"subject":     typedDetail.Subject,
 					"description": typedDetail.Description,
 				}
-				errJson["details"].([]interface{})[i] = detailMap
+				errJson.Details[i] = detailMap
 			case *errdetails.PreconditionFailure_Violation:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
@@ -274,7 +270,7 @@ func (e *Error) JSONErrorValue() []byte {
 					"description": typedDetail.Description,
 					"type":        typedDetail.Type,
 				}
-				errJson["details"].([]interface{})[i] = detailMap
+				errJson.Details[i] = detailMap
 			case *errdetails.BadRequest_FieldViolation:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
@@ -282,7 +278,7 @@ func (e *Error) JSONErrorValue() []byte {
 					"field":       typedDetail.Field,
 					"description": typedDetail.Description,
 				}
-				errJson["details"].([]interface{})[i] = detailMap
+				errJson.Details[i] = detailMap
 			case *errdetails.Help_Link:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
@@ -290,7 +286,7 @@ func (e *Error) JSONErrorValue() []byte {
 					"description": typedDetail.Description,
 					"url":         typedDetail.Url,
 				}
-				errJson["details"].([]interface{})[i] = detailMap
+				errJson.Details[i] = detailMap
 			default:
 				log.Debugf("Failed to convert error details due to incorrect type. \nSee types here: https://github.com/googleapis/googleapis/blob/master/google/rpc/error_details.proto. \nDetail: %s", detail)
 				// Handle unknown detail types
@@ -298,7 +294,7 @@ func (e *Error) JSONErrorValue() []byte {
 					"unknownDetailType": fmt.Sprintf("%T", typedDetail),
 					"unknownDetails":    fmt.Sprintf("%#v", typedDetail),
 				}
-				errJson["details"].([]interface{})[i] = unknownDetail
+				errJson.Details[i] = unknownDetail
 			}
 		}
 	}
