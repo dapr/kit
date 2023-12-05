@@ -16,6 +16,7 @@ package errors
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"net/http"
@@ -401,6 +402,58 @@ func TestError_WithDetails(t *testing.T) {
 			assert.True(t, kitErr.Is(kitErr))
 		})
 	}
+}
+
+func TestWithErrorHelp(t *testing.T) {
+	// Initialize the Error struct with some default values
+	err := New(grpcCodes.InvalidArgument, http.StatusBadRequest, "Internal error", "INTERNAL_ERROR")
+
+	// Define test data for the help links
+	links := []*errdetails.Help_Link{
+		{
+			Description: "Link 1 Description",
+			Url:         "http://example.com/1",
+		},
+		{
+			Description: "Link 2 Description",
+			Url:         "http://example.com/2",
+		},
+	}
+
+	// Call WithHelp
+	err = err.WithHelp(links)
+
+	// Use require to make assertions
+	require.Len(t, err.Details, 1, "Details should contain exactly one item")
+
+	// Type assert to *errdetails.Help
+	helpDetail, ok := err.Details[0].(*errdetails.Help)
+	require.True(t, ok, "Details[0] should be of type *errdetails.Help")
+	require.Equal(t, links, helpDetail.Links, "Links should match the provided links")
+}
+
+func TestWithErrorFieldViolation(t *testing.T) {
+	// Initialize the Error struct with some default values
+	err := New(grpcCodes.InvalidArgument, http.StatusBadRequest, "Internal error", "INTERNAL_ERROR")
+
+	// Define test data for the field violation
+	fieldName := "testField"
+	msg := "test message"
+
+	// Call WithFieldViolation
+	updatedErr := err.WithFieldViolation(fieldName, msg)
+
+	// Check if the Details slice contains the expected BadRequest
+	require.Len(t, updatedErr.Details, 1)
+
+	// Type assert to *errdetails.BadRequest
+	br, ok := updatedErr.Details[0].(*errdetails.BadRequest)
+	require.True(t, ok, "Expected BadRequest type, got %T", updatedErr.Details[0])
+
+	// Check if the BadRequest contains the expected FieldViolation
+	require.Len(t, br.FieldViolations, 1, "Expected 1 field violation, got %d", len(br.FieldViolations))
+	require.Equal(t, fieldName, br.FieldViolations[0].Field, "Expected field name %s, got %s", fieldName, br.FieldViolations[0].Field)
+	require.Equal(t, msg, br.FieldViolations[0].Description, "Expected description %s, got %s", msg, br.FieldViolations[0].Description)
 }
 
 func TestError_JSONErrorValue(t *testing.T) {
