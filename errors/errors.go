@@ -91,6 +91,25 @@ func (e *Error) WithResourceInfo(resourceType string, resourceName string, owner
 	return e
 }
 
+func (e *Error) WithHelpLink(url string, description string) *Error {
+	link := errdetails.Help_Link{
+		Description: description,
+		Url:         url,
+	}
+	var links []*errdetails.Help_Link
+	links = append(links, &link)
+
+	help := &errdetails.Help{Links: links}
+	e.Details = append(e.Details, help)
+
+	return e
+}
+func (e *Error) WithHelp(links []*errdetails.Help_Link) *Error {
+	e.Details = append(e.Details, &errdetails.Help{Links: links})
+
+	return e
+}
+
 // WithErrorInfo adds error information to the Error struct.
 func (e *Error) WithErrorInfo(reason string, metadata map[string]string) *Error {
 	errorInfo := &errdetails.ErrorInfo{
@@ -103,6 +122,19 @@ func (e *Error) WithErrorInfo(reason string, metadata map[string]string) *Error 
 	return e
 }
 
+// WithErrorInfo adds error information to the Error struct.
+func (e *Error) WithFieldViolation(fieldName string, msg string) *Error {
+	br := &errdetails.BadRequest{
+		FieldViolations: []*errdetails.BadRequest_FieldViolation{{
+			Field:       fieldName,
+			Description: msg,
+		}},
+	}
+
+	e.Details = append(e.Details, br)
+
+	return e
+}
 func (e *Error) WithDetails(details ...proto.Message) *Error {
 	e.Details = append(e.Details, details...)
 
