@@ -8,7 +8,7 @@ The standardizing of errors to be used in Dapr based on the gRPC Richer Error Mo
 import kitErrors "github.com/dapr/kit/errors"
 
 // Define error in dapr pkg/api/<building_block>_errors.go
-func PubSubNotFound(pubsubName string, pubsubType string, metadata map[string]string) *kitErrors.Error {
+func PubSubNotFound(pubsubName string, pubsubType string, metadata map[string]string) error {
 message := fmt.Sprintf("pubsub %s is not found", pubsubName)
 
 return kitErrors.New(
