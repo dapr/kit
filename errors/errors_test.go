@@ -429,7 +429,7 @@ func TestWithErrorHelp(t *testing.T) {
 	// Type assert to *errdetails.Help
 	helpDetail, ok := err.Details[0].(*errdetails.Help)
 	require.True(t, ok, "Details[0] should be of type *errdetails.Help")
-	require.Equal(t, links, helpDetail.Links, "Links should match the provided links")
+	require.Equal(t, links, helpDetail.GetLinks(), "Links should match the provided links")
 }
 
 func TestWithErrorFieldViolation(t *testing.T) {
