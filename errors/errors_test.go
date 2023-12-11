@@ -819,7 +819,6 @@ func TestError_GRPCStatus(t *testing.T) {
 		grpcCode grpcCodes.Code
 		httpCode int
 		message  string
-		reason   string
 		tag      string
 	}
 
