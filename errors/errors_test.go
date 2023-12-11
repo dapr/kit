@@ -16,12 +16,13 @@ package errors
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/durationpb"
 	"net/http"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/genproto/googleapis/rpc/context"
