@@ -159,10 +159,10 @@ func TestError_HttpCode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			kitErr := Error{
-				HttpCode: tt.fields.httpCode,
+				HTTPCode: tt.fields.httpCode,
 			}
-			if got := kitErr.HttpCode; got != tt.want {
-				t.Errorf("Error.HttpCode = %v, want %v", got, tt.want)
+			if got := kitErr.HTTPCode; got != tt.want {
+				t.Errorf("Error.HTTPCode = %v, want %v", got, tt.want)
 			}
 			assert.True(t, kitErr.Is(&kitErr))
 		})

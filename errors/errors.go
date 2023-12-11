@@ -19,12 +19,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dapr/kit/logger"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	grpcCodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/runtime/protoiface"
+
+	"github.com/dapr/kit/logger"
 )
 
 var log = logger.NewLogger("dapr.kit")
@@ -40,7 +41,7 @@ type Error struct {
 	GrpcCode grpcCodes.Code
 
 	// Status code for HTTP responses.
-	HttpCode int
+	HTTPCode int
 
 	// Message is the human-readable error message.
 	Message string
@@ -55,7 +56,7 @@ func New(grpcCode grpcCodes.Code, httpCode int, message string, tag string) *Err
 	kitError := &Error{
 		Details:  make([]proto.Message, 0),
 		GrpcCode: grpcCode,
-		HttpCode: httpCode,
+		HTTPCode: httpCode,
 		Message:  message,
 		Tag:      tag,
 	}
@@ -187,7 +188,7 @@ func (e *Error) JSONErrorValue() []byte {
 	// This will get overwritten later if there is an ErrorInfo code
 	httpStatus := e.Tag
 	if httpStatus == "" {
-		httpStatus = http.StatusText(e.HttpCode)
+		httpStatus = http.StatusText(e.HTTPCode)
 	}
 
 	errJSON := ErrorJSON{
@@ -349,5 +350,5 @@ func (e *Error) Is(targetI error) bool {
 	}
 	return e.Tag == target.Tag &&
 		e.GrpcCode == target.GrpcCode &&
-		e.HttpCode == target.HttpCode
+		e.HTTPCode == target.HTTPCode
 }
