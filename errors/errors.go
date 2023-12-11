@@ -17,18 +17,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/dapr/kit/logger"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	grpcCodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/runtime/protoiface"
-	"net/http"
 )
 
-var (
-	log = logger.NewLogger("dapr.kit")
-)
+var log = logger.NewLogger("dapr.kit")
 
 // Error implements the Error interface and the interface that complies with "google.golang.org/grpc/status".FromError().
 // It can be used to send errors to HTTP and gRPC servers, indicating the correct status code for each.
@@ -207,116 +206,116 @@ func (e *Error) JSONErrorValue() []byte {
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":    typeGoogleAPI + desc.FullName(),
-					"reason":   typedDetail.Reason,
-					"domain":   typedDetail.Domain,
-					"metadata": typedDetail.Metadata,
+					"reason":   typedDetail.GetReason(),
+					"domain":   typedDetail.GetDomain(),
+					"metadata": typedDetail.GetMetadata(),
 				}
 				errJson.Details[i] = detailMap
 
 				// If there is an ErrorInfo Reason, but no legacy Tag code, use the ErrorInfo Reason as the error code
-				if e.Tag == "" && typedDetail.Reason != "" {
-					errJson.ErrorCode = typedDetail.Reason
+				if e.Tag == "" && typedDetail.GetReason() != "" {
+					errJson.ErrorCode = typedDetail.GetReason()
 				}
 			case *errdetails.RetryInfo:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":       typeGoogleAPI + desc.FullName(),
-					"retry_delay": typedDetail.RetryDelay,
+					"retry_delay": typedDetail.GetRetryDelay(),
 				}
 				errJson.Details[i] = detailMap
 			case *errdetails.DebugInfo:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":         typeGoogleAPI + desc.FullName(),
-					"stack_entries": typedDetail.StackEntries,
-					"detail":        typedDetail.Detail,
+					"stack_entries": typedDetail.GetStackEntries(),
+					"detail":        typedDetail.GetDetail(),
 				}
 				errJson.Details[i] = detailMap
 			case *errdetails.QuotaFailure:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":      typeGoogleAPI + desc.FullName(),
-					"violations": typedDetail.Violations,
+					"violations": typedDetail.GetViolations(),
 				}
 				errJson.Details[i] = detailMap
 			case *errdetails.PreconditionFailure:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":      typeGoogleAPI + desc.FullName(),
-					"violations": typedDetail.Violations,
+					"violations": typedDetail.GetViolations(),
 				}
 				errJson.Details[i] = detailMap
 			case *errdetails.BadRequest:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":            typeGoogleAPI + desc.FullName(),
-					"field_violations": typedDetail.FieldViolations,
+					"field_violations": typedDetail.GetFieldViolations(),
 				}
 				errJson.Details[i] = detailMap
 			case *errdetails.RequestInfo:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":        typeGoogleAPI + desc.FullName(),
-					"request_id":   typedDetail.RequestId,
-					"serving_data": typedDetail.ServingData,
+					"request_id":   typedDetail.GetRequestId(),
+					"serving_data": typedDetail.GetServingData(),
 				}
 				errJson.Details[i] = detailMap
 			case *errdetails.ResourceInfo:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":         typeGoogleAPI + desc.FullName(),
-					"resource_type": typedDetail.ResourceType,
-					"resource_name": typedDetail.ResourceName,
-					"owner":         typedDetail.Owner,
-					"description":   typedDetail.Description,
+					"resource_type": typedDetail.GetResourceType(),
+					"resource_name": typedDetail.GetResourceName(),
+					"owner":         typedDetail.GetOwner(),
+					"description":   typedDetail.GetDescription(),
 				}
 				errJson.Details[i] = detailMap
 			case *errdetails.Help:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type": typeGoogleAPI + desc.FullName(),
-					"links": typedDetail.Links,
+					"links": typedDetail.GetLinks(),
 				}
 				errJson.Details[i] = detailMap
 			case *errdetails.LocalizedMessage:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":   typeGoogleAPI + desc.FullName(),
-					"locale":  typedDetail.Locale,
-					"message": typedDetail.Message,
+					"locale":  typedDetail.GetLocale(),
+					"message": typedDetail.GetMessage(),
 				}
 				errJson.Details[i] = detailMap
 			case *errdetails.QuotaFailure_Violation:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":       typeGoogleAPI + desc.FullName(),
-					"subject":     typedDetail.Subject,
-					"description": typedDetail.Description,
+					"subject":     typedDetail.GetSubject(),
+					"description": typedDetail.GetDescription(),
 				}
 				errJson.Details[i] = detailMap
 			case *errdetails.PreconditionFailure_Violation:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":       typeGoogleAPI + desc.FullName(),
-					"subject":     typedDetail.Subject,
-					"description": typedDetail.Description,
-					"type":        typedDetail.Type,
+					"subject":     typedDetail.GetSubject(),
+					"description": typedDetail.GetDescription(),
+					"type":        typedDetail.GetType(),
 				}
 				errJson.Details[i] = detailMap
 			case *errdetails.BadRequest_FieldViolation:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":       typeGoogleAPI + desc.FullName(),
-					"field":       typedDetail.Field,
-					"description": typedDetail.Description,
+					"field":       typedDetail.GetField(),
+					"description": typedDetail.GetDescription(),
 				}
 				errJson.Details[i] = detailMap
 			case *errdetails.Help_Link:
 				desc := typedDetail.ProtoReflect().Descriptor()
 				detailMap := map[string]interface{}{
 					"@type":       typeGoogleAPI + desc.FullName(),
-					"description": typedDetail.Description,
-					"url":         typedDetail.Url,
+					"description": typedDetail.GetDescription(),
+					"url":         typedDetail.GetUrl(),
 				}
 				errJson.Details[i] = detailMap
 			default:

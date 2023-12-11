@@ -422,7 +422,6 @@ func TestWithErrorHelp(t *testing.T) {
 
 	// Call WithHelp
 	err = err.WithHelp(links)
-
 	// Use require to make assertions
 	require.Len(t, err.Details, 1, "Details should contain exactly one item")
 
@@ -451,9 +450,9 @@ func TestWithErrorFieldViolation(t *testing.T) {
 	require.True(t, ok, "Expected BadRequest type, got %T", updatedErr.Details[0])
 
 	// Check if the BadRequest contains the expected FieldViolation
-	require.Len(t, br.FieldViolations, 1, "Expected 1 field violation, got %d", len(br.FieldViolations))
-	require.Equal(t, fieldName, br.FieldViolations[0].Field, "Expected field name %s, got %s", fieldName, br.FieldViolations[0].Field)
-	require.Equal(t, msg, br.FieldViolations[0].Description, "Expected description %s, got %s", msg, br.FieldViolations[0].Description)
+	require.Len(t, br.GetFieldViolations(), 1, "Expected 1 field violation, got %d", len(br.GetFieldViolations()))
+	require.Equal(t, fieldName, br.GetFieldViolations()[0].GetField(), "Expected field name %s, got %s", fieldName, br.GetFieldViolations()[0].GetField())
+	require.Equal(t, msg, br.GetFieldViolations()[0].GetDescription(), "Expected description %s, got %s", msg, br.GetFieldViolations()[0].GetDescription())
 }
 
 func TestError_JSONErrorValue(t *testing.T) {
