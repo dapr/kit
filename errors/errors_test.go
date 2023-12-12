@@ -774,20 +774,19 @@ func TestError_GRPCStatus(t *testing.T) {
 
 func TestErrorBuilder_Build(t *testing.T) {
 	t.Run("With_ErrorInfo", func(t *testing.T) {
-		builder := NewBuilder(
+		built := NewBuilder(
 			grpcCodes.ResourceExhausted,
 			http.StatusTeapot,
 			"Test Msg",
 			"SOME_ERROR",
-		).WithErrorInfo("fake", map[string]string{"fake": "test"})
+		).WithErrorInfo("fake", map[string]string{"fake": "test"}).Build()
 
-		err := builder.Build()
-
-		assert.NotNil(t, err)
+		builtErr, ok := built.(Error)
+		require.True(t, ok)
 
 		containsErrorInfo := false
 
-		for _, detail := range builder.err.details {
+		for _, detail := range builtErr.details {
 			_, isErrInfo := detail.(*errdetails.ErrorInfo)
 			if isErrInfo {
 				containsErrorInfo = true
