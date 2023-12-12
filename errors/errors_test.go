@@ -20,153 +20,82 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/durationpb"
-
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/genproto/googleapis/rpc/context"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	grpcCodes "google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-func TestError_Message(t *testing.T) {
-	type fields struct {
-		message string
-	}
-	tests := []struct {
-		name   string
-		err    *Error
-		fields fields
-		want   string
-	}{
-		{
-			name: "Has_Message",
-			err: New(
-				grpcCodes.ResourceExhausted,
-				http.StatusTeapot,
-				"Test Msg",
-				"DAPR_FAKE_TAG",
-			).WithErrorInfo("fake", map[string]string{"fake": "test"}),
-			fields: fields{message: "Test Msg"},
-			want:   "Test Msg",
-		},
-		{
-			name: "No_Message",
-			err: New(
-				grpcCodes.ResourceExhausted,
-				http.StatusTeapot,
-				"",
-				"DAPR_FAKE_TAG",
-			).WithErrorInfo("fake", map[string]string{"fake": "test"}),
-			fields: fields{message: ""},
-			want:   "",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			kitErr := Error{
-				Message: tt.fields.message,
-			}
-			if got := kitErr.Message; got != tt.want {
-				t.Errorf("Error.Message = %v, want %v", got, tt.want)
-			}
-			assert.True(t, kitErr.Is(&kitErr))
-		})
-	}
+func TestError_HTTPStatusCode(t *testing.T) {
+	httpStatusCode := http.StatusTeapot
+	kitErr := NewBuilder(
+		grpcCodes.ResourceExhausted,
+		httpStatusCode,
+		"Test Msg",
+		"SOME_ERROR",
+	).
+		WithErrorInfo("fake", map[string]string{"fake": "test"}).
+		Build()
+
+	err, ok := kitErr.(Error)
+	require.True(t, ok, httpStatusCode, err.HTTPStatusCode())
 }
 
-func TestError_Tag(t *testing.T) {
-	type fields struct {
-		tag string
-	}
-	tests := []struct {
-		name   string
-		err    *Error
-		fields fields
-		want   string
-	}{
-		{
-			name: "Has_Tag",
-			err: New(
-				grpcCodes.ResourceExhausted,
-				http.StatusTeapot,
-				"Test Msg",
-				"SOME_ERROR",
-			).WithErrorInfo("fake", map[string]string{"fake": "test"}),
-			fields: fields{tag: "SOME_ERROR"},
-			want:   "SOME_ERROR",
-		},
-		{
-			name: "No_Tag",
-			err: New(
-				grpcCodes.ResourceExhausted,
-				http.StatusTeapot,
-				"",
-				"",
-			).WithErrorInfo("fake", map[string]string{"fake": "test"}),
-			fields: fields{tag: ""},
-			want:   "",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			kitErr := Error{
-				Tag: tt.fields.tag,
-			}
-			if got := kitErr.Tag; got != tt.want {
-				t.Errorf("Error.Tag = %v, want %v", got, tt.want)
-			}
-			assert.True(t, kitErr.Is(&kitErr))
-		})
-	}
+func TestError_GrpcStatusCode(t *testing.T) {
+	grpcStatusCode := grpcCodes.ResourceExhausted
+	kitErr := NewBuilder(
+		grpcStatusCode,
+		http.StatusTeapot,
+		"Test Msg",
+		"SOME_ERROR",
+	).
+		WithErrorInfo("fake", map[string]string{"fake": "test"}).
+		Build()
+
+	err, ok := kitErr.(Error)
+	require.True(t, ok, grpcStatusCode, err.GrpcStatusCode())
 }
 
-func TestError_HttpCode(t *testing.T) {
-	type fields struct {
-		httpCode int
+func TestError_AddDetails(t *testing.T) {
+	reason := "example_reason"
+	metadata := map[string]string{"key": "value"}
+
+	details1 := &errdetails.ErrorInfo{
+		Domain:   ErrMsgDomain,
+		Reason:   reason,
+		Metadata: metadata,
 	}
-	tests := []struct {
-		name   string
-		err    *Error
-		fields fields
-		want   int
-	}{
-		{
-			name: "Has_HttpCode",
-			err: New(
-				grpcCodes.ResourceExhausted,
-				http.StatusTeapot,
-				"Test Msg",
-				"SOME_ERROR",
-			).WithErrorInfo("fake", map[string]string{"fake": "test"}),
-			fields: fields{httpCode: http.StatusTeapot},
-			want:   http.StatusTeapot,
-		},
-		{
-			name: "No_HttpCode",
-			err: New(
-				grpcCodes.ResourceExhausted,
-				0,
-				"",
-				"",
-			).WithErrorInfo("fake", map[string]string{"fake": "test"}),
-			fields: fields{},
-			want:   0,
+
+	details2 := &errdetails.PreconditionFailure_Violation{
+		Type:        "TOS",
+		Subject:     "google.com/cloud",
+		Description: "test_description",
+	}
+
+	expected := Error{
+		grpcCode: grpcCodes.ResourceExhausted,
+		httpCode: http.StatusTeapot,
+		message:  "fake_message",
+		tag:      "DAPR_FAKE_TAG",
+		details: []proto.Message{
+			details1,
+			details2,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			kitErr := Error{
-				HTTPCode: tt.fields.httpCode,
-			}
-			if got := kitErr.HTTPCode; got != tt.want {
-				t.Errorf("Error.HTTPCode = %v, want %v", got, tt.want)
-			}
-			assert.True(t, kitErr.Is(&kitErr))
-		})
+
+	kitErr := &Error{
+		grpcCode: grpcCodes.ResourceExhausted,
+		httpCode: http.StatusTeapot,
+		message:  "fake_message",
+		tag:      "DAPR_FAKE_TAG",
 	}
+
+	kitErr.AddDetails(details1, details2)
+	assert.Equal(t, expected, *kitErr)
 }
 
 // Ensure Err format does not break users expecting this format
@@ -176,19 +105,19 @@ func TestError_Error(t *testing.T) {
 		grpcCode grpcCodes.Code
 	}
 	tests := []struct {
-		name   string
-		err    *Error
-		fields fields
-		want   string
+		name    string
+		builder *ErrorBuilder
+		fields  fields
+		want    string
 	}{
 		{
 			name: "Has_GrpcCode_And_Message",
-			err: New(
+			builder: NewBuilder(
 				grpcCodes.ResourceExhausted,
 				http.StatusTeapot,
 				"Msg",
 				"SOME_ERROR",
-			),
+			).WithErrorInfo("fake", map[string]string{"fake": "test"}),
 			fields: fields{
 				message:  "Msg",
 				grpcCode: grpcCodes.ResourceExhausted,
@@ -197,12 +126,12 @@ func TestError_Error(t *testing.T) {
 		},
 		{
 			name: "Has_Only_Message",
-			err: New(
+			builder: NewBuilder(
 				grpcCodes.OK,
 				http.StatusTeapot,
 				"Msg",
 				"SOME_ERROR",
-			),
+			).WithErrorInfo("fake", map[string]string{"fake": "test"}),
 			fields: fields{
 				message: "Msg",
 			},
@@ -210,7 +139,7 @@ func TestError_Error(t *testing.T) {
 		},
 		{
 			name: "Has_Only_GrpcCode",
-			err: New(
+			builder: NewBuilder(
 				grpcCodes.Canceled,
 				http.StatusTeapot,
 				"Msg",
@@ -219,21 +148,50 @@ func TestError_Error(t *testing.T) {
 			fields: fields{
 				grpcCode: grpcCodes.Canceled,
 			},
-			want: fmt.Sprintf(errStringFormat, grpcCodes.Canceled, ""),
+			want: fmt.Sprintf(errStringFormat, grpcCodes.Canceled, "Msg"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			kitErr := Error{
-				Message:  tt.fields.message,
-				GrpcCode: tt.fields.grpcCode,
-			}
+			kitErr := tt.builder.Build()
 			if got := kitErr.Error(); got != tt.want {
-				t.Errorf("Error.Error() = %v, want %v", got, tt.want)
+				t.Errorf("got = %v, want %v", got, tt.want)
 			}
-			assert.True(t, kitErr.Is(&kitErr))
+
+			err, ok := kitErr.(Error)
+			require.True(t, ok, err.Is(kitErr))
 		})
 	}
+}
+
+func TestErrorBuilder_WithErrorInfo(t *testing.T) {
+	reason := "fake"
+	metadata := map[string]string{"fake": "test"}
+	details := &errdetails.ErrorInfo{
+		Domain:   ErrMsgDomain,
+		Reason:   reason,
+		Metadata: metadata,
+	}
+
+	expected := Error{
+		grpcCode: grpcCodes.ResourceExhausted,
+		httpCode: http.StatusTeapot,
+		message:  "fake_message",
+		tag:      "DAPR_FAKE_TAG",
+		details: []proto.Message{
+			details,
+		},
+	}
+
+	builder := NewBuilder(
+		grpcCodes.ResourceExhausted,
+		http.StatusTeapot,
+		"fake_message",
+		"DAPR_FAKE_TAG",
+	).
+		WithErrorInfo(reason, metadata)
+
+	assert.Equal(t, expected, builder.Build())
 }
 
 // helperSlicesEqual compares slices element by element
@@ -249,7 +207,7 @@ func helperSlicesEqual(a, b []proto.Message) bool {
 	return true
 }
 
-func TestError_WithErrorInfo(t *testing.T) {
+func TestErrorBuilder_WithDetails(t *testing.T) {
 	type fields struct {
 		details  []proto.Message
 		grpcCode grpcCodes.Code
@@ -266,91 +224,7 @@ func TestError_WithErrorInfo(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   *Error
-	}{
-		{
-			name: "Has_No_Detail",
-			fields: fields{
-				details:  []proto.Message{},
-				grpcCode: grpcCodes.ResourceExhausted,
-				httpCode: http.StatusTeapot,
-				message:  "fake_message",
-				tag:      "DAPR_FAKE_TAG",
-			},
-			args: args{a: []proto.Message{}},
-			want: New(
-				grpcCodes.ResourceExhausted,
-				http.StatusTeapot,
-				"fake_message",
-				"DAPR_FAKE_TAG",
-			).WithErrorInfo("fake", map[string]string{"fake": "test"}),
-		},
-		{
-			name: "Has_One_Detail",
-			fields: fields{
-				details:  []proto.Message{},
-				grpcCode: grpcCodes.ResourceExhausted,
-				httpCode: http.StatusTeapot,
-				message:  "fake_message",
-				tag:      "DAPR_FAKE_TAG",
-			},
-			args: args{a: []proto.Message{
-				&errdetails.PreconditionFailure_Violation{
-					Type:        "TOS",
-					Subject:     "google.com/cloud",
-					Description: "test_description",
-				},
-			}},
-			want: New(
-				grpcCodes.ResourceExhausted,
-				http.StatusTeapot,
-				"fake_message",
-				"DAPR_FAKE_TAG",
-			).WithErrorInfo("fake", map[string]string{"fake": "test"}).WithDetails(
-				&errdetails.PreconditionFailure_Violation{
-					Type:        "TOS",
-					Subject:     "google.com/cloud",
-					Description: "test_description",
-				},
-			),
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			kitErr := New(
-				test.fields.grpcCode,
-				test.fields.httpCode,
-				test.fields.message,
-				test.fields.tag,
-			).WithErrorInfo("fake", map[string]string{"fake": "test"})
-
-			if got := kitErr.WithDetails(test.args.a...); !helperSlicesEqual(got.Details, test.want.Details) {
-				t.Errorf("Error.WithDetails() = %v, want %v", got, test.want)
-			}
-			assert.True(t, kitErr.Is(kitErr))
-		})
-	}
-}
-
-func TestError_WithDetails(t *testing.T) {
-	type fields struct {
-		details  []proto.Message
-		grpcCode grpcCodes.Code
-		httpCode int
-		message  string
-		tag      string
-	}
-
-	type args struct {
-		a []proto.Message
-	}
-
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *Error
+		want   Error
 	}{
 		{
 			name: "Has_Multiple_Details",
@@ -373,41 +247,44 @@ func TestError_WithDetails(t *testing.T) {
 					Description: "test_description",
 				},
 			}},
-			want: New(
-				grpcCodes.ResourceExhausted,
-				http.StatusTeapot,
-				"fake_message",
-				"DAPR_FAKE_TAG",
-			).WithErrorInfo("example_reason", map[string]string{"key": "value"}).WithDetails(
-				&errdetails.PreconditionFailure_Violation{
-					Type:        "TOS",
-					Subject:     "google.com/cloud",
-					Description: "test_description",
+			want: Error{
+				grpcCode: grpcCodes.ResourceExhausted,
+				httpCode: http.StatusTeapot,
+				message:  "fake_message",
+				tag:      "DAPR_FAKE_TAG",
+				details: []proto.Message{
+					&errdetails.ErrorInfo{
+						Domain:   ErrMsgDomain,
+						Reason:   "example_reason",
+						Metadata: map[string]string{"key": "value"},
+					},
+					&errdetails.PreconditionFailure_Violation{
+						Type:        "TOS",
+						Subject:     "google.com/cloud",
+						Description: "test_description",
+					},
 				},
-			),
+			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			kitErr := New(
+			kitErr := NewBuilder(
 				test.fields.grpcCode,
 				test.fields.httpCode,
 				test.fields.message,
 				test.fields.tag,
-			)
+			).WithDetails(test.args.a...)
 
-			if got := kitErr.WithDetails(test.args.a...); !helperSlicesEqual(got.Details, test.want.Details) {
-				t.Errorf("Error.WithDetails() = %v, want %v", got, test.want)
-			}
-			assert.True(t, kitErr.Is(kitErr))
+			assert.Equal(t, test.want, kitErr.Build())
 		})
 	}
 }
 
 func TestWithErrorHelp(t *testing.T) {
 	// Initialize the Error struct with some default values
-	err := New(grpcCodes.InvalidArgument, http.StatusBadRequest, "Internal error", "INTERNAL_ERROR")
+	err := NewBuilder(grpcCodes.InvalidArgument, http.StatusBadRequest, "Internal error", "INTERNAL_ERROR")
 
 	// Define test data for the help links
 	links := []*errdetails.Help_Link{
@@ -424,17 +301,17 @@ func TestWithErrorHelp(t *testing.T) {
 	// Call WithHelp
 	err = err.WithHelp(links)
 	// Use require to make assertions
-	require.Len(t, err.Details, 1, "Details should contain exactly one item")
+	require.Len(t, err.err.details, 1, "Details should contain exactly one item")
 
 	// Type assert to *errdetails.Help
-	helpDetail, ok := err.Details[0].(*errdetails.Help)
+	helpDetail, ok := err.err.details[0].(*errdetails.Help)
 	require.True(t, ok, "Details[0] should be of type *errdetails.Help")
 	require.Equal(t, links, helpDetail.GetLinks(), "Links should match the provided links")
 }
 
 func TestWithErrorFieldViolation(t *testing.T) {
 	// Initialize the Error struct with some default values
-	err := New(grpcCodes.InvalidArgument, http.StatusBadRequest, "Internal error", "INTERNAL_ERROR")
+	err := NewBuilder(grpcCodes.InvalidArgument, http.StatusBadRequest, "Internal error", "INTERNAL_ERROR")
 
 	// Define test data for the field violation
 	fieldName := "testField"
@@ -444,11 +321,11 @@ func TestWithErrorFieldViolation(t *testing.T) {
 	updatedErr := err.WithFieldViolation(fieldName, msg)
 
 	// Check if the Details slice contains the expected BadRequest
-	require.Len(t, updatedErr.Details, 1)
+	require.Len(t, updatedErr.err.details, 1)
 
 	// Type assert to *errdetails.BadRequest
-	br, ok := updatedErr.Details[0].(*errdetails.BadRequest)
-	require.True(t, ok, "Expected BadRequest type, got %T", updatedErr.Details[0])
+	br, ok := updatedErr.err.details[0].(*errdetails.BadRequest)
+	require.True(t, ok, "Expected BadRequest type, got %T", updatedErr.err.details[0])
 
 	// Check if the BadRequest contains the expected FieldViolation
 	require.Len(t, br.GetFieldViolations(), 1, "Expected 1 field violation, got %d", len(br.GetFieldViolations()))
@@ -772,10 +649,10 @@ func TestError_JSONErrorValue(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			kitErr := New(test.fields.grpcCode, test.fields.httpCode, test.fields.message, test.fields.tag).
+			kitErr := NewBuilder(test.fields.grpcCode, test.fields.httpCode, test.fields.message, test.fields.tag).
 				WithDetails(test.fields.details...)
 
-			got := kitErr.JSONErrorValue()
+			got := kitErr.err.JSONErrorValue()
 
 			// Use map[string]interface{} to handle order diff in the slices
 			var gotMap, wantMap map[string]interface{}
@@ -806,7 +683,7 @@ func TestError_JSONErrorValue(t *testing.T) {
 				t.Errorf("tag: \ngot = %s, \nwant %s", got, test.want)
 			}
 
-			if !helperSlicesEqual(kitErr.Details, test.fields.details) {
+			if !helperSlicesEqual(kitErr.err.details, test.fields.details) {
 				t.Errorf("Error.JSONErrorValue(): \ngot %s, \nwant %s", got, test.want)
 			}
 		})
@@ -879,18 +756,58 @@ func TestError_GRPCStatus(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			kitErr := New(
+			kitErr := NewBuilder(
 				test.fields.grpcCode,
 				test.fields.httpCode,
 				test.fields.message,
 				test.fields.tag,
 			).WithDetails(test.fields.details...)
 
-			got := kitErr.GRPCStatus()
+			got := kitErr.err.GRPCStatus()
 
 			if !reflect.DeepEqual(got.Proto(), test.want.Proto()) {
 				t.Errorf("Error.GRPCStatus(): \ngot = %v, \nwant %v", got.Proto(), test.want.Proto())
 			}
 		})
 	}
+}
+
+func TestErrorBuilder_Build(t *testing.T) {
+	t.Run("With_ErrorInfo", func(t *testing.T) {
+		builder := NewBuilder(
+			grpcCodes.ResourceExhausted,
+			http.StatusTeapot,
+			"Test Msg",
+			"SOME_ERROR",
+		).WithErrorInfo("fake", map[string]string{"fake": "test"})
+
+		err := builder.Build()
+
+		assert.NotNil(t, err)
+
+		containsErrorInfo := false
+
+		for _, detail := range builder.err.details {
+			_, isErrInfo := detail.(*errdetails.ErrorInfo)
+			if isErrInfo {
+				containsErrorInfo = true
+				break
+			}
+		}
+
+		assert.True(t, containsErrorInfo)
+	})
+
+	t.Run("Without_ErrorInfo", func(t *testing.T) {
+		builder := NewBuilder(
+			grpcCodes.ResourceExhausted,
+			http.StatusTeapot,
+			"Test Msg",
+			"SOME_ERROR",
+		)
+
+		assert.PanicsWithValue(t, "Must include ErrorInfo in error details.", func() {
+			_ = builder.Build()
+		})
+	})
 }

@@ -35,123 +35,85 @@ var log = logger.NewLogger("dapr.kit")
 type Error struct {
 	// Added error details. To see available details see:
 	// https://github.com/googleapis/googleapis/blob/master/google/rpc/error_details.proto
-	Details []proto.Message
+	details []proto.Message
 
 	// Status code for gRPC responses.
-	GrpcCode grpcCodes.Code
+	grpcCode grpcCodes.Code
 
 	// Status code for HTTP responses.
-	HTTPCode int
+	httpCode int
 
 	// Message is the human-readable error message.
-	Message string
+	message string
 
 	// Tag is a string identifying the error, used with HTTP responses only.
-	Tag string
+	tag string
 }
 
-// New create a new Error using the supplied metadata and Options
-func New(grpcCode grpcCodes.Code, httpCode int, message string, tag string) *Error {
-	// Use default values
-	kitError := &Error{
-		Details:  make([]proto.Message, 0),
-		GrpcCode: grpcCode,
-		HTTPCode: httpCode,
-		Message:  message,
-		Tag:      tag,
-	}
+// ErrorBuilder is used to build the error
+type ErrorBuilder struct {
+	err Error
+}
 
-	return kitError
+// ErrorJSON is used to build the error for the HTTP Methods json output
+type ErrorJSON struct {
+	ErrorCode string `json:"errorCode"`
+	Message   string `json:"message"`
+	Details   []any  `json:"details,omitempty"`
+}
+
+/**************************************
+Error
+**************************************/
+
+// HTTPStatusCode gets the error http code
+func (e *Error) HTTPStatusCode() int {
+	return e.httpCode
+}
+
+// GrpcStatusCode gets the error grpc code
+func (e *Error) GrpcStatusCode() grpcCodes.Code {
+	return e.grpcCode
 }
 
 // Error implements the error interface.
-func (e *Error) Error() string {
-	if e != nil {
-		return e.String()
-	}
-	return ""
+func (e Error) Error() string {
+	return e.String()
 }
 
 // String returns the string representation.
 func (e Error) String() string {
-	return fmt.Sprintf(errStringFormat, e.GrpcCode.String(), e.Message)
+	return fmt.Sprintf(errStringFormat, e.grpcCode.String(), e.message)
 }
 
-// WithResourceInfo used to pass ResourceInfo to the Error struct.
-func (e *Error) WithResourceInfo(resourceType string, resourceName string, owner string, description string) *Error {
-	resourceInfo := &errdetails.ResourceInfo{
-		ResourceType: resourceType,
-		ResourceName: resourceName,
-		Owner:        owner,
-		Description:  description,
+// Is implements the interface that checks if the error matches the given one.
+func (e *Error) Is(targetI error) bool {
+	// Ignore the message in the comparison because the target could have been formatted
+	var target *Error
+	if !errors.As(targetI, &target) {
+		return false
 	}
+	return e.tag == target.tag &&
+		e.grpcCode == target.grpcCode &&
+		e.httpCode == target.httpCode
+}
 
-	e.Details = append(e.Details, resourceInfo)
+// Allow details to be mutable and added to the error in runtime
+func (e *Error) AddDetails(details ...proto.Message) *Error {
+	e.details = append(e.details, details...)
 
 	return e
 }
 
-func (e *Error) WithHelpLink(url string, description string) *Error {
-	link := errdetails.Help_Link{
-		Description: description,
-		Url:         url,
-	}
-	var links []*errdetails.Help_Link
-	links = append(links, &link)
-
-	help := &errdetails.Help{Links: links}
-	e.Details = append(e.Details, help)
-
-	return e
-}
-
-func (e *Error) WithHelp(links []*errdetails.Help_Link) *Error {
-	e.Details = append(e.Details, &errdetails.Help{Links: links})
-
-	return e
-}
-
-// WithErrorInfo adds error information to the Error struct.
-func (e *Error) WithErrorInfo(reason string, metadata map[string]string) *Error {
-	errorInfo := &errdetails.ErrorInfo{
-		Domain:   ErrMsgDomain,
-		Reason:   reason,
-		Metadata: metadata,
-	}
-	e.Details = append(e.Details, errorInfo)
-
-	return e
-}
-
-// WithErrorInfo adds error information to the Error struct.
-func (e *Error) WithFieldViolation(fieldName string, msg string) *Error {
-	br := &errdetails.BadRequest{
-		FieldViolations: []*errdetails.BadRequest_FieldViolation{{
-			Field:       fieldName,
-			Description: msg,
-		}},
-	}
-
-	e.Details = append(e.Details, br)
-
-	return e
-}
-
-func (e *Error) WithDetails(details ...proto.Message) *Error {
-	e.Details = append(e.Details, details...)
-
-	return e
-}
-
-// *** GRPC Methods ***
+/*** GRPC Methods ***/
 
 // GRPCStatus returns the gRPC status.Status object.
 func (e *Error) GRPCStatus() *status.Status {
-	stat := status.New(e.GrpcCode, e.Message)
+	stat := status.New(e.grpcCode, e.message)
 
 	// convert details from proto.Msg -> protoiface.MsgV1
 	var convertedDetails []protoiface.MessageV1
-	for _, detail := range e.Details {
+	for _, detail := range e.details {
 		if v1, ok := detail.(protoiface.MessageV1); ok {
 			convertedDetails = append(convertedDetails, v1)
 		} else {
@@ -159,7 +121,7 @@ func (e *Error) GRPCStatus() *status.Status {
 		}
 	}
 
-	if len(e.Details) > 0 {
+	if len(e.details) > 0 {
 		var err error
 		stat, err = stat.WithDetails(convertedDetails...)
 		if err != nil {
@@ -170,25 +132,19 @@ func (e *Error) GRPCStatus() *status.Status {
 	return stat
 }
 
-// *** HTTP Methods ***
-
-type ErrorJSON struct {
-	ErrorCode string `json:"errorCode"`
-	Message   string `json:"message"`
-	Details   []any  `json:"details,omitempty"`
-}
+/*** HTTP Methods ***/
 
 // JSONErrorValue implements the errorResponseValue interface.
-func (e *Error) JSONErrorValue() []byte {
+func (e Error) JSONErrorValue() []byte {
 	grpcStatus := e.GRPCStatus().Proto()
 
 	// Make httpCode human readable
 
 	// If there is no http legacy code, use the http status text
 	// This will get overwritten later if there is an ErrorInfo code
-	httpStatus := e.Tag
+	httpStatus := e.tag
 	if httpStatus == "" {
-		httpStatus = http.StatusText(e.HTTPCode)
+		httpStatus = http.StatusText(e.httpCode)
 	}
 
 	errJSON := ErrorJSON{
@@ -197,7 +153,7 @@ func (e *Error) JSONErrorValue() []byte {
 	}
 
 	// Handle err details
-	details := e.Details
+	details := e.details
 	if len(details) > 0 {
 		errJSON.Details = make([]any, len(details))
 		for i, detail := range details {
@@ -216,7 +172,7 @@ func (e *Error) JSONErrorValue() []byte {
 				errJSON.Details[i] = detailMap
 
 				// If there is an ErrorInfo Reason, but no legacy Tag code, use the ErrorInfo Reason as the error code
-				if e.Tag == "" && typedDetail.GetReason() != "" {
+				if e.tag == "" && typedDetail.GetReason() != "" {
 					errJSON.ErrorCode = typedDetail.GetReason()
 				}
 			case *errdetails.RetryInfo:
@@ -341,14 +297,107 @@ func (e *Error) JSONErrorValue() []byte {
 	return errBytes
 }
 
-// Is implements the interface that checks if the error matches the given one.
-func (e *Error) Is(targetI error) bool {
-	// Ignore the message in the comparison because the target could have been formatted
-	var target *Error
-	if !errors.As(targetI, &target) {
-		return false
+/**************************************
+ErrorBuilder
+**************************************/
+
+// NewBuilder create a new ErrorBuilder using the supplied required error fields
+func NewBuilder(grpcCode grpcCodes.Code, httpCode int, message string, tag string) *ErrorBuilder {
+	return &ErrorBuilder{
+		err: Error{
+			details:  make([]proto.Message, 0),
+			grpcCode: grpcCode,
+			httpCode: httpCode,
+			message:  message,
+			tag:      tag,
+		},
 	}
-	return e.Tag == target.Tag &&
-		e.GrpcCode == target.GrpcCode &&
-		e.HTTPCode == target.HTTPCode
+}
+
+// WithResourceInfo is used to pass ResourceInfo error details to the Error struct.
+func (b *ErrorBuilder) WithResourceInfo(resourceType string, resourceName string, owner string, description string) *ErrorBuilder {
+	resourceInfo := &errdetails.ResourceInfo{
+		ResourceType: resourceType,
+		ResourceName: resourceName,
+		Owner:        owner,
+		Description:  description,
+	}
+
+	b.err.details = append(b.err.details, resourceInfo)
+
+	return b
+}
+
+// WithHelpLink is used to pass HelpLink error details to the Error struct.
+func (b *ErrorBuilder) WithHelpLink(url string, description string) *ErrorBuilder {
+	link := errdetails.Help_Link{
+		Description: description,
+		Url:         url,
+	}
+	var links []*errdetails.Help_Link
+	links = append(links, &link)
+
+	help := &errdetails.Help{Links: links}
+	b.err.details = append(b.err.details, help)
+
+	return b
+}
+
+// WithHelp is used to pass Help error details to the Error struct.
+func (b *ErrorBuilder) WithHelp(links []*errdetails.Help_Link) *ErrorBuilder {
+	b.err.details = append(b.err.details, &errdetails.Help{Links: links})
+
+	return b
+}
+
+// WithErrorInfo adds error information to the Error struct.
+func (b *ErrorBuilder) WithErrorInfo(reason string, metadata map[string]string) *ErrorBuilder {
+	errorInfo := &errdetails.ErrorInfo{
+		Domain:   ErrMsgDomain,
+		Reason:   reason,
+		Metadata: metadata,
+	}
+	b.err.details = append(b.err.details, errorInfo)
+
+	return b
+}
+
+// WithFieldViolation is used to pass FieldViolation error details to the Error struct.
+func (b *ErrorBuilder) WithFieldViolation(fieldName string, msg string) *ErrorBuilder {
+	br := &errdetails.BadRequest{
+		FieldViolations: []*errdetails.BadRequest_FieldViolation{{
+			Field:       fieldName,
+			Description: msg,
+		}},
+	}
+
+	b.err.details = append(b.err.details, br)
+
+	return b
+}
+
+// WithDetails is used to pass any error details to the Error struct.
+func (b *ErrorBuilder) WithDetails(details ...proto.Message) *ErrorBuilder {
+	b.err.details = append(b.err.details, details...)
+
+	return b
+}
+
+// Build builds our error
+func (b *ErrorBuilder) Build() error {
+	// Check for ErrorInfo, since its required per the proposal
+	containsErrorInfo := false
+	for _, detail := range b.err.details {
+		if _, ok := detail.(*errdetails.ErrorInfo); ok {
+			containsErrorInfo = true
+			break
+		}
+	}
+
+	if !containsErrorInfo || len(b.err.details) == 0 {
+		log.Errorf("Must include ErrorInfo in error details. Error: ", b.err)
+		panic("Must include ErrorInfo in error details.")
+	}
+
+	return b.err
 }
