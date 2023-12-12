@@ -4,24 +4,31 @@ The standardizing of errors to be used in Dapr based on the gRPC Richer Error Mo
 
 ## Usage
 
+Define the error
 ```go
 import kitErrors "github.com/dapr/kit/errors"
 
 // Define error in dapr pkg/api/<building_block>_errors.go
-func PubSubNotFound(pubsubName string, pubsubType string, metadata map[string]string) error {
-message := fmt.Sprintf("pubsub %s is not found", pubsubName)
+func PubSubNotFound(name string, pubsubType string, metadata map[string]string) error {
+	message := fmt.Sprintf("pubsub %s is not found", name)
 
-return kitErrors.New(
-grpcCodes.NotFound,
-http.StatusBadRequest,
-message,
-fmt.Sprintf("%s%s", kitErrors.CodePrefixPubSub, kitErrors.CodeNotFound),
-).
-WithErrorInfo(kitErrors.CodePrefixPubSub+kitErrors.CodeNotFound, metadata).
-WithResourceInfo(pubsubType, pubsubName, "", message)
+	return kitErrors.NewBuilder(
+		grpcCodes.NotFound,
+		http.StatusBadRequest,
+		message,
+		kitErrors.CodePrefixPubSub+kitErrors.CodeNotFound,
+	).
+		WithErrorInfo(kitErrors.CodePrefixPubSub+kitErrors.CodeNotFound, metadata).
+		WithResourceInfo(pubsubType, name, "", message).
+		Build()
 }
+```
+
+Use the error
+```go
+import apiErrors "github.com/dapr/dapr/pkg/api/errors"
 
 // Use error in dapr and pass in relevant information
-err = errutil.PubSubNotFound(pubsubName, pubsubType, metadata)
+err = apiErrors.PubSubNotFound(pubsubName, pubsubType, metadata)
 
 ```
