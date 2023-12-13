@@ -108,7 +108,7 @@ func (e *Error) AddDetails(details ...proto.Message) *Error {
 /*** GRPC Methods ***/
 
 // GRPCStatus returns the gRPC status.Status object.
-func (e *Error) GRPCStatus() *status.Status {
+func (e Error) GRPCStatus() *status.Status {
 	stat := status.New(e.grpcCode, e.message)
 
 	// convert details from proto.Msg -> protoiface.MsgV1
