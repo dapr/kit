@@ -21,7 +21,7 @@ const (
 	typeGoogleAPI = "type.googleapis.com/"
 
 	// Messages
-	MsgStateGet        = "fail to get %s from state store %s: %s"
+	MsgStateGet        = "failed to get %s from state store %s: %s"
 	MsgStateDelete     = "failed deleting state with key %s: %s"
 	MsgStateSave       = "failed saving state in state store %s: %s"
 	MsgStateDeleteBulk = "failed deleting state in state store %s: %s"
