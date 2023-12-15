@@ -59,7 +59,7 @@ type Error struct {
 }
 
 // ErrorBuilder is used to build the error
-type errorBuilder struct {
+type ErrorBuilder struct {
 	err Error
 }
 
@@ -309,9 +309,9 @@ func (e Error) JSONErrorValue() []byte {
 ErrorBuilder
 **************************************/
 
-// NewBuilder create a new errorBuilder using the supplied required error fields
-func NewBuilder(grpcCode grpcCodes.Code, httpCode int, message string, tag string) *errorBuilder {
-	return &errorBuilder{
+// NewBuilder create a new ErrorBuilder using the supplied required error fields
+func NewBuilder(grpcCode grpcCodes.Code, httpCode int, message string, tag string) *ErrorBuilder {
+	return &ErrorBuilder{
 		err: Error{
 			details:  make([]proto.Message, 0),
 			grpcCode: grpcCode,
@@ -323,7 +323,7 @@ func NewBuilder(grpcCode grpcCodes.Code, httpCode int, message string, tag strin
 }
 
 // WithResourceInfo is used to pass ResourceInfo error details to the Error struct.
-func (b *errorBuilder) WithResourceInfo(resourceType string, resourceName string, owner string, description string) *errorBuilder {
+func (b *ErrorBuilder) WithResourceInfo(resourceType string, resourceName string, owner string, description string) *ErrorBuilder {
 	resourceInfo := &errdetails.ResourceInfo{
 		ResourceType: resourceType,
 		ResourceName: resourceName,
@@ -337,7 +337,7 @@ func (b *errorBuilder) WithResourceInfo(resourceType string, resourceName string
 }
 
 // WithHelpLink is used to pass HelpLink error details to the Error struct.
-func (b *errorBuilder) WithHelpLink(url string, description string) *errorBuilder {
+func (b *ErrorBuilder) WithHelpLink(url string, description string) *ErrorBuilder {
 	link := errdetails.Help_Link{
 		Description: description,
 		Url:         url,
@@ -352,14 +352,14 @@ func (b *errorBuilder) WithHelpLink(url string, description string) *errorBuilde
 }
 
 // WithHelp is used to pass Help error details to the Error struct.
-func (b *errorBuilder) WithHelp(links []*errdetails.Help_Link) *errorBuilder {
+func (b *ErrorBuilder) WithHelp(links []*errdetails.Help_Link) *ErrorBuilder {
 	b.err.details = append(b.err.details, &errdetails.Help{Links: links})
 
 	return b
 }
 
 // WithErrorInfo adds error information to the Error struct.
-func (b *errorBuilder) WithErrorInfo(reason string, metadata map[string]string) *errorBuilder {
+func (b *ErrorBuilder) WithErrorInfo(reason string, metadata map[string]string) *ErrorBuilder {
 	errorInfo := &errdetails.ErrorInfo{
 		Domain:   Domain,
 		Reason:   reason,
@@ -371,7 +371,7 @@ func (b *errorBuilder) WithErrorInfo(reason string, metadata map[string]string) 
 }
 
 // WithFieldViolation is used to pass FieldViolation error details to the Error struct.
-func (b *errorBuilder) WithFieldViolation(fieldName string, msg string) *errorBuilder {
+func (b *ErrorBuilder) WithFieldViolation(fieldName string, msg string) *ErrorBuilder {
 	br := &errdetails.BadRequest{
 		FieldViolations: []*errdetails.BadRequest_FieldViolation{{
 			Field:       fieldName,
@@ -385,14 +385,14 @@ func (b *errorBuilder) WithFieldViolation(fieldName string, msg string) *errorBu
 }
 
 // WithDetails is used to pass any error details to the Error struct.
-func (b *errorBuilder) WithDetails(details ...proto.Message) *errorBuilder {
+func (b *ErrorBuilder) WithDetails(details ...proto.Message) *ErrorBuilder {
 	b.err.details = append(b.err.details, details...)
 
 	return b
 }
 
 // Build builds our error
-func (b *errorBuilder) Build() error {
+func (b *ErrorBuilder) Build() error {
 	// Check for ErrorInfo, since it's required per the proposal
 	containsErrorInfo := false
 	for _, detail := range b.err.details {

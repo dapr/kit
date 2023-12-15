@@ -109,7 +109,7 @@ func TestError_Error(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		builder *errorBuilder
+		builder *ErrorBuilder
 		fields  fields
 		want    string
 	}{
