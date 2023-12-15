@@ -28,6 +28,14 @@ import (
 	"github.com/dapr/kit/logger"
 )
 
+const (
+	Domain = "dapr.io"
+
+	errStringFormat = "api error: code = %s desc = %s"
+
+	typeGoogleAPI = "type.googleapis.com/"
+)
+
 var log = logger.NewLogger("dapr.kit")
 
 // Error implements the Error interface and the interface that complies with "google.golang.org/grpc/status".FromError().
@@ -51,12 +59,12 @@ type Error struct {
 }
 
 // ErrorBuilder is used to build the error
-type ErrorBuilder struct {
+type errorBuilder struct {
 	err Error
 }
 
-// ErrorJSON is used to build the error for the HTTP Methods json output
-type ErrorJSON struct {
+// errorJSON is used to build the error for the HTTP Methods json output
+type errorJSON struct {
 	ErrorCode string `json:"errorCode"`
 	Message   string `json:"message"`
 	Details   []any  `json:"details,omitempty"`
@@ -147,7 +155,7 @@ func (e Error) JSONErrorValue() []byte {
 		httpStatus = http.StatusText(e.httpCode)
 	}
 
-	errJSON := ErrorJSON{
+	errJSON := errorJSON{
 		ErrorCode: httpStatus,
 		Message:   grpcStatus.GetMessage(),
 	}
@@ -301,9 +309,9 @@ func (e Error) JSONErrorValue() []byte {
 ErrorBuilder
 **************************************/
 
-// NewBuilder create a new ErrorBuilder using the supplied required error fields
-func NewBuilder(grpcCode grpcCodes.Code, httpCode int, message string, tag string) *ErrorBuilder {
-	return &ErrorBuilder{
+// NewBuilder create a new errorBuilder using the supplied required error fields
+func NewBuilder(grpcCode grpcCodes.Code, httpCode int, message string, tag string) *errorBuilder {
+	return &errorBuilder{
 		err: Error{
 			details:  make([]proto.Message, 0),
 			grpcCode: grpcCode,
@@ -315,7 +323,7 @@ func NewBuilder(grpcCode grpcCodes.Code, httpCode int, message string, tag strin
 }
 
 // WithResourceInfo is used to pass ResourceInfo error details to the Error struct.
-func (b *ErrorBuilder) WithResourceInfo(resourceType string, resourceName string, owner string, description string) *ErrorBuilder {
+func (b *errorBuilder) WithResourceInfo(resourceType string, resourceName string, owner string, description string) *errorBuilder {
 	resourceInfo := &errdetails.ResourceInfo{
 		ResourceType: resourceType,
 		ResourceName: resourceName,
@@ -329,7 +337,7 @@ func (b *ErrorBuilder) WithResourceInfo(resourceType string, resourceName string
 }
 
 // WithHelpLink is used to pass HelpLink error details to the Error struct.
-func (b *ErrorBuilder) WithHelpLink(url string, description string) *ErrorBuilder {
+func (b *errorBuilder) WithHelpLink(url string, description string) *errorBuilder {
 	link := errdetails.Help_Link{
 		Description: description,
 		Url:         url,
@@ -344,16 +352,16 @@ func (b *ErrorBuilder) WithHelpLink(url string, description string) *ErrorBuilde
 }
 
 // WithHelp is used to pass Help error details to the Error struct.
-func (b *ErrorBuilder) WithHelp(links []*errdetails.Help_Link) *ErrorBuilder {
+func (b *errorBuilder) WithHelp(links []*errdetails.Help_Link) *errorBuilder {
 	b.err.details = append(b.err.details, &errdetails.Help{Links: links})
 
 	return b
 }
 
 // WithErrorInfo adds error information to the Error struct.
-func (b *ErrorBuilder) WithErrorInfo(reason string, metadata map[string]string) *ErrorBuilder {
+func (b *errorBuilder) WithErrorInfo(reason string, metadata map[string]string) *errorBuilder {
 	errorInfo := &errdetails.ErrorInfo{
-		Domain:   ErrMsgDomain,
+		Domain:   Domain,
 		Reason:   reason,
 		Metadata: metadata,
 	}
@@ -363,7 +371,7 @@ func (b *ErrorBuilder) WithErrorInfo(reason string, metadata map[string]string) 
 }
 
 // WithFieldViolation is used to pass FieldViolation error details to the Error struct.
-func (b *ErrorBuilder) WithFieldViolation(fieldName string, msg string) *ErrorBuilder {
+func (b *errorBuilder) WithFieldViolation(fieldName string, msg string) *errorBuilder {
 	br := &errdetails.BadRequest{
 		FieldViolations: []*errdetails.BadRequest_FieldViolation{{
 			Field:       fieldName,
@@ -377,15 +385,15 @@ func (b *ErrorBuilder) WithFieldViolation(fieldName string, msg string) *ErrorBu
 }
 
 // WithDetails is used to pass any error details to the Error struct.
-func (b *ErrorBuilder) WithDetails(details ...proto.Message) *ErrorBuilder {
+func (b *errorBuilder) WithDetails(details ...proto.Message) *errorBuilder {
 	b.err.details = append(b.err.details, details...)
 
 	return b
 }
 
 // Build builds our error
-func (b *ErrorBuilder) Build() error {
-	// Check for ErrorInfo, since its required per the proposal
+func (b *errorBuilder) Build() error {
+	// Check for ErrorInfo, since it's required per the proposal
 	containsErrorInfo := false
 	for _, detail := range b.err.details {
 		if _, ok := detail.(*errdetails.ErrorInfo); ok {

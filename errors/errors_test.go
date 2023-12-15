@@ -16,9 +16,12 @@ package errors
 import (
 	"encoding/json"
 	"fmt"
+	"go/types"
 	"net/http"
 	"reflect"
 	"testing"
+
+	"golang.org/x/tools/go/packages"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -65,7 +68,7 @@ func TestError_AddDetails(t *testing.T) {
 	metadata := map[string]string{"key": "value"}
 
 	details1 := &errdetails.ErrorInfo{
-		Domain:   ErrMsgDomain,
+		Domain:   Domain,
 		Reason:   reason,
 		Metadata: metadata,
 	}
@@ -106,7 +109,7 @@ func TestError_Error(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		builder *ErrorBuilder
+		builder *errorBuilder
 		fields  fields
 		want    string
 	}{
@@ -168,7 +171,7 @@ func TestErrorBuilder_WithErrorInfo(t *testing.T) {
 	reason := "fake"
 	metadata := map[string]string{"fake": "test"}
 	details := &errdetails.ErrorInfo{
-		Domain:   ErrMsgDomain,
+		Domain:   Domain,
 		Reason:   reason,
 		Metadata: metadata,
 	}
@@ -237,7 +240,7 @@ func TestErrorBuilder_WithDetails(t *testing.T) {
 			},
 			args: args{a: []proto.Message{
 				&errdetails.ErrorInfo{
-					Domain:   ErrMsgDomain,
+					Domain:   Domain,
 					Reason:   "example_reason",
 					Metadata: map[string]string{"key": "value"},
 				},
@@ -254,7 +257,7 @@ func TestErrorBuilder_WithDetails(t *testing.T) {
 				tag:      "DAPR_FAKE_TAG",
 				details: []proto.Message{
 					&errdetails.ErrorInfo{
-						Domain:   ErrMsgDomain,
+						Domain:   Domain,
 						Reason:   "example_reason",
 						Metadata: map[string]string{"key": "value"},
 					},
@@ -363,7 +366,7 @@ func TestError_JSONErrorValue(t *testing.T) {
 			fields: fields{
 				details: []proto.Message{
 					&errdetails.ErrorInfo{
-						Domain:   ErrMsgDomain,
+						Domain:   Domain,
 						Reason:   "test_reason",
 						Metadata: map[string]string{"key": "value"},
 					},
@@ -385,7 +388,7 @@ func TestError_JSONErrorValue(t *testing.T) {
 			fields: fields{
 				details: []proto.Message{
 					&errdetails.ErrorInfo{
-						Domain:   ErrMsgDomain,
+						Domain:   Domain,
 						Reason:   "test_reason",
 						Metadata: map[string]string{"key": "value"},
 					},
@@ -720,7 +723,7 @@ func TestError_GRPCStatus(t *testing.T) {
 			fields: fields{
 				details: []proto.Message{
 					&errdetails.ErrorInfo{
-						Domain:   ErrMsgDomain,
+						Domain:   Domain,
 						Reason:   "FAKE_REASON",
 						Metadata: map[string]string{"key": "value"},
 					},
@@ -739,7 +742,7 @@ func TestError_GRPCStatus(t *testing.T) {
 				s, _ := status.New(grpcCodes.ResourceExhausted, "fake_message").
 					WithDetails(
 						&errdetails.ErrorInfo{
-							Domain:   ErrMsgDomain,
+							Domain:   Domain,
 							Reason:   "FAKE_REASON",
 							Metadata: map[string]string{"key": "value"},
 						},
@@ -809,4 +812,78 @@ func TestErrorBuilder_Build(t *testing.T) {
 			_ = builder.Build()
 		})
 	})
+}
+
+// This test ensures that all the error details google provides are covered in our switch case
+// in errors.go. If google adds an error detail, this test should fail, and we should add
+// that specific error detail to the switch case
+func TestEnsureAllErrDetailsCovered(t *testing.T) {
+	packagePath := "google.golang.org/genproto/googleapis/rpc/errdetails"
+
+	// Load the package
+	cfg := &packages.Config{Mode: packages.NeedTypes | packages.NeedTypesInfo}
+	pkgs, err := packages.Load(cfg, packagePath)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if packages.PrintErrors(pkgs) > 0 {
+		t.Errorf("ensure package is correct: %v", packages.ListError)
+	}
+
+	// This is hard-coded from the switch statement in errors.go to ensure we stay up
+	// to date on the error types we support, and to ensure we update our supported
+	// error types when google adds to their error details
+	mySwitchTypes := []string{
+		"ErrorInfo",
+		"RetryInfo",
+		"DebugInfo",
+		"QuotaFailure",
+		"PreconditionFailure",
+		"PreconditionFailure_Violation",
+		"BadRequest",
+		"BadRequest_FieldViolation",
+		"RequestInfo",
+		"ResourceInfo",
+		"Help",
+		"LocalizedMessage",
+		"QuotaFailure_Violation",
+		"Help_Link",
+	}
+
+	coveredTypes := make(map[string]bool)
+
+	// Iterate through the types in googles error detail package
+	for _, name := range pkgs[0].Types.Scope().Names() {
+		obj := pkgs[0].Types.Scope().Lookup(name)
+		if typ, ok := obj.Type().(*types.Named); ok {
+			typeFullName := typ.Obj().Name()
+
+			// Check if the type is covered in errors.go switch cases
+			if containsType(mySwitchTypes, typ.Obj().Name()) {
+				coveredTypes[typeFullName] = true
+			} else {
+				coveredTypes[typeFullName] = false
+			}
+		}
+	}
+
+	// Check if there are any uncovered types
+	for typeName, covered := range coveredTypes {
+		// Skip "FileDescriptor" && "Once" since those aren't types we care about
+		if !covered && typeName != "FileDescriptor" && typeName != "Once" {
+			t.Errorf("Type %s is not handled in switch cases, please update the switch case in errors.go",
+				typeName)
+		}
+	}
+}
+
+// containsType checks if the slice of types contains a specific type
+func containsType(types []string, target string) bool {
+	for _, t := range types {
+		if t == target {
+			return true
+		}
+	}
+	return false
 }
