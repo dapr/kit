@@ -836,6 +836,7 @@ func TestEnsureAllErrDetailsCovered(t *testing.T) {
 		t.Errorf("ensure package is correct: %v", packages.ListError)
 	}
 
+	//nolint:dogsled
 	_, filename, _, _ := runtime.Caller(0)
 	// path where convertErrorDetails function lives
 	filePath := filepath.Join(filepath.Dir(filename), "errors.go")
