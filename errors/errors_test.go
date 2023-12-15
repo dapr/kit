@@ -16,9 +16,14 @@ package errors
 import (
 	"encoding/json"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"go/types"
 	"net/http"
+	"path/filepath"
 	"reflect"
+	"runtime"
 	"testing"
 
 	"golang.org/x/tools/go/packages"
@@ -831,24 +836,12 @@ func TestEnsureAllErrDetailsCovered(t *testing.T) {
 		t.Errorf("ensure package is correct: %v", packages.ListError)
 	}
 
-	// This is hard-coded from the switch statement in errors.go to ensure we stay up
-	// to date on the error types we support, and to ensure we update our supported
-	// error types when google adds to their error details
-	mySwitchTypes := []string{
-		"ErrorInfo",
-		"RetryInfo",
-		"DebugInfo",
-		"QuotaFailure",
-		"PreconditionFailure",
-		"PreconditionFailure_Violation",
-		"BadRequest",
-		"BadRequest_FieldViolation",
-		"RequestInfo",
-		"ResourceInfo",
-		"Help",
-		"LocalizedMessage",
-		"QuotaFailure_Violation",
-		"Help_Link",
+	_, filename, _, _ := runtime.Caller(0)
+	// path where convertErrorDetails function lives
+	filePath := filepath.Join(filepath.Dir(filename), "errors.go")
+	mySwitchTypes, err := extractTypesFromSwitch(filePath, "convertErrorDetails")
+	if err != nil {
+		t.Errorf("err extracting type from switch: %v", err)
 	}
 
 	coveredTypes := make(map[string]bool)
@@ -876,6 +869,67 @@ func TestEnsureAllErrDetailsCovered(t *testing.T) {
 				typeName)
 		}
 	}
+}
+
+// extractTypesFromSwitch extracts type names from the switch statement in the specified function,
+// so we don't have to hard code the error details we support when comparing them
+// to the ones google supports.
+func extractTypesFromSwitch(filePath, funcName string) ([]string, error) {
+	fileSet := token.NewFileSet()
+	var err error
+
+	parsedFile, err := parser.ParseFile(fileSet, filePath, nil, parser.ParseComments)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing file: %v", err)
+	}
+
+	// Find the function
+	var foundFunc *ast.FuncDecl
+	for _, decl := range parsedFile.Decls {
+		if funcDecl, ok := decl.(*ast.FuncDecl); ok && funcDecl.Name.Name == funcName {
+			foundFunc = funcDecl
+			break
+		}
+	}
+
+	if foundFunc == nil {
+		return nil, fmt.Errorf("function %s not found in file", funcName)
+	}
+
+	var errTypes []string
+
+	// Traverse the AST to find the switch statement inside the function
+	ast.Inspect(foundFunc.Body, func(n ast.Node) bool {
+		// Check if it's a block statement
+		if blockStmt, ok := n.(*ast.BlockStmt); ok {
+			// Iterate over the statements in the block
+			for _, stmt := range blockStmt.List {
+				// Check if it's a switch statement
+				if switchStmt, ok := stmt.(*ast.TypeSwitchStmt); ok {
+					// Iterate over the cases in the switch statement
+					for _, caseClause := range switchStmt.Body.List {
+						// Check if it's a case clause
+						if cc, ok := caseClause.(*ast.CaseClause); ok {
+							// Extract the type name from the case clause
+							for _, expr := range cc.List {
+								// Check if it's a type assertion
+								if typeAssert, ok := expr.(*ast.StarExpr); ok {
+									// Check if it's a selector expression
+									if selectorExpr, ok := typeAssert.X.(*ast.SelectorExpr); ok {
+										// Extract the type name from the selector expression
+										errTypes = append(errTypes, selectorExpr.Sel.Name)
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return true
+	})
+
+	return errTypes, nil
 }
 
 // containsType checks if the slice of types contains a specific type

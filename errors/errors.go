@@ -165,134 +165,12 @@ func (e Error) JSONErrorValue() []byte {
 	if len(details) > 0 {
 		errJSON.Details = make([]any, len(details))
 		for i, detail := range details {
-			// cast to interface to be able to do type switch
-			// over all possible error_details defined
-			// https://github.com/googleapis/go-genproto/blob/main/googleapis/rpc/errdetails/error_details.pb.go
-			switch typedDetail := detail.(type) {
-			case *errdetails.ErrorInfo:
-				desc := typedDetail.ProtoReflect().Descriptor()
-				detailMap := map[string]interface{}{
-					"@type":    typeGoogleAPI + desc.FullName(),
-					"reason":   typedDetail.GetReason(),
-					"domain":   typedDetail.GetDomain(),
-					"metadata": typedDetail.GetMetadata(),
-				}
-				errJSON.Details[i] = detailMap
+			detailMap, errorCode := convertErrorDetails(detail, e)
+			errJSON.Details[i] = detailMap
 
-				// If there is an ErrorInfo Reason, but no legacy Tag code, use the ErrorInfo Reason as the error code
-				if e.tag == "" && typedDetail.GetReason() != "" {
-					errJSON.ErrorCode = typedDetail.GetReason()
-				}
-			case *errdetails.RetryInfo:
-				desc := typedDetail.ProtoReflect().Descriptor()
-				detailMap := map[string]interface{}{
-					"@type":       typeGoogleAPI + desc.FullName(),
-					"retry_delay": typedDetail.GetRetryDelay(),
-				}
-				errJSON.Details[i] = detailMap
-			case *errdetails.DebugInfo:
-				desc := typedDetail.ProtoReflect().Descriptor()
-				detailMap := map[string]interface{}{
-					"@type":         typeGoogleAPI + desc.FullName(),
-					"stack_entries": typedDetail.GetStackEntries(),
-					"detail":        typedDetail.GetDetail(),
-				}
-				errJSON.Details[i] = detailMap
-			case *errdetails.QuotaFailure:
-				desc := typedDetail.ProtoReflect().Descriptor()
-				detailMap := map[string]interface{}{
-					"@type":      typeGoogleAPI + desc.FullName(),
-					"violations": typedDetail.GetViolations(),
-				}
-				errJSON.Details[i] = detailMap
-			case *errdetails.PreconditionFailure:
-				desc := typedDetail.ProtoReflect().Descriptor()
-				detailMap := map[string]interface{}{
-					"@type":      typeGoogleAPI + desc.FullName(),
-					"violations": typedDetail.GetViolations(),
-				}
-				errJSON.Details[i] = detailMap
-			case *errdetails.BadRequest:
-				desc := typedDetail.ProtoReflect().Descriptor()
-				detailMap := map[string]interface{}{
-					"@type":            typeGoogleAPI + desc.FullName(),
-					"field_violations": typedDetail.GetFieldViolations(),
-				}
-				errJSON.Details[i] = detailMap
-			case *errdetails.RequestInfo:
-				desc := typedDetail.ProtoReflect().Descriptor()
-				detailMap := map[string]interface{}{
-					"@type":        typeGoogleAPI + desc.FullName(),
-					"request_id":   typedDetail.GetRequestId(),
-					"serving_data": typedDetail.GetServingData(),
-				}
-				errJSON.Details[i] = detailMap
-			case *errdetails.ResourceInfo:
-				desc := typedDetail.ProtoReflect().Descriptor()
-				detailMap := map[string]interface{}{
-					"@type":         typeGoogleAPI + desc.FullName(),
-					"resource_type": typedDetail.GetResourceType(),
-					"resource_name": typedDetail.GetResourceName(),
-					"owner":         typedDetail.GetOwner(),
-					"description":   typedDetail.GetDescription(),
-				}
-				errJSON.Details[i] = detailMap
-			case *errdetails.Help:
-				desc := typedDetail.ProtoReflect().Descriptor()
-				detailMap := map[string]interface{}{
-					"@type": typeGoogleAPI + desc.FullName(),
-					"links": typedDetail.GetLinks(),
-				}
-				errJSON.Details[i] = detailMap
-			case *errdetails.LocalizedMessage:
-				desc := typedDetail.ProtoReflect().Descriptor()
-				detailMap := map[string]interface{}{
-					"@type":   typeGoogleAPI + desc.FullName(),
-					"locale":  typedDetail.GetLocale(),
-					"message": typedDetail.GetMessage(),
-				}
-				errJSON.Details[i] = detailMap
-			case *errdetails.QuotaFailure_Violation:
-				desc := typedDetail.ProtoReflect().Descriptor()
-				detailMap := map[string]interface{}{
-					"@type":       typeGoogleAPI + desc.FullName(),
-					"subject":     typedDetail.GetSubject(),
-					"description": typedDetail.GetDescription(),
-				}
-				errJSON.Details[i] = detailMap
-			case *errdetails.PreconditionFailure_Violation:
-				desc := typedDetail.ProtoReflect().Descriptor()
-				detailMap := map[string]interface{}{
-					"@type":       typeGoogleAPI + desc.FullName(),
-					"subject":     typedDetail.GetSubject(),
-					"description": typedDetail.GetDescription(),
-					"type":        typedDetail.GetType(),
-				}
-				errJSON.Details[i] = detailMap
-			case *errdetails.BadRequest_FieldViolation:
-				desc := typedDetail.ProtoReflect().Descriptor()
-				detailMap := map[string]interface{}{
-					"@type":       typeGoogleAPI + desc.FullName(),
-					"field":       typedDetail.GetField(),
-					"description": typedDetail.GetDescription(),
-				}
-				errJSON.Details[i] = detailMap
-			case *errdetails.Help_Link:
-				desc := typedDetail.ProtoReflect().Descriptor()
-				detailMap := map[string]interface{}{
-					"@type":       typeGoogleAPI + desc.FullName(),
-					"description": typedDetail.GetDescription(),
-					"url":         typedDetail.GetUrl(),
-				}
-				errJSON.Details[i] = detailMap
-			default:
-				log.Debugf("Failed to convert error details due to incorrect type. \nSee types here: https://github.com/googleapis/googleapis/blob/master/google/rpc/error_details.proto. \nDetail: %s", detail)
-				// Handle unknown detail types
-				unknownDetail := map[string]interface{}{
-					"unknownDetailType": fmt.Sprintf("%T", typedDetail),
-					"unknownDetails":    fmt.Sprintf("%#v", typedDetail),
-				}
-				errJSON.Details[i] = unknownDetail
+			// If there is an errorCode, update the overall ErrorCode
+			if errorCode != "" {
+				errJSON.ErrorCode = errorCode
 			}
 		}
 	}
@@ -303,6 +181,138 @@ func (e Error) JSONErrorValue() []byte {
 		return errJSON
 	}
 	return errBytes
+}
+
+func convertErrorDetails(detail any, e Error) (map[string]interface{}, string) {
+	// cast to interface to be able to do type switch
+	// over all possible error_details defined
+	// https://github.com/googleapis/go-genproto/blob/main/googleapis/rpc/errdetails/error_details.pb.go
+	switch typedDetail := detail.(type) {
+	case *errdetails.ErrorInfo:
+		desc := typedDetail.ProtoReflect().Descriptor()
+		detailMap := map[string]interface{}{
+			"@type":    typeGoogleAPI + desc.FullName(),
+			"reason":   typedDetail.GetReason(),
+			"domain":   typedDetail.GetDomain(),
+			"metadata": typedDetail.GetMetadata(),
+		}
+		var errorCode string
+		// If there is an ErrorInfo Reason, but no legacy Tag code, use the ErrorInfo Reason as the error code
+		if e.tag == "" && typedDetail.GetReason() != "" {
+			errorCode = typedDetail.GetReason()
+		}
+		return detailMap, errorCode
+	case *errdetails.RetryInfo:
+		desc := typedDetail.ProtoReflect().Descriptor()
+		detailMap := map[string]interface{}{
+			"@type":       typeGoogleAPI + desc.FullName(),
+			"retry_delay": typedDetail.GetRetryDelay(),
+		}
+		return detailMap, ""
+	case *errdetails.DebugInfo:
+		desc := typedDetail.ProtoReflect().Descriptor()
+		detailMap := map[string]interface{}{
+			"@type":         typeGoogleAPI + desc.FullName(),
+			"stack_entries": typedDetail.GetStackEntries(),
+			"detail":        typedDetail.GetDetail(),
+		}
+		return detailMap, ""
+	case *errdetails.QuotaFailure:
+		desc := typedDetail.ProtoReflect().Descriptor()
+		detailMap := map[string]interface{}{
+			"@type":      typeGoogleAPI + desc.FullName(),
+			"violations": typedDetail.GetViolations(),
+		}
+		return detailMap, ""
+	case *errdetails.PreconditionFailure:
+		desc := typedDetail.ProtoReflect().Descriptor()
+		detailMap := map[string]interface{}{
+			"@type":      typeGoogleAPI + desc.FullName(),
+			"violations": typedDetail.GetViolations(),
+		}
+		return detailMap, ""
+	case *errdetails.BadRequest:
+		desc := typedDetail.ProtoReflect().Descriptor()
+		detailMap := map[string]interface{}{
+			"@type":            typeGoogleAPI + desc.FullName(),
+			"field_violations": typedDetail.GetFieldViolations(),
+		}
+		return detailMap, ""
+	case *errdetails.RequestInfo:
+		desc := typedDetail.ProtoReflect().Descriptor()
+		detailMap := map[string]interface{}{
+			"@type":        typeGoogleAPI + desc.FullName(),
+			"request_id":   typedDetail.GetRequestId(),
+			"serving_data": typedDetail.GetServingData(),
+		}
+		return detailMap, ""
+	case *errdetails.ResourceInfo:
+		desc := typedDetail.ProtoReflect().Descriptor()
+		detailMap := map[string]interface{}{
+			"@type":         typeGoogleAPI + desc.FullName(),
+			"resource_type": typedDetail.GetResourceType(),
+			"resource_name": typedDetail.GetResourceName(),
+			"owner":         typedDetail.GetOwner(),
+			"description":   typedDetail.GetDescription(),
+		}
+		return detailMap, ""
+	case *errdetails.Help:
+		desc := typedDetail.ProtoReflect().Descriptor()
+		detailMap := map[string]interface{}{
+			"@type": typeGoogleAPI + desc.FullName(),
+			"links": typedDetail.GetLinks(),
+		}
+		return detailMap, ""
+	case *errdetails.LocalizedMessage:
+		desc := typedDetail.ProtoReflect().Descriptor()
+		detailMap := map[string]interface{}{
+			"@type":   typeGoogleAPI + desc.FullName(),
+			"locale":  typedDetail.GetLocale(),
+			"message": typedDetail.GetMessage(),
+		}
+		return detailMap, ""
+	case *errdetails.QuotaFailure_Violation:
+		desc := typedDetail.ProtoReflect().Descriptor()
+		detailMap := map[string]interface{}{
+			"@type":       typeGoogleAPI + desc.FullName(),
+			"subject":     typedDetail.GetSubject(),
+			"description": typedDetail.GetDescription(),
+		}
+		return detailMap, ""
+	case *errdetails.PreconditionFailure_Violation:
+		desc := typedDetail.ProtoReflect().Descriptor()
+		detailMap := map[string]interface{}{
+			"@type":       typeGoogleAPI + desc.FullName(),
+			"subject":     typedDetail.GetSubject(),
+			"description": typedDetail.GetDescription(),
+			"type":        typedDetail.GetType(),
+		}
+		return detailMap, ""
+	case *errdetails.BadRequest_FieldViolation:
+		desc := typedDetail.ProtoReflect().Descriptor()
+		detailMap := map[string]interface{}{
+			"@type":       typeGoogleAPI + desc.FullName(),
+			"field":       typedDetail.GetField(),
+			"description": typedDetail.GetDescription(),
+		}
+		return detailMap, ""
+	case *errdetails.Help_Link:
+		desc := typedDetail.ProtoReflect().Descriptor()
+		detailMap := map[string]interface{}{
+			"@type":       typeGoogleAPI + desc.FullName(),
+			"description": typedDetail.GetDescription(),
+			"url":         typedDetail.GetUrl(),
+		}
+		return detailMap, ""
+	default:
+		log.Debugf("Failed to convert error details due to incorrect type. \nSee types here: https://github.com/googleapis/googleapis/blob/master/google/rpc/error_details.proto. \nDetail: %s", detail)
+		// Handle unknown detail types
+		unknownDetail := map[string]interface{}{
+			"unknownDetailType": fmt.Sprintf("%T", typedDetail),
+			"unknownDetails":    fmt.Sprintf("%#v", typedDetail),
+		}
+		return unknownDetail, ""
+	}
 }
 
 /**************************************
