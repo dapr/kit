@@ -403,7 +403,7 @@ func (b *errorBuilder) Build() error {
 	}
 
 	if !containsErrorInfo || len(b.err.details) == 0 {
-		log.Errorf("Must include ErrorInfo in error details. Error: ", b.err)
+		log.Errorf("Must include ErrorInfo in error details. Error: %s", b.err.Error())
 		panic("Must include ErrorInfo in error details.")
 	}
 
