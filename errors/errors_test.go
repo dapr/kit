@@ -942,3 +942,29 @@ func containsType(types []string, target string) bool {
 	}
 	return false
 }
+
+func TestFromError(t *testing.T) {
+	result, ok := FromError(nil)
+	if result != nil || ok {
+		t.Errorf("Expected result to be nil and ok to be false, got result: %v, ok: %t", result, ok)
+	}
+
+	kitErr := Error{
+		grpcCode: grpcCodes.ResourceExhausted,
+		httpCode: http.StatusTeapot,
+		message:  "fake_message",
+		tag:      "DAPR_FAKE_TAG",
+		details:  []proto.Message{},
+	}
+
+	result, ok = FromError(kitErr)
+	if !ok || !reflect.DeepEqual(result, &kitErr) {
+		t.Errorf("Expected result to be %#v and ok to be true, got result: %#v, ok: %t", &kitErr, result, ok)
+	}
+
+	var nonKitError error
+	result, ok = FromError(nonKitError)
+	if result != nil || ok {
+		t.Errorf("Expected result to be nil and ok to be false, got result: %#v, ok: %t", result, ok)
+	}
+}

@@ -113,6 +113,20 @@ func (e *Error) AddDetails(details ...proto.Message) *Error {
 	return e
 }
 
+// FromError takes in an error and returns back the kitError if it's that type under the hood
+func FromError(err error) (*Error, bool) {
+	if err == nil {
+		return nil, false
+	}
+
+	kitErr, ok := err.(Error)
+	if ok {
+		return &kitErr, ok
+	}
+
+	return nil, false
+}
+
 /*** GRPC Methods ***/
 
 // GRPCStatus returns the gRPC status.Status object.
