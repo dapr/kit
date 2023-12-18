@@ -119,9 +119,9 @@ func FromError(err error) (*Error, bool) {
 		return nil, false
 	}
 
-	kitErr, ok := err.(Error)
-	if ok {
-		return &kitErr, ok
+	var kitErr Error
+	if errors.As(err, &kitErr) {
+		return &kitErr, true
 	}
 
 	return nil, false

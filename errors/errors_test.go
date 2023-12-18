@@ -967,4 +967,10 @@ func TestFromError(t *testing.T) {
 	if result != nil || ok {
 		t.Errorf("Expected result to be nil and ok to be false, got result: %#v, ok: %t", result, ok)
 	}
+
+	wrapped := fmt.Errorf("wrapped: %w", kitErr)
+	result, ok = FromError(wrapped)
+	if !ok || !reflect.DeepEqual(result, &kitErr) {
+		t.Errorf("Expected result to be %#v and ok to be true, got result: %#v, ok: %t", &kitErr, result, ok)
+	}
 }
