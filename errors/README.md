@@ -8,7 +8,7 @@ Define the error
 ```go
 import kitErrors "github.com/dapr/kit/errors"
 
-// Define error in dapr pkg/api/<building_block>_errors.go
+// Define error in dapr pkg/api/errors/<building_block>.go
 func PubSubNotFound(name string, pubsubType string, metadata map[string]string) error {
 	message := fmt.Sprintf("pubsub %s is not found", name)
 
