@@ -39,6 +39,7 @@ func TestCache(t *testing.T) {
 	cache.Set("key1", "val1", 2)
 	cache.Set("key2", "val2", 5)
 	cache.Set("key3", "val3", 30) // Max TTL is 15s
+	cache.Set("key4", "val4", 5)
 
 	// Retrieve values
 	for i := 0; i < 16; i++ {
@@ -62,6 +63,17 @@ func TestCache(t *testing.T) {
 		if i < 15 {
 			require.True(t, ok)
 			require.Equal(t, "val3", v)
+		} else {
+			require.False(t, ok)
+		}
+
+		v, ok = cache.Get("key4")
+		if i < 1 {
+			require.True(t, ok)
+			require.Equal(t, "val4", v)
+
+			// Delete from the cache
+			cache.Delete("key4")
 		} else {
 			require.False(t, ok)
 		}

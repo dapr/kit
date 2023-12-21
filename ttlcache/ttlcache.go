@@ -102,6 +102,11 @@ func (c *Cache[V]) Set(key string, val V, ttl int64) {
 	})
 }
 
+// Delete an item from the cache
+func (c *Cache[V]) Delete(key string) {
+	c.m.Del(key)
+}
+
 // Cleanup removes all expired entries from the cache.
 func (c *Cache[V]) Cleanup() {
 	now := c.clock.Now()
