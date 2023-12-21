@@ -3,6 +3,7 @@ module github.com/dapr/kit
 go 1.20
 
 require (
+	github.com/alphadose/haxmap v1.3.1
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/lestrrat-go/httprc v1.0.4
