@@ -22,6 +22,7 @@ package jwkscache
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -38,6 +39,7 @@ import (
 
 	"github.com/dapr/kit/fswatcher"
 	"github.com/dapr/kit/logger"
+	"github.com/dapr/kit/utils"
 )
 
 const (
@@ -49,11 +51,11 @@ const (
 
 // JWKSCache is a cache of JWKS objects.
 // It fetches a JWKS object from a file on disk, a URL, or from a value passed as-is.
-// TODO: Move this to dapr/kit and use it for the JWKS crypto component too
 type JWKSCache struct {
 	location           string
 	requestTimeout     time.Duration
 	minRefreshInterval time.Duration
+	caCertificate      string
 
 	jwks    jwk.Set
 	logger  logger.Logger
@@ -111,6 +113,12 @@ func (c *JWKSCache) SetRequestTimeout(requestTimeout time.Duration) {
 // SetMinRefreshInterval sets the minimum interval for refreshing a JWKS from a URL if a key is not found in the cache.
 func (c *JWKSCache) SetMinRefreshInterval(minRefreshInterval time.Duration) {
 	c.minRefreshInterval = minRefreshInterval
+}
+
+// SetCACertificate sets the CA certificate to trust.
+// Can be a path to a local file or an actual, PEM-encoded certificate
+func (c *JWKSCache) SetCACertificate(caCertificate string) {
+	c.caCertificate = caCertificate
 }
 
 // SetHTTPClient sets the HTTP client object to use.
@@ -184,12 +192,28 @@ func (c *JWKSCache) initJWKSFromURL(ctx context.Context, url string) error {
 
 	// We also need to create a custom HTTP client (if we don't have one already) because otherwise there's no timeout.
 	if c.client == nil {
+		tlsConfig := &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		}
+
+		// Load CA certificates if we have one
+		if c.caCertificate != "" {
+			caCert, err := utils.GetPEM(c.caCertificate)
+			if err != nil {
+				return fmt.Errorf("failed to load CA certificate: %w", err)
+			}
+
+			caCertPool := x509.NewCertPool()
+			if !caCertPool.AppendCertsFromPEM(caCert) {
+				return errors.New("failed to add root certificate to certificate pool")
+			}
+			tlsConfig.RootCAs = caCertPool
+		}
+
 		c.client = &http.Client{
 			Timeout: c.requestTimeout,
 			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					MinVersion: tls.VersionTLS12,
-				},
+				TLSClientConfig: tlsConfig,
 			},
 		}
 	}
