@@ -25,13 +25,13 @@ func TestNew(t *testing.T) {
 	t.Parallel()
 
 	interval := time.Millisecond * 10
-	b := New(interval)
+	b := New[string](interval)
 	assert.Equal(t, interval, b.interval)
 	assert.False(t, b.closed.Load())
 }
 
 func TestWithClock(t *testing.T) {
-	b := New(time.Millisecond * 10)
+	b := New[string](time.Millisecond * 10)
 	fakeClock := testingclock.NewFakeClock(time.Now())
 	b.WithClock(fakeClock)
 	assert.Equal(t, fakeClock, b.clock)
@@ -40,7 +40,7 @@ func TestWithClock(t *testing.T) {
 func TestSubscribe(t *testing.T) {
 	t.Parallel()
 
-	b := New(time.Millisecond * 10)
+	b := New[string](time.Millisecond * 10)
 	ch := make(chan struct{})
 	b.Subscribe(ch)
 	assert.Len(t, b.eventChs, 1)
@@ -50,7 +50,7 @@ func TestBatch(t *testing.T) {
 	t.Parallel()
 
 	fakeClock := testingclock.NewFakeClock(time.Now())
-	b := New(time.Millisecond * 10)
+	b := New[string](time.Millisecond * 10)
 	b.WithClock(fakeClock)
 	ch1 := make(chan struct{})
 	ch2 := make(chan struct{})
@@ -105,7 +105,7 @@ func TestBatch(t *testing.T) {
 func TestClose(t *testing.T) {
 	t.Parallel()
 
-	b := New(time.Millisecond * 10)
+	b := New[string](time.Millisecond * 10)
 	ch := make(chan struct{})
 	b.Subscribe(ch)
 	assert.Len(t, b.eventChs, 1)
@@ -117,7 +117,7 @@ func TestClose(t *testing.T) {
 func TestSubscribeAfterClose(t *testing.T) {
 	t.Parallel()
 
-	b := New(time.Millisecond * 10)
+	b := New[string](time.Millisecond * 10)
 	b.Close()
 	ch := make(chan struct{})
 	b.Subscribe(ch)

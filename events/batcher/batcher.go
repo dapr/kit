@@ -27,10 +27,10 @@ import (
 // the added event channel subscribers. Events are sent to the channels after
 // the interval has elapsed. If events with the same key are received within
 // the interval, the timer is reset.
-type Batcher struct {
+type Batcher[T comparable] struct {
 	interval time.Duration
 	eventChs []chan<- struct{}
-	queue    *queue.Processor[*item]
+	queue    *queue.Processor[T, *item[T]]
 
 	clock   clock.Clock
 	lock    sync.Mutex
@@ -40,27 +40,27 @@ type Batcher struct {
 }
 
 // New creates a new Batcher with the given interval and key type.
-func New(interval time.Duration) *Batcher {
-	b := &Batcher{
+func New[T comparable](interval time.Duration) *Batcher[T] {
+	b := &Batcher[T]{
 		interval: interval,
 		clock:    clock.RealClock{},
 		closeCh:  make(chan struct{}),
 	}
 
-	b.queue = queue.NewProcessor[*item](b.execute)
+	b.queue = queue.NewProcessor[T, *item[T]](b.execute)
 
 	return b
 }
 
 // WithClock sets the clock used by the batcher. Used for testing.
-func (b *Batcher) WithClock(clock clock.Clock) {
+func (b *Batcher[T]) WithClock(clock clock.Clock) {
 	b.queue.WithClock(clock)
 	b.clock = clock
 }
 
 // Subscribe adds a new event channel subscriber. If the batcher is closed, the
 // subscriber is silently dropped.
-func (b *Batcher) Subscribe(eventCh ...chan<- struct{}) {
+func (b *Batcher[T]) Subscribe(eventCh ...chan<- struct{}) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if b.closed.Load() {
@@ -69,7 +69,7 @@ func (b *Batcher) Subscribe(eventCh ...chan<- struct{}) {
 	b.eventChs = append(b.eventChs, eventCh...)
 }
 
-func (b *Batcher) execute(_ *item) {
+func (b *Batcher[T]) execute(_ *item[T]) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if b.closed.Load() {
@@ -90,8 +90,8 @@ func (b *Batcher) execute(_ *item) {
 // Batch adds the given key to the batcher. If an event for this key is already
 // active, the timer is reset. If the batcher is closed, the key is silently
 // dropped.
-func (b *Batcher) Batch(key string) {
-	b.queue.Enqueue(&item{
+func (b *Batcher[T]) Batch(key T) {
+	b.queue.Enqueue(&item[T]{
 		key: key,
 		ttl: b.clock.Now().Add(b.interval),
 	})
@@ -99,7 +99,7 @@ func (b *Batcher) Batch(key string) {
 
 // Close closes the batcher. It blocks until all events have been sent to the
 // subscribers. The batcher will be a no-op after this call.
-func (b *Batcher) Close() {
+func (b *Batcher[T]) Close() {
 	defer b.wg.Wait()
 	b.lock.Lock()
 	if b.closed.CompareAndSwap(false, true) {
@@ -110,15 +110,15 @@ func (b *Batcher) Close() {
 }
 
 // item implements queue.queueable.
-type item struct {
-	key string
+type item[T comparable] struct {
+	key T
 	ttl time.Time
 }
 
-func (b *item) Key() string {
+func (b *item[T]) Key() T {
 	return b.key
 }
 
-func (b *item) ScheduledTime() time.Time {
+func (b *item[T]) ScheduledTime() time.Time {
 	return b.ttl
 }

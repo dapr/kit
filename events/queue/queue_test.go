@@ -23,7 +23,7 @@ import (
 )
 
 func TestQueue(t *testing.T) {
-	queue := newQueue[*queueableItem]()
+	queue := newQueue[string, *queueableItem]()
 
 	// Add 5 items, which are not in order
 	queue.Insert(newTestItem(2, "2022-02-02T02:02:02Z"), false)
@@ -56,7 +56,7 @@ func TestQueue(t *testing.T) {
 }
 
 func TestQueueSkipDuplicates(t *testing.T) {
-	queue := newQueue[*queueableItem]()
+	queue := newQueue[string, *queueableItem]()
 
 	// Add 2 items
 	queue.Insert(newTestItem(2, "2022-02-02T02:02:02Z"), false)
@@ -78,7 +78,7 @@ func TestQueueSkipDuplicates(t *testing.T) {
 }
 
 func TestQueueReplaceDuplicates(t *testing.T) {
-	queue := newQueue[*queueableItem]()
+	queue := newQueue[string, *queueableItem]()
 
 	// Add 2 items
 	queue.Insert(newTestItem(2, "2022-02-02T02:02:02Z"), false)
@@ -100,7 +100,7 @@ func TestQueueReplaceDuplicates(t *testing.T) {
 }
 
 func TestAddToQueue(t *testing.T) {
-	queue := newQueue[*queueableItem]()
+	queue := newQueue[string, *queueableItem]()
 
 	// Add 5 items, which are not in order
 	queue.Insert(newTestItem(2, "2022-02-02T02:02:02Z"), false)
@@ -151,7 +151,7 @@ func TestAddToQueue(t *testing.T) {
 }
 
 func TestRemoveFromQueue(t *testing.T) {
-	queue := newQueue[*queueableItem]()
+	queue := newQueue[string, *queueableItem]()
 
 	// Add 5 items, which are not in order
 	queue.Insert(newTestItem(2, "2022-02-02T02:02:02Z"), false)
@@ -193,7 +193,7 @@ func TestRemoveFromQueue(t *testing.T) {
 }
 
 func TestUpdateInQueue(t *testing.T) {
-	queue := newQueue[*queueableItem]()
+	queue := newQueue[string, *queueableItem]()
 
 	// Add 5 items, which are not in order
 	queue.Insert(newTestItem(2, "2022-02-02T02:02:02Z"), false)
@@ -238,7 +238,7 @@ func TestUpdateInQueue(t *testing.T) {
 }
 
 func TestQueuePeek(t *testing.T) {
-	queue := newQueue[*queueableItem]()
+	queue := newQueue[string, *queueableItem]()
 
 	// Peeking an empty queue returns false
 	_, ok := queue.Peek()
@@ -299,7 +299,7 @@ func newTestItem(n int, dueTime any) *queueableItem {
 	return r
 }
 
-func popAndCompare(t *testing.T, q *queue[*queueableItem], expectN int, expectDueTime string) {
+func popAndCompare(t *testing.T, q *queue[string, *queueableItem], expectN int, expectDueTime string) {
 	r, ok := q.Pop()
 	require.True(t, ok)
 	require.NotNil(t, r)
@@ -307,7 +307,7 @@ func popAndCompare(t *testing.T, q *queue[*queueableItem], expectN int, expectDu
 	assert.Equal(t, expectDueTime, r.ScheduledTime().Format(time.RFC3339))
 }
 
-func peekAndCompare(t *testing.T, q *queue[*queueableItem], expectN int, expectDueTime string) {
+func peekAndCompare(t *testing.T, q *queue[string, *queueableItem], expectN int, expectDueTime string) {
 	r, ok := q.Peek()
 	require.True(t, ok)
 	require.NotNil(t, r)

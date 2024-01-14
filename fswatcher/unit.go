@@ -22,7 +22,7 @@ import (
 	"github.com/dapr/kit/events/batcher"
 )
 
-func (f *FSWatcher) WithBatcher(b *batcher.Batcher) *FSWatcher {
+func (f *FSWatcher) WithBatcher(b *batcher.Batcher[string]) *FSWatcher {
 	f.batcher = b
 	return f
 }

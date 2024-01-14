@@ -27,7 +27,7 @@ import (
 )
 
 func TestWithBatcher(t *testing.T) {
-	b := batcher.New(time.Millisecond * 10)
+	b := batcher.New[string](time.Millisecond * 10)
 	f, err := New(Options{})
 	require.NoError(t, err)
 	f.WithBatcher(b)

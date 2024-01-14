@@ -19,9 +19,9 @@ import (
 )
 
 // queueable is the interface for items that can be added to the queue.
-type queueable interface {
+type queueable[T comparable] interface {
 	comparable
-	Key() string
+	Key() T
 	ScheduledTime() time.Time
 }
 
@@ -29,27 +29,27 @@ type queueable interface {
 // It acts as a "priority queue", in which items are added in order of when they're scheduled.
 // Internally, it uses a heap (from container/heap) that allows Insert and Pop operations to be completed in O(log N) time (where N is the queue's length).
 // Note: methods in this struct are not safe for concurrent use. Callers should use locks to ensure consistency.
-type queue[T queueable] struct {
-	heap  *queueHeap[T]
-	items map[string]*queueItem[T]
+type queue[K comparable, T queueable[K]] struct {
+	heap  *queueHeap[K, T]
+	items map[K]*queueItem[K, T]
 }
 
 // newQueue creates a new queue.
-func newQueue[T queueable]() queue[T] {
-	return queue[T]{
-		heap:  new(queueHeap[T]),
-		items: make(map[string]*queueItem[T]),
+func newQueue[K comparable, T queueable[K]]() queue[K, T] {
+	return queue[K, T]{
+		heap:  new(queueHeap[K, T]),
+		items: make(map[K]*queueItem[K, T]),
 	}
 }
 
 // Len returns the number of items in the queue.
-func (p *queue[T]) Len() int {
+func (p *queue[K, T]) Len() int {
 	return p.heap.Len()
 }
 
 // Insert inserts a new item into the queue.
 // If replace is true, existing items are replaced
-func (p *queue[T]) Insert(r T, replace bool) {
+func (p *queue[K, T]) Insert(r T, replace bool) {
 	key := r.Key()
 
 	// Check if the item already exists
@@ -62,7 +62,7 @@ func (p *queue[T]) Insert(r T, replace bool) {
 		return
 	}
 
-	item = &queueItem[T]{
+	item = &queueItem[K, T]{
 		value: r,
 	}
 	heap.Push(p.heap, item)
@@ -71,13 +71,13 @@ func (p *queue[T]) Insert(r T, replace bool) {
 
 // Pop removes the next item in the queue and returns it.
 // The returned boolean value will be "true" if an item was found.
-func (p *queue[T]) Pop() (T, bool) {
+func (p *queue[K, T]) Pop() (T, bool) {
 	if p.Len() == 0 {
 		var zero T
 		return zero, false
 	}
 
-	item, ok := heap.Pop(p.heap).(*queueItem[T])
+	item, ok := heap.Pop(p.heap).(*queueItem[K, T])
 	if !ok || item == nil {
 		var zero T
 		return zero, false
@@ -89,7 +89,7 @@ func (p *queue[T]) Pop() (T, bool) {
 
 // Peek returns the next item in the queue, without removing it.
 // The returned boolean value will be "true" if an item was found.
-func (p *queue[T]) Peek() (T, bool) {
+func (p *queue[K, T]) Peek() (T, bool) {
 	if p.Len() == 0 {
 		var zero T
 		return zero, false
@@ -99,7 +99,7 @@ func (p *queue[T]) Peek() (T, bool) {
 }
 
 // Remove an item from the queue.
-func (p *queue[T]) Remove(key string) {
+func (p *queue[K, T]) Remove(key K) {
 	// If the item is not in the queue, this is a nop
 	item, ok := p.items[key]
 	if !ok {
@@ -111,7 +111,7 @@ func (p *queue[T]) Remove(key string) {
 }
 
 // Update an item in the queue.
-func (p *queue[T]) Update(r T) {
+func (p *queue[K, T]) Update(r T) {
 	// If the item is not in the queue, this is a nop
 	item, ok := p.items[r.Key()]
 	if !ok {
@@ -122,37 +122,37 @@ func (p *queue[T]) Update(r T) {
 	heap.Fix(p.heap, item.index)
 }
 
-type queueItem[T queueable] struct {
+type queueItem[K comparable, T queueable[K]] struct {
 	value T
 
 	// The index of the item in the heap. This is maintained by the heap.Interface methods.
 	index int
 }
 
-type queueHeap[T queueable] []*queueItem[T]
+type queueHeap[K comparable, T queueable[K]] []*queueItem[K, T]
 
-func (pq queueHeap[T]) Len() int {
+func (pq queueHeap[K, T]) Len() int {
 	return len(pq)
 }
 
-func (pq queueHeap[T]) Less(i, j int) bool {
+func (pq queueHeap[K, T]) Less(i, j int) bool {
 	return pq[i].value.ScheduledTime().Before(pq[j].value.ScheduledTime())
 }
 
-func (pq queueHeap[T]) Swap(i, j int) {
+func (pq queueHeap[K, T]) Swap(i, j int) {
 	pq[i], pq[j] = pq[j], pq[i]
 	pq[i].index = i
 	pq[j].index = j
 }
 
-func (pq *queueHeap[T]) Push(x any) {
+func (pq *queueHeap[K, T]) Push(x any) {
 	n := len(*pq)
-	item := x.(*queueItem[T])
+	item := x.(*queueItem[K, T])
 	item.index = n
 	*pq = append(*pq, item)
 }
 
-func (pq *queueHeap[T]) Pop() any {
+func (pq *queueHeap[K, T]) Pop() any {
 	old := *pq
 	n := len(old)
 	item := old[n-1]

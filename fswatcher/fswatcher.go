@@ -44,7 +44,7 @@ type Options struct {
 type FSWatcher struct {
 	w       *fsnotify.Watcher
 	running atomic.Bool
-	batcher *batcher.Batcher
+	batcher *batcher.Batcher[string]
 }
 
 func New(opts Options) (*FSWatcher, error) {
@@ -71,7 +71,7 @@ func New(opts Options) (*FSWatcher, error) {
 		w: w,
 		// Often the case, writes to files are not atomic and involve multiple file system events.
 		// We want to hold off on sending events until we are sure that the file has been written to completion. We do this by waiting for a period of time after the last event has been received for a file name.
-		batcher: batcher.New(interval),
+		batcher: batcher.New[string](interval),
 	}, nil
 }
 
