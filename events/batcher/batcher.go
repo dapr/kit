@@ -19,23 +19,20 @@ import (
 	"time"
 
 	"k8s.io/utils/clock"
-)
 
-// key is the type of the comparable key used to batch events.
-type key interface {
-	comparable
-}
+	"github.com/dapr/kit/events/queue"
+)
 
 // Batcher is a one to many event batcher. It batches events and sends them to
 // the added event channel subscribers. Events are sent to the channels after
 // the interval has elapsed. If events with the same key are received within
 // the interval, the timer is reset.
-type Batcher[T key] struct {
+type Batcher struct {
 	interval time.Duration
-	actives  map[T]clock.Timer
 	eventChs []chan<- struct{}
+	queue    *queue.Processor[*item]
 
-	clock   clock.WithDelayedExecution
+	clock   clock.Clock
 	lock    sync.Mutex
 	wg      sync.WaitGroup
 	closeCh chan struct{}
@@ -43,23 +40,27 @@ type Batcher[T key] struct {
 }
 
 // New creates a new Batcher with the given interval and key type.
-func New[T key](interval time.Duration) *Batcher[T] {
-	return &Batcher[T]{
+func New(interval time.Duration) *Batcher {
+	b := &Batcher{
 		interval: interval,
-		actives:  make(map[T]clock.Timer),
 		clock:    clock.RealClock{},
 		closeCh:  make(chan struct{}),
 	}
+
+	b.queue = queue.NewProcessor[*item](b.execute)
+
+	return b
 }
 
 // WithClock sets the clock used by the batcher. Used for testing.
-func (b *Batcher[T]) WithClock(clock clock.WithDelayedExecution) {
+func (b *Batcher) WithClock(clock clock.Clock) {
+	b.queue.WithClock(clock)
 	b.clock = clock
 }
 
 // Subscribe adds a new event channel subscriber. If the batcher is closed, the
 // subscriber is silently dropped.
-func (b *Batcher[T]) Subscribe(eventCh ...chan<- struct{}) {
+func (b *Batcher) Subscribe(eventCh ...chan<- struct{}) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if b.closed.Load() {
@@ -68,63 +69,56 @@ func (b *Batcher[T]) Subscribe(eventCh ...chan<- struct{}) {
 	b.eventChs = append(b.eventChs, eventCh...)
 }
 
-// Batch adds the given key to the batcher. If an event for this key is already
-// active, the timer is reset. If the batcher is closed, the key is silently
-// dropped.
-func (b *Batcher[T]) Batch(key T) {
+func (b *Batcher) execute(_ *item) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
-
 	if b.closed.Load() {
 		return
 	}
-
-	if active, ok := b.actives[key]; ok {
-		if !active.Stop() {
-			<-active.C()
-		}
-		active.Reset(b.interval)
-		return
+	b.wg.Add(len(b.eventChs))
+	for _, eventCh := range b.eventChs {
+		go func(eventCh chan<- struct{}) {
+			defer b.wg.Done()
+			select {
+			case eventCh <- struct{}{}:
+			case <-b.closeCh:
+			}
+		}(eventCh)
 	}
+}
 
-	b.actives[key] = b.clock.AfterFunc(b.interval, func() {
-		b.lock.Lock()
-		defer b.lock.Unlock()
-
-		b.wg.Add(len(b.eventChs))
-		delete(b.actives, key)
-		for _, eventCh := range b.eventChs {
-			go func(eventCh chan<- struct{}) {
-				defer b.wg.Done()
-				select {
-				case eventCh <- struct{}{}:
-				case <-b.closeCh:
-				}
-			}(eventCh)
-		}
+// Batch adds the given key to the batcher. If an event for this key is already
+// active, the timer is reset. If the batcher is closed, the key is silently
+// dropped.
+func (b *Batcher) Batch(key string) {
+	b.queue.Enqueue(&item{
+		key: key,
+		ttl: b.clock.Now().Add(b.interval),
 	})
 }
 
 // Close closes the batcher. It blocks until all events have been sent to the
 // subscribers. The batcher will be a no-op after this call.
-func (b *Batcher[T]) Close() {
+func (b *Batcher) Close() {
 	defer b.wg.Wait()
-
-	// Lock to ensure that no new timers are created.
 	b.lock.Lock()
 	if b.closed.CompareAndSwap(false, true) {
 		close(b.closeCh)
 	}
-	actives := b.actives
 	b.lock.Unlock()
+	b.queue.Close()
+}
 
-	for _, active := range actives {
-		if !active.Stop() {
-			<-active.C()
-		}
-	}
+// item implements queue.queueable.
+type item struct {
+	key string
+	ttl time.Time
+}
 
-	b.lock.Lock()
-	b.actives = nil
-	b.lock.Unlock()
+func (b *item) Key() string {
+	return b.key
+}
+
+func (b *item) ScheduledTime() time.Time {
+	return b.ttl
 }
