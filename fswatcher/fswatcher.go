@@ -79,6 +79,7 @@ func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
 	if !f.running.CompareAndSwap(false, true) {
 		return errors.New("watcher already running")
 	}
+	defer f.batcher.Close()
 
 	f.batcher.Subscribe(eventCh)
 

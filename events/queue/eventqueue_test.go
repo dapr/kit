@@ -43,7 +43,7 @@ func ExampleProcessor() {
 	}
 
 	// Create the processor
-	processor := NewProcessor[*queueableItem](executeFn)
+	processor := NewProcessor[string, *queueableItem](executeFn)
 
 	// Add items to the processor, in any order, using Enqueue
 	processor.Enqueue(&queueableItem{Name: "item1", ExecutionTime: time.Now().Add(500 * time.Millisecond)})

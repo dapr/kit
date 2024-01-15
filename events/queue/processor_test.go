@@ -31,7 +31,7 @@ func TestProcessor(t *testing.T) {
 	// Create the processor
 	clock := clocktesting.NewFakeClock(time.Now())
 	executeCh := make(chan *queueableItem)
-	processor := NewProcessor(func(r *queueableItem) {
+	processor := NewProcessor[string](func(r *queueableItem) {
 		executeCh <- r
 	})
 	processor.clock = clock
@@ -364,7 +364,7 @@ func TestClose(t *testing.T) {
 	// Create the processor
 	clock := clocktesting.NewFakeClock(time.Now())
 	executeCh := make(chan *queueableItem)
-	processor := NewProcessor(func(r *queueableItem) {
+	processor := NewProcessor[string](func(r *queueableItem) {
 		executeCh <- r
 	})
 	processor.clock = clock

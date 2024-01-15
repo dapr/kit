@@ -51,7 +51,7 @@ func TestBatch(t *testing.T) {
 
 	fakeClock := testingclock.NewFakeClock(time.Now())
 	b := New[string](time.Millisecond * 10)
-	b.clock = fakeClock
+	b.WithClock(fakeClock)
 	ch1 := make(chan struct{})
 	ch2 := make(chan struct{})
 	ch3 := make(chan struct{})
@@ -66,8 +66,6 @@ func TestBatch(t *testing.T) {
 	b.Batch("key2")
 	b.Batch("key3")
 	b.Batch("key3")
-
-	assert.Len(t, b.actives, 3)
 
 	assert.Eventually(t, func() bool {
 		return fakeClock.HasWaiters()
@@ -112,19 +110,8 @@ func TestClose(t *testing.T) {
 	b.Subscribe(ch)
 	assert.Len(t, b.eventChs, 1)
 	b.Batch("key1")
-	assert.Len(t, b.actives, 1)
 	b.Close()
 	assert.True(t, b.closed.Load())
-	assert.Empty(t, b.actives)
-}
-
-func TestBatchAfterClose(t *testing.T) {
-	t.Parallel()
-
-	b := New[string](time.Millisecond * 10)
-	b.Close()
-	b.Batch("key1")
-	assert.Empty(t, b.actives)
 }
 
 func TestSubscribeAfterClose(t *testing.T) {

@@ -26,9 +26,9 @@ import (
 var ErrProcessorStopped = errors.New("processor is stopped")
 
 // Processor manages the queue of items and processes them at the correct time.
-type Processor[T queueable] struct {
+type Processor[K comparable, T queueable[K]] struct {
 	executeFn          func(r T)
-	queue              queue[T]
+	queue              queue[K, T]
 	clock              kclock.Clock
 	lock               sync.Mutex
 	wg                 sync.WaitGroup
@@ -40,10 +40,10 @@ type Processor[T queueable] struct {
 
 // NewProcessor returns a new Processor object.
 // executeFn is the callback invoked when the item is to be executed; this will be invoked in a background goroutine.
-func NewProcessor[T queueable](executeFn func(r T)) *Processor[T] {
-	return &Processor[T]{
+func NewProcessor[K comparable, T queueable[K]](executeFn func(r T)) *Processor[K, T] {
+	return &Processor[K, T]{
 		executeFn:          executeFn,
-		queue:              newQueue[T](),
+		queue:              newQueue[K, T](),
 		processorRunningCh: make(chan struct{}, 1),
 		stopCh:             make(chan struct{}),
 		resetCh:            make(chan struct{}, 1),
@@ -52,14 +52,14 @@ func NewProcessor[T queueable](executeFn func(r T)) *Processor[T] {
 }
 
 // WithClock sets the clock used by the processor. Used for testing.
-func (p *Processor[T]) WithClock(clock kclock.Clock) *Processor[T] {
+func (p *Processor[K, T]) WithClock(clock kclock.Clock) *Processor[K, T] {
 	p.clock = clock
 	return p
 }
 
 // Enqueue adds a new item to the queue.
 // If a item with the same ID already exists, it'll be replaced.
-func (p *Processor[T]) Enqueue(r T) error {
+func (p *Processor[K, T]) Enqueue(r T) error {
 	if p.stopped.Load() {
 		return ErrProcessorStopped
 	}
@@ -79,7 +79,7 @@ func (p *Processor[T]) Enqueue(r T) error {
 }
 
 // Dequeue removes a item from the queue.
-func (p *Processor[T]) Dequeue(key string) error {
+func (p *Processor[K, T]) Dequeue(key K) error {
 	if p.stopped.Load() {
 		return ErrProcessorStopped
 	}
@@ -99,7 +99,7 @@ func (p *Processor[T]) Dequeue(key string) error {
 
 // Close stops the processor.
 // This method blocks until the processor loop returns.
-func (p *Processor[T]) Close() error {
+func (p *Processor[K, T]) Close() error {
 	defer p.wg.Wait()
 	if p.stopped.CompareAndSwap(false, true) {
 		// Send a signal to stop
@@ -114,7 +114,7 @@ func (p *Processor[T]) Close() error {
 
 // Start the processing loop if it's not already running.
 // This must be invoked while the caller has a lock.
-func (p *Processor[T]) process(isNext bool) {
+func (p *Processor[K, T]) process(isNext bool) {
 	// Do not start a loop if it's already running
 	select {
 	case p.processorRunningCh <- struct{}{}:
@@ -140,7 +140,7 @@ func (p *Processor[T]) process(isNext bool) {
 }
 
 // Processing loop.
-func (p *Processor[T]) processLoop() {
+func (p *Processor[K, T]) processLoop() {
 	defer func() {
 		// Release the channel when exiting
 		<-p.processorRunningCh
@@ -209,7 +209,7 @@ func (p *Processor[T]) processLoop() {
 }
 
 // Executes a item when it's time.
-func (p *Processor[T]) execute(r T) {
+func (p *Processor[K, T]) execute(r T) {
 	// Pop the item now that we're ready to process it
 	// There's a small chance this is a different item than the one we peeked before
 	p.lock.Lock()
