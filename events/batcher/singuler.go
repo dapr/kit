@@ -21,7 +21,6 @@ import (
 
 // Singular is a Batcher which batches events and treats them as all the same
 // key, behaving like a singular batched queue.
-// Subscribe
 type Singular struct {
 	b       *Batcher[int]
 	closeCh chan struct{}
