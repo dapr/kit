@@ -395,3 +395,47 @@ func TestResolveAliases(t *testing.T) {
 		})
 	}
 }
+
+func TestGetMetadataPropertyWithMatchedKey(t *testing.T) {
+	props := map[string]string{
+		"key1":     "value1",
+		"key2":     "value2",
+		"key3":     "value3",
+		"emptyKey": "",
+	}
+
+	t.Run("Existing key", func(t *testing.T) {
+		key, val, ok := GetMetadataPropertyWithMatchedKey(props, "key1", "key2")
+		assert.True(t, ok)
+		assert.Equal(t, "key1", key)
+		assert.Equal(t, "value1", val)
+	})
+
+	t.Run("Case-insensitive matching", func(t *testing.T) {
+		key, val, ok := GetMetadataPropertyWithMatchedKey(props, "KEY1")
+		assert.True(t, ok)
+		assert.Equal(t, "KEY1", key)
+		assert.Equal(t, "value1", val)
+	})
+
+	t.Run("Non-existing key", func(t *testing.T) {
+		key, val, ok := GetMetadataPropertyWithMatchedKey(props, "key4")
+		assert.False(t, ok)
+		assert.Equal(t, "", key)
+		assert.Equal(t, "", val)
+	})
+
+	t.Run("Empty properties", func(t *testing.T) {
+		key, val, ok := GetMetadataPropertyWithMatchedKey(nil, "key1")
+		assert.False(t, ok)
+		assert.Equal(t, "", key)
+		assert.Equal(t, "", val)
+	})
+
+	t.Run("Value is empty", func(t *testing.T) {
+		key, val, ok := GetMetadataPropertyWithMatchedKey(props, "EmptyKey")
+		assert.True(t, ok)
+		assert.Equal(t, "EmptyKey", key)
+		assert.Equal(t, "", val)
+	})
+}

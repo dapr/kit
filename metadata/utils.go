@@ -24,6 +24,13 @@ import (
 
 // GetMetadataProperty returns a property from the metadata map, with support for case-insensitive keys and aliases.
 func GetMetadataProperty(props map[string]string, keys ...string) (val string, ok bool) {
+	_, val, ok = GetMetadataPropertyWithMatchedKey(props, keys...)
+	return val, ok
+}
+
+// GetMetadataPropertyWithMatchedKey returns a property from the metadata map, with support for case-insensitive keys and aliases,
+// while returning the original matching metadata field key.
+func GetMetadataPropertyWithMatchedKey(props map[string]string, keys ...string) (key string, val string, ok bool) {
 	lcProps := make(map[string]string, len(props))
 	for k, v := range props {
 		lcProps[strings.ToLower(k)] = v
@@ -31,10 +38,10 @@ func GetMetadataProperty(props map[string]string, keys ...string) (val string, o
 	for _, k := range keys {
 		val, ok = lcProps[strings.ToLower(k)]
 		if ok {
-			return val, true
+			return k, val, true
 		}
 	}
-	return "", false
+	return "", "", false
 }
 
 // DecodeMetadata decodes a component metadata into a struct.
@@ -55,8 +62,12 @@ func DecodeMetadata(input any, result any) error {
 		return fmt.Errorf("input object cannot be cast to map[string]string: %w", err)
 	}
 
+	return decodeMetadataMap(inputMap, result)
+}
+
+func decodeMetadataMap(inputMap map[string]string, result any) error {
 	// Handle aliases
-	err = resolveAliases(inputMap, reflect.TypeOf(result))
+	err := resolveAliases(inputMap, reflect.TypeOf(result))
 	if err != nil {
 		return fmt.Errorf("failed to resolve aliases: %w", err)
 	}
