@@ -23,18 +23,17 @@ import (
 )
 
 // GetMetadataProperty returns a property from the metadata map, with support for case-insensitive keys and aliases.
-func GetMetadataProperty(props map[string]string, keys ...string) (val string, ok bool) {
+func GetMetadataProperty(props map[string]string, keys ...string) (key string, val string, ok bool) {
 	lcProps := make(map[string]string, len(props))
 	for k, v := range props {
 		lcProps[strings.ToLower(k)] = v
 	}
 	for _, k := range keys {
-		val, ok = lcProps[strings.ToLower(k)]
-		if ok {
-			return val, true
+		if v, found := lcProps[strings.ToLower(k)]; found {
+			return k, v, true
 		}
 	}
-	return "", false
+	return "", "", false
 }
 
 // DecodeMetadata decodes a component metadata into a struct.
