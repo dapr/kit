@@ -36,8 +36,9 @@ func GetMetadataPropertyWithMatchedKey(props map[string]string, keys ...string) 
 		lcProps[strings.ToLower(k)] = v
 	}
 	for _, k := range keys {
-		if v, found := lcProps[strings.ToLower(k)]; found {
-			return k, v, true
+		val, ok = lcProps[strings.ToLower(k)]
+		if ok {
+			return k, val, true
 		}
 	}
 	return "", "", false
