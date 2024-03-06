@@ -62,8 +62,12 @@ func DecodeMetadata(input any, result any) error {
 		return fmt.Errorf("input object cannot be cast to map[string]string: %w", err)
 	}
 
+	return decodeMetadataMap(inputMap, result)
+}
+
+func decodeMetadataMap(inputMap map[string]string, result any) error {
 	// Handle aliases
-	err = resolveAliases(inputMap, reflect.TypeOf(result))
+	err := resolveAliases(inputMap, reflect.TypeOf(result))
 	if err != nil {
 		return fmt.Errorf("failed to resolve aliases: %w", err)
 	}
