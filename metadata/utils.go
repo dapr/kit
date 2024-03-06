@@ -23,7 +23,14 @@ import (
 )
 
 // GetMetadataProperty returns a property from the metadata map, with support for case-insensitive keys and aliases.
-func GetMetadataProperty(props map[string]string, keys ...string) (key string, val string, ok bool) {
+func GetMetadataProperty(props map[string]string, keys ...string) (val string, ok bool) {
+	_, val, ok = GetMetadataPropertyWithMatchedKey(props, keys...)
+	return val, ok
+}
+
+// GetMetadataPropertyWithMatchedKey returns a property from the metadata map, with support for case-insensitive keys and aliases,
+// while returning the original matching metadata field key.
+func GetMetadataPropertyWithMatchedKey(props map[string]string, keys ...string) (key string, val string, ok bool) {
 	lcProps := make(map[string]string, len(props))
 	for k, v := range props {
 		lcProps[strings.ToLower(k)] = v
