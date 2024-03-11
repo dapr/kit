@@ -32,7 +32,7 @@ import (
 )
 
 func TestFSWatcher(t *testing.T) {
-	runWatcher := func(t *testing.T, opts Options, bacher *batcher.Batcher[string]) <-chan struct{} {
+	runWatcher := func(t *testing.T, opts Options, bacher *batcher.Batcher[string, struct{}]) <-chan struct{} {
 		t.Helper()
 
 		f, err := New(opts)
@@ -191,7 +191,7 @@ func TestFSWatcher(t *testing.T) {
 
 	t.Run("should batch events of the same file for multiple events", func(t *testing.T) {
 		clock := clocktesting.NewFakeClock(time.Time{})
-		batcher := batcher.New[string](time.Millisecond * 500)
+		batcher := batcher.New[string, struct{}](time.Millisecond * 500)
 		batcher.WithClock(clock)
 		dir1 := t.TempDir()
 		dir2 := t.TempDir()
