@@ -103,7 +103,9 @@ func TestBatch(t *testing.T) {
 	}
 
 	t.Run("ensure items are received in order with latest value", func(t *testing.T) {
-		b := New[int, int](0)
+		fakeClock := testingclock.NewFakeClock(time.Now())
+		b := New[int, int](time.Millisecond * 10)
+		b.WithClock(fakeClock)
 		t.Cleanup(b.Close)
 		ch1 := make(chan int, 10)
 		ch2 := make(chan int, 10)
@@ -115,6 +117,7 @@ func TestBatch(t *testing.T) {
 			b.Batch(i, i)
 			b.Batch(i, i+1)
 			b.Batch(i, i+2)
+			fakeClock.Step(time.Millisecond * 10)
 		}
 
 		for _, ch := range []chan int{ch1} {
