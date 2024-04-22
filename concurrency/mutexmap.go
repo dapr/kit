@@ -3,8 +3,8 @@ package concurrency
 import "sync"
 
 type MutexMap struct {
-	mu    sync.RWMutex
-	mutex map[string]*sync.Mutex
+	mu    sync.RWMutex // outer lock
+	mutex map[string]*sync.Mutex // inner locks
 }
 
 func NewMutexMap() *MutexMap {
