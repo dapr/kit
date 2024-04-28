@@ -1,8 +1,9 @@
 package concurrency
 
 import (
-	"sync/atomic"
+	"fmt"
 	"sync"
+	"sync/atomic"
 )
 
 type AtomicMap interface {
@@ -14,26 +15,29 @@ type AtomicMap interface {
 	OuterRUnlock()
 }
 
-type AtomicMapBase struct{
+type AtomicMapBase struct {
+	// This lock only protects the map itself, not the items in the map
+	// The items are protected by their own atomic type
 	mu sync.RWMutex
 }
 
-func(mm *AtomicMapBase) OuterLock(){
-	mm.mu.Lock()
+func (m *AtomicMapBase) OuterLock() {
+	m.mu.Lock()
 }
 
-func(mm *AtomicMapBase) OuterUnlock(){
-	mm.mu.Unlock()
+func (m *AtomicMapBase) OuterUnlock() {
+	m.mu.Unlock()
 }
 
-func(mm *AtomicMapBase) OuterRLock(){
-	mm.mu.RLock()
+// OuterRLock is usually needed when ranging over Items
+func (m *AtomicMapBase) OuterRLock() {
+	m.mu.RLock()
 }
 
-func(mm *AtomicMapBase) OuterRUnlock(){
-	mm.mu.RUnlock()
+// OuterRUnlock is usually needed when ranging over Items
+func (m *AtomicMapBase) OuterRUnlock() {
+	m.mu.RUnlock()
 }
-
 
 type AtomicMapInt32 struct {
 	AtomicMapBase
@@ -46,21 +50,39 @@ func NewAtomicMapInt32() *AtomicMapInt32 {
 	}
 }
 
-func (m *AtomicMapInt32) Get(key string) *atomic.Int32 {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
+func (m *AtomicMapInt32) Get(key string) (*atomic.Int32, error) {
+	m.OuterRLock()
+	item, ok := m.Items[key]
+	m.OuterRUnlock()
 
-	if _, ok := m.Items[key]; !ok {
-		m.Items[key] = &atomic.Int32{}
+	if !ok {
+		return nil, fmt.Errorf("key %s not found", key)
 	}
 
+	return item, nil
+}
 
-	return m.Items[key]
+func (m *AtomicMapInt32) GetOrCreate(key string) *atomic.Int32 {
+	m.OuterRLock()
+	item, ok := m.Items[key]
+	m.OuterRUnlock()
+
+	if !ok {
+		m.OuterLock()
+		// Double-check the key exists to avoid race condition
+		if item, ok = m.Items[key]; !ok {
+			item = &atomic.Int32{}
+			m.Items[key] = item
+		}
+		m.OuterUnlock()
+	}
+
+	return item
 }
 
 func (m *AtomicMapInt32) Delete(key string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.OuterLock()
+	defer m.OuterUnlock()
 
 	delete(m.Items, key)
 }
@@ -76,24 +98,42 @@ func NewAtomicMapUint32() *AtomicMapUint32 {
 	}
 }
 
-func (m *AtomicMapUint32) Get(key string) *atomic.Uint32 {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
+func (m *AtomicMapUint32) Get(key string) (*atomic.Uint32, error) {
+	m.OuterRLock()
+	item, ok := m.Items[key]
+	m.OuterRUnlock()
 
-	if _, ok := m.Items[key]; !ok {
-		m.Items[key] = &atomic.Uint32{}
+	if !ok {
+		return nil, fmt.Errorf("key %s not found", key)
 	}
 
-	return m.Items[key]
+	return item, nil
+}
+
+func (m *AtomicMapUint32) GetOrCreate(key string) *atomic.Uint32 {
+	m.OuterRLock()
+	item, ok := m.Items[key]
+	m.OuterRUnlock()
+
+	if !ok {
+		m.OuterLock()
+		// Double-check the key exists to avoid race condition
+		if item, ok = m.Items[key]; !ok {
+			item = &atomic.Uint32{}
+			m.Items[key] = item
+		}
+		m.OuterUnlock()
+	}
+
+	return item
 }
 
 func (m *AtomicMapUint32) Delete(key string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.OuterLock()
+	defer m.OuterUnlock()
 
 	delete(m.Items, key)
 }
-
 
 type AtomicMapInt64 struct {
 	AtomicMapBase
@@ -106,21 +146,39 @@ func NewAtomicMapInt64() *AtomicMapInt64 {
 	}
 }
 
-func (m *AtomicMapInt64) Get(key string) *atomic.Int64 {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
+func (m *AtomicMapInt64) Get(key string) (*atomic.Int64, error) {
+	m.OuterRLock()
+	item, ok := m.Items[key]
+	m.OuterRUnlock()
 
-	if _, ok := m.Items[key]; !ok {
-		m.Items[key] = &atomic.Int64{}
+	if !ok {
+		return nil, fmt.Errorf("key %s not found", key)
 	}
 
+	return item, nil
+}
 
-	return m.Items[key]
+func (m *AtomicMapInt64) GetOrCreate(key string) *atomic.Int64 {
+	m.OuterRLock()
+	item, ok := m.Items[key]
+	m.OuterRUnlock()
+
+	if !ok {
+		m.OuterLock()
+		// Double-check the key exists to avoid race condition
+		if item, ok = m.Items[key]; !ok {
+			item = &atomic.Int64{}
+			m.Items[key] = item
+		}
+		m.OuterUnlock()
+	}
+
+	return item
 }
 
 func (m *AtomicMapInt64) Delete(key string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.OuterLock()
+	defer m.OuterUnlock()
 
 	delete(m.Items, key)
 }
@@ -136,20 +194,39 @@ func NewAtomicMapUint64() *AtomicMapUint64 {
 	}
 }
 
-func (m *AtomicMapUint64) Get(key string) *atomic.Uint64 {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
+func (m *AtomicMapUint64) Get(key string) (*atomic.Uint64, error) {
+	m.OuterRLock()
+	item, ok := m.Items[key]
+	m.OuterRUnlock()
 
-	if _, ok := m.Items[key]; !ok {
-		m.Items[key] = &atomic.Uint64{}
+	if !ok {
+		return nil, fmt.Errorf("key %s not found", key)
 	}
 
-	return m.Items[key]
+	return item, nil
+}
+
+func (m *AtomicMapUint64) GetOrCreate(key string) *atomic.Uint64 {
+	m.OuterRLock()
+	item, ok := m.Items[key]
+	m.OuterRUnlock()
+
+	if !ok {
+		m.OuterLock()
+		// Double-check the key exists to avoid race condition
+		if item, ok = m.Items[key]; !ok {
+			item = &atomic.Uint64{}
+			m.Items[key] = item
+		}
+		m.OuterUnlock()
+	}
+
+	return item
 }
 
 func (m *AtomicMapUint64) Delete(key string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.OuterLock()
+	defer m.OuterUnlock()
 
 	delete(m.Items, key)
 }
