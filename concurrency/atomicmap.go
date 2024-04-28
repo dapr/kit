@@ -7,8 +7,9 @@ import (
 )
 
 type AtomicMap interface {
+	Get(key string) (interface{}, error)
+	GetOrCreate(key string) interface{}
 	Delete(key string)
-	Get(key string) interface{}
 	OuterLock()
 	OuterUnlock()
 	OuterRLock()
