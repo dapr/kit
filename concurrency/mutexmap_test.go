@@ -8,13 +8,12 @@ import (
 )
 
 func TestNewMutexMap_Add_Delete(t *testing.T) {
-
 	mm := NewMutexMap()
 
 	t.Run("New mutex map", func(t *testing.T) {
 		require.NotNil(t, mm)
 		require.NotNil(t, mm.mutex)
-		require.Len(t, mm.mutex, 0)
+		require.Empty(t, mm.mutex)
 	})
 
 	t.Run("Add mutex ", func(t *testing.T) {
@@ -26,7 +25,7 @@ func TestNewMutexMap_Add_Delete(t *testing.T) {
 
 	t.Run("Delete mutex", func(t *testing.T) {
 		mm.Delete("key1")
-		require.Len(t, mm.mutex, 0)
+		require.Empty(t, mm.mutex)
 		_, ok := mm.mutex["key1"]
 		require.False(t, ok)
 	})

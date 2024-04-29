@@ -3,7 +3,6 @@ package concurrency
 import (
 	"sync"
 	"testing"
-	//"sync"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,7 +12,7 @@ func TestAtomicMapInt32_New_Get_Delete(t *testing.T) {
 	m := NewAtomicMapInt32()
 	require.NotNil(t, m)
 	require.NotNil(t, m.Items)
-	require.Len(t, m.Items, 0)
+	require.Empty(t, m.Items)
 
 	t.Run("basic operations", func(t *testing.T) {
 		key := "key1"
@@ -32,7 +31,7 @@ func TestAtomicMapInt32_New_Get_Delete(t *testing.T) {
 		// Delete the key and check it no longer exists
 		m.Delete(key)
 		_, err = m.Get(key)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("concurrent access multiple keys", func(t *testing.T) {
