@@ -43,36 +43,26 @@ func (a *AtomicValue[T]) Add(v T) T {
 	return a.value
 }
 
-type AtomicMap[K comparable, T constraints.Integer] struct {
+type AtomicMap[K comparable, T constraints.Integer] interface {
+	Get(key K) (*AtomicValue[T], bool)
+	GetOrCreate(key K, createT T) *AtomicValue[T]
+	Delete(key K)
+	ForEach(fn func(key K, value *AtomicValue[T]))
+	Clear()
+}
+
+type atomicMap[K comparable, T constraints.Integer] struct {
 	lock  sync.RWMutex
 	items map[K]*AtomicValue[T]
 }
 
-func NewAtomicMapStringInt64() *AtomicMap[string, int64] {
-	return &AtomicMap[string, int64]{
-		items: make(map[string]*AtomicValue[int64]),
+func NewAtomicMap[K comparable, T constraints.Integer]() AtomicMap[K, T] {
+	return &atomicMap[K, T]{
+		items: make(map[K]*AtomicValue[T]),
 	}
 }
 
-func NewAtomicMapStringInt32() *AtomicMap[string, int32] {
-	return &AtomicMap[string, int32]{
-		items: make(map[string]*AtomicValue[int32]),
-	}
-}
-
-func NewAtomicMapStringUint64() *AtomicMap[string, uint64] {
-	return &AtomicMap[string, uint64]{
-		items: make(map[string]*AtomicValue[uint64]),
-	}
-}
-
-func NewAtomicMapStringUint32() *AtomicMap[string, uint32] {
-	return &AtomicMap[string, uint32]{
-		items: make(map[string]*AtomicValue[uint32]),
-	}
-}
-
-func (a *AtomicMap[K, T]) Get(key K) (*AtomicValue[T], bool) {
+func (a *atomicMap[K, T]) Get(key K) (*AtomicValue[T], bool) {
 	a.lock.RLock()
 	defer a.lock.RUnlock()
 
@@ -83,7 +73,7 @@ func (a *AtomicMap[K, T]) Get(key K) (*AtomicValue[T], bool) {
 	return item, true
 }
 
-func (a *AtomicMap[K, T]) GetOrCreate(key K, createT T) *AtomicValue[T] {
+func (a *atomicMap[K, T]) GetOrCreate(key K, createT T) *AtomicValue[T] {
 	a.lock.RLock()
 	item, ok := a.items[key]
 	a.lock.RUnlock()
@@ -100,13 +90,13 @@ func (a *AtomicMap[K, T]) GetOrCreate(key K, createT T) *AtomicValue[T] {
 	return item
 }
 
-func (a *AtomicMap[K, T]) Delete(key K) {
+func (a *atomicMap[K, T]) Delete(key K) {
 	a.lock.Lock()
 	delete(a.items, key)
 	a.lock.Unlock()
 }
 
-func (a *AtomicMap[K, T]) ForEach(fn func(key K, value *AtomicValue[T])) {
+func (a *atomicMap[K, T]) ForEach(fn func(key K, value *AtomicValue[T])) {
 	a.lock.RLock()
 	defer a.lock.RUnlock()
 	for k, v := range a.items {
@@ -114,7 +104,7 @@ func (a *AtomicMap[K, T]) ForEach(fn func(key K, value *AtomicValue[T])) {
 	}
 }
 
-func (a *AtomicMap[K, T]) Clear() {
+func (a *atomicMap[K, T]) Clear() {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	a.items = make(map[K]*AtomicValue[T])

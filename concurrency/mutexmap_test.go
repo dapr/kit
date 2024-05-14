@@ -21,7 +21,7 @@ import (
 )
 
 func TestNewMutexMap_Add_Delete(t *testing.T) {
-	mm := NewMutexMapString()
+	mm := NewMutexMap[string]().(*mutexMap[string])
 
 	t.Run("New mutex map", func(t *testing.T) {
 		require.NotNil(t, mm)

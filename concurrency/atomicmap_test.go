@@ -22,7 +22,8 @@ import (
 )
 
 func TestAtomicMapInt32_New_Get_Delete(t *testing.T) {
-	m := NewAtomicMapStringInt32()
+	m := NewAtomicMap[string, int32]().(*atomicMap[string, int32])
+
 	require.NotNil(t, m)
 	require.NotNil(t, m.items)
 	require.Empty(t, m.items)

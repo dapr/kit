@@ -17,18 +17,27 @@ import (
 	"sync"
 )
 
-type MutexMap[T comparable] struct {
+type MutexMap[T comparable] interface {
+	Lock(key T)
+	Unlock(key T)
+	RLock(key T)
+	RUnlock(key T)
+	Delete(key T)
+	Clear()
+}
+
+type mutexMap[T comparable] struct {
 	lock  sync.RWMutex
 	items map[T]*sync.RWMutex
 }
 
-func NewMutexMapString() *MutexMap[string] {
-	return &MutexMap[string]{
-		items: make(map[string]*sync.RWMutex),
+func NewMutexMap[T comparable]() MutexMap[T] {
+	return &mutexMap[T]{
+		items: make(map[T]*sync.RWMutex),
 	}
 }
 
-func (a *MutexMap[T]) Lock(key T) {
+func (a *mutexMap[T]) Lock(key T) {
 	a.lock.RLock()
 	mutex, ok := a.items[key]
 	a.lock.RUnlock()
@@ -44,7 +53,7 @@ func (a *MutexMap[T]) Lock(key T) {
 	mutex.Lock()
 }
 
-func (a *MutexMap[T]) Unlock(key T) {
+func (a *mutexMap[T]) Unlock(key T) {
 	a.lock.RLock()
 	mutex, ok := a.items[key]
 	a.lock.RUnlock()
@@ -53,7 +62,7 @@ func (a *MutexMap[T]) Unlock(key T) {
 	}
 }
 
-func (a *MutexMap[T]) RLock(key T) {
+func (a *mutexMap[T]) RLock(key T) {
 	a.lock.RLock()
 	mutex, ok := a.items[key]
 	a.lock.RUnlock()
@@ -69,7 +78,7 @@ func (a *MutexMap[T]) RLock(key T) {
 	mutex.Lock()
 }
 
-func (a *MutexMap[T]) RUnlock(key T) {
+func (a *mutexMap[T]) RUnlock(key T) {
 	a.lock.RLock()
 	mutex, ok := a.items[key]
 	a.lock.RUnlock()
@@ -78,13 +87,13 @@ func (a *MutexMap[T]) RUnlock(key T) {
 	}
 }
 
-func (a *MutexMap[T]) Delete(key T) {
+func (a *mutexMap[T]) Delete(key T) {
 	a.lock.Lock()
 	delete(a.items, key)
 	a.lock.Unlock()
 }
 
-func (a *MutexMap[T]) Clear() {
+func (a *mutexMap[T]) Clear() {
 	a.lock.Lock()
 	a.items = make(map[T]*sync.RWMutex)
 	a.lock.Unlock()
