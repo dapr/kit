@@ -1,102 +1,91 @@
+/*
+Copyright 2024 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package concurrency
 
-import "sync"
+import (
+	"sync"
+)
 
-type MutexMap struct {
-	mu    sync.RWMutex             // outer lock
-	mutex map[string]*sync.RWMutex // inner locks
+type MutexMap[T comparable] struct {
+	lock  sync.RWMutex
+	items map[T]*sync.RWMutex
 }
 
-func NewMutexMap() *MutexMap {
-	return &MutexMap{
-		mutex: make(map[string]*sync.RWMutex),
+func NewMutexMapString() *MutexMap[string] {
+	return &MutexMap[string]{
+		items: make(map[string]*sync.RWMutex),
 	}
 }
 
-func (mm *MutexMap) Lock(key string) {
-	mm.OuterRLock()
-	lock, ok := mm.mutex[key]
-	mm.OuterRUnlock()
-
+func (a *MutexMap[T]) Lock(key T) {
+	a.lock.RLock()
+	mutex, ok := a.items[key]
+	a.lock.RUnlock()
 	if !ok {
-		mm.OuterLock()
-		lock, ok = mm.mutex[key]
+		a.lock.Lock()
+		mutex, ok = a.items[key]
 		if !ok {
-			mm.mutex[key] = &sync.RWMutex{}
-			lock = mm.mutex[key]
+			mutex = &sync.RWMutex{}
+			a.items[key] = mutex
 		}
-		mm.OuterUnlock()
+		a.lock.Unlock()
 	}
-	lock.Lock()
+	mutex.Lock()
 }
 
-func (mm *MutexMap) Unlock(key string) {
-	mm.OuterLock()
-	defer mm.OuterUnlock()
-
-	if _, ok := mm.mutex[key]; ok {
-		mm.mutex[key].Unlock()
+func (a *MutexMap[T]) Unlock(key T) {
+	a.lock.RLock()
+	mutex, ok := a.items[key]
+	a.lock.RUnlock()
+	if ok {
+		mutex.Unlock()
 	}
 }
 
-func (mm *MutexMap) RLock(key string) {
-	mm.OuterRLock()
-	lock, ok := mm.mutex[key]
-	mm.OuterRUnlock()
-
+func (a *MutexMap[T]) RLock(key T) {
+	a.lock.RLock()
+	mutex, ok := a.items[key]
+	a.lock.RUnlock()
 	if !ok {
-		mm.OuterLock()
-		lock, ok = mm.mutex[key]
+		a.lock.Lock()
+		mutex, ok = a.items[key]
 		if !ok {
-			mm.mutex[key] = &sync.RWMutex{}
-			lock = mm.mutex[key]
+			mutex = &sync.RWMutex{}
+			a.items[key] = mutex
 		}
-		mm.OuterUnlock()
+		a.lock.Unlock()
 	}
-	lock.RLock()
+	mutex.Lock()
 }
 
-func (mm *MutexMap) RUnlock(key string) {
-	mm.OuterLock()
-	defer mm.OuterUnlock()
-
-	if _, ok := mm.mutex[key]; ok {
-		mm.mutex[key].RUnlock()
-	}
-}
-
-// Add adds a new mutex to the map
-// If the calling code already holds the outer lock, set lock parameter to false
-func (mm *MutexMap) Add(key string) {
-	mm.OuterLock()
-	defer mm.OuterUnlock()
-
-	if _, ok := mm.mutex[key]; !ok {
-		mm.mutex[key] = &sync.RWMutex{}
+func (a *MutexMap[T]) RUnlock(key T) {
+	a.lock.RLock()
+	mutex, ok := a.items[key]
+	a.lock.RUnlock()
+	if ok {
+		mutex.Unlock()
 	}
 }
 
-// Delete deletes a mutex from the map
-// If the calling code already holds the outer lock, set lock parameter to false
-func (mm *MutexMap) Delete(key string) {
-	mm.OuterLock()
-	defer mm.OuterUnlock()
-
-	delete(mm.mutex, key)
+func (a *MutexMap[T]) Delete(key T) {
+	a.lock.Lock()
+	delete(a.items, key)
+	a.lock.Unlock()
 }
 
-func (mm *MutexMap) OuterLock() {
-	mm.mu.Lock()
-}
-
-func (mm *MutexMap) OuterUnlock() {
-	mm.mu.Unlock()
-}
-
-func (mm *MutexMap) OuterRLock() {
-	mm.mu.RLock()
-}
-
-func (mm *MutexMap) OuterRUnlock() {
-	mm.mu.RUnlock()
+func (a *MutexMap[T]) Clear() {
+	a.lock.Lock()
+	a.items = make(map[T]*sync.RWMutex)
+	a.lock.Unlock()
 }

@@ -8,52 +8,19 @@ import (
 )
 
 func TestNewMutexMap_Add_Delete(t *testing.T) {
-	mm := NewMutexMap()
+	mm := NewMutexMapString()
 
 	t.Run("New mutex map", func(t *testing.T) {
 		require.NotNil(t, mm)
-		require.NotNil(t, mm.mutex)
-		require.Empty(t, mm.mutex)
+		require.NotNil(t, mm.items)
+		require.Empty(t, mm.items)
 	})
 
-	t.Run("Add mutex ", func(t *testing.T) {
-		mm.Add("key1")
-		require.Len(t, mm.mutex, 1)
-		_, ok := mm.mutex["key1"]
+	t.Run("Lock and unlock mutex", func(t *testing.T) {
+		mm.Lock("key1")
+		_, ok := mm.items["key1"]
 		require.True(t, ok)
-	})
-
-	t.Run("Delete mutex", func(t *testing.T) {
-		mm.Delete("key1")
-		require.Empty(t, mm.mutex)
-		_, ok := mm.mutex["key1"]
-		require.False(t, ok)
-	})
-
-	t.Run("Concurrently add and delete mutexes", func(t *testing.T) {
-		numGoroutines := 10
-		keys := []string{"key1", "key2", "key3"}
-
-		var wg sync.WaitGroup
-		wg.Add(numGoroutines)
-
-		// Concurrently add and delete keys
-		for i := 0; i < numGoroutines; i++ {
-			go func() {
-				defer wg.Done()
-				for _, key := range keys {
-					mm.Add(key)
-					mm.Delete(key)
-				}
-			}()
-		}
-		wg.Wait()
-
-		// Additional check that all keys have been deleted
-		for _, key := range keys {
-			_, ok := mm.mutex[key]
-			require.False(t, ok)
-		}
+		mm.Unlock("key1")
 	})
 
 	t.Run("Concurrently lock and unlock mutexes", func(t *testing.T) {
@@ -77,11 +44,48 @@ func TestNewMutexMap_Add_Delete(t *testing.T) {
 		require.Equal(t, 10, counter)
 	})
 
-	t.Run("Lock and unlock nonexistent mutexes", func(t *testing.T) {
-		mm.Lock("non-existent-key")
-		_, ok := mm.mutex["non-existent-key"]
-		mm.Unlock("non-existent-key")
-
+	t.Run("RLock and RUnlock mutex", func(t *testing.T) {
+		mm.RLock("key1")
+		_, ok := mm.items["key1"]
 		require.True(t, ok)
+		mm.RUnlock("key1")
+	})
+
+	t.Run("Concurrently RLock and RUnlock mutexes", func(t *testing.T) {
+		var counter int
+		var wg sync.WaitGroup
+
+		numGoroutines := 10
+		wg.Add(numGoroutines)
+
+		// Concurrently RLock and RUnlock for each key
+		for i := 0; i < numGoroutines; i++ {
+			go func() {
+				defer wg.Done()
+				mm.RLock("key1")
+				counter++
+				mm.RUnlock("key1")
+			}()
+		}
+		wg.Wait()
+
+		require.Equal(t, 10, counter)
+	})
+
+	t.Run("Delete mutex", func(t *testing.T) {
+		mm.Lock("key1")
+		mm.Unlock("key1")
+		mm.Delete("key1")
+		_, ok := mm.items["key1"]
+		require.False(t, ok)
+	})
+
+	t.Run("Clear all mutexes", func(t *testing.T) {
+		mm.Lock("key1")
+		mm.Unlock("key1")
+		mm.Lock("key2")
+		mm.Unlock("key2")
+		mm.Clear()
+		require.Empty(t, mm.items)
 	})
 }

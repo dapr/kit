@@ -54,15 +54,15 @@ func NewAtomicMapStringInt64() *AtomicMap[string, int64] {
 	}
 }
 
-func NewAtomicMapStringUint64() *AtomicMap[string, uint64] {
-	return &AtomicMap[string, uint64]{
-		items: make(map[string]*AtomicValue[uint64]),
-	}
-}
-
 func NewAtomicMapStringInt32() *AtomicMap[string, int32] {
 	return &AtomicMap[string, int32]{
 		items: make(map[string]*AtomicValue[int32]),
+	}
+}
+
+func NewAtomicMapStringUint64() *AtomicMap[string, uint64] {
+	return &AtomicMap[string, uint64]{
+		items: make(map[string]*AtomicValue[uint64]),
 	}
 }
 
@@ -72,11 +72,11 @@ func NewAtomicMapStringUint32() *AtomicMap[string, uint32] {
 	}
 }
 
-
 func (a *AtomicMap[K, T]) Get(key K) (*AtomicValue[T], bool) {
 	a.lock.RLock()
+	defer a.lock.RUnlock()
+
 	item, ok := a.items[key]
-	a.lock.RUnlock()
 	if !ok {
 		return nil, false
 	}
@@ -90,9 +90,10 @@ func (a *AtomicMap[K, T]) GetOrCreate(key K, createT T) *AtomicValue[T] {
 	if !ok {
 		a.lock.Lock()
 		// Double-check the key exists to avoid race condition
-		if item, ok = a.items[key]; !ok {
-			a.items[key] = &AtomicValue[T]{value: createT}
-			item = a.items[key]
+		item, ok = a.items[key]
+		if !ok {
+			item = &AtomicValue[T]{value: createT}
+			a.items[key] = item
 		}
 		a.lock.Unlock()
 	}
@@ -105,10 +106,16 @@ func (a *AtomicMap[K, T]) Delete(key K) {
 	a.lock.Unlock()
 }
 
-func (a *AtomicMap[K, T]) ForEach(fn func(key K, val *AtomicValue[T])) {
+func (a *AtomicMap[K, T]) ForEach(fn func(key K, value *AtomicValue[T])) {
 	a.lock.RLock()
-	for key, val := range a.items {
-		fn(key, val)
+	defer a.lock.RUnlock()
+	for k, v := range a.items {
+		fn(k, v)
 	}
-	a.lock.RUnlock()
+}
+
+func (a *AtomicMap[K, T]) Clear() {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+	a.items = make(map[K]*AtomicValue[T])
 }

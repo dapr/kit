@@ -9,29 +9,29 @@ import (
 )
 
 func TestAtomicMapInt32_New_Get_Delete(t *testing.T) {
-	m := NewAtomicMapInt32()
+	m := NewAtomicMapStringInt32()
 	require.NotNil(t, m)
-	require.NotNil(t, m.Items)
-	require.Empty(t, m.Items)
+	require.NotNil(t, m.items)
+	require.Empty(t, m.items)
 
 	t.Run("basic operations", func(t *testing.T) {
 		key := "key1"
 		value := int32(10)
 
 		// Initially, the key should not exist
-		_, err := m.Get(key)
-		require.Error(t, err)
+		_, ok := m.Get(key)
+		require.False(t, ok)
 
 		// Add a value and check it
-		m.GetOrCreate(key).Store(value)
-		result, err := m.Get(key)
-		require.NoError(t, err)
+		m.GetOrCreate(key, 0).Store(value)
+		result, ok := m.Get(key)
+		require.True(t, ok)
 		assert.Equal(t, value, result.Load())
 
 		// Delete the key and check it no longer exists
 		m.Delete(key)
-		_, err = m.Get(key)
-		require.Error(t, err)
+		_, ok = m.Get(key)
+		require.False(t, ok)
 	})
 
 	t.Run("concurrent access multiple keys", func(t *testing.T) {
@@ -44,21 +44,21 @@ func TestAtomicMapInt32_New_Get_Delete(t *testing.T) {
 			go func(k string) {
 				defer wg.Done()
 				for i := 0; i < iterations; i++ {
-					m.GetOrCreate(k).Add(1)
+					m.GetOrCreate(k, 0).Add(1)
 				}
 			}(key)
 			go func(k string) {
 				defer wg.Done()
 				for i := 0; i < iterations; i++ {
-					m.GetOrCreate(k).Add(-1)
+					m.GetOrCreate(k, 0).Add(-1)
 				}
 			}(key)
 		}
 		wg.Wait()
 
 		for _, key := range keys {
-			val, err := m.Get(key)
-			require.NoError(t, err)
+			val, ok := m.Get(key)
+			require.True(t, ok)
 			require.Equal(t, int32(0), val.Load())
 		}
 	})
