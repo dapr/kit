@@ -93,11 +93,14 @@ func TestNewMutexMap_Add_Delete(t *testing.T) {
 		require.False(t, ok)
 	})
 
-	t.Run("Clear all mutexes", func(t *testing.T) {
+	t.Run("Clear all mutexes, and check item count", func(t *testing.T) {
 		mm.Lock("key1")
 		mm.Unlock("key1")
 		mm.Lock("key2")
 		mm.Unlock("key2")
+
+		require.Equal(t, 2, mm.ItemCount())
+
 		mm.Clear()
 		require.Empty(t, mm.items)
 	})

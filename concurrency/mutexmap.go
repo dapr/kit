@@ -24,6 +24,7 @@ type MutexMap[T comparable] interface {
 	RUnlock(key T)
 	Delete(key T)
 	Clear()
+	ItemCount() int
 }
 
 type mutexMap[T comparable] struct {
@@ -97,4 +98,10 @@ func (a *mutexMap[T]) Clear() {
 	a.lock.Lock()
 	a.items = make(map[T]*sync.RWMutex)
 	a.lock.Unlock()
+}
+
+func (a *mutexMap[T]) ItemCount() int {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+	return len(a.items)
 }
