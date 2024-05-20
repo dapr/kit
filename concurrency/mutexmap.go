@@ -29,7 +29,6 @@ import (
 // - Delete(key T): Removes the mutex associated with the given key from the map.
 // - Clear(): Removes all mutexes from the map.
 // - ItemCount() int: Returns the number of items (mutexes) in the map.
-
 type MutexMap[T comparable] interface {
 	Lock(key T)
 	Unlock(key T)
