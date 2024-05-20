@@ -17,6 +17,19 @@ import (
 	"sync"
 )
 
+// MutexMap is an interface that defines a thread-safe map with keys of type T associated to
+// read-write mutexes (sync.RWMutex), allowing for granular locking on a per-key basis.
+// This can be useful for scenarios where fine-grained concurrency control is needed.
+//
+// Methods:
+// - Lock(key T): Acquires an exclusive lock on the mutex associated with the given key.
+// - Unlock(key T): Releases the exclusive lock on the mutex associated with the given key.
+// - RLock(key T): Acquires a read lock on the mutex associated with the given key.
+// - RUnlock(key T): Releases the read lock on the mutex associated with the given key.
+// - Delete(key T): Removes the mutex associated with the given key from the map.
+// - Clear(): Removes all mutexes from the map.
+// - ItemCount() int: Returns the number of items (mutexes) in the map.
+
 type MutexMap[T comparable] interface {
 	Lock(key T)
 	Unlock(key T)
