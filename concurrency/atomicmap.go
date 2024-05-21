@@ -107,5 +107,5 @@ func (a *atomicMap[K, T]) ForEach(fn func(key K, value *AtomicValue[T])) {
 func (a *atomicMap[K, T]) Clear() {
 	a.lock.Lock()
 	defer a.lock.Unlock()
-	a.items = make(map[K]*AtomicValue[T])
+	clear(a.items)
 }
