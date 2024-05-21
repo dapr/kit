@@ -108,7 +108,7 @@ func (a *mutexMap[T]) Delete(key T) {
 
 func (a *mutexMap[T]) Clear() {
 	a.lock.Lock()
-	a.items = make(map[T]*sync.RWMutex)
+	clear(a.items)
 	a.lock.Unlock()
 }
 
