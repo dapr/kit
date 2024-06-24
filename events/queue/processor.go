@@ -226,5 +226,5 @@ func (p *Processor[K, T]) execute(r T) {
 		return
 	}
 
-	go p.executeFn(r)
+	p.executeFn(r)
 }

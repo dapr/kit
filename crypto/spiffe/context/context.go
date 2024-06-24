@@ -1,8 +1,5 @@
-//go:build unit
-// +build unit
-
 /*
-Copyright 2023 The Dapr Authors
+Copyright 2024 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -14,22 +11,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package fswatcher
+package context
 
 import (
-	"testing"
-	"time"
+	"context"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
 
-	"github.com/dapr/kit/events/batcher"
+	"github.com/dapr/kit/crypto/spiffe"
 )
 
-func TestWithBatcher(t *testing.T) {
-	b := batcher.New[string, struct{}](time.Millisecond * 10)
-	f, err := New(Options{})
-	require.NoError(t, err)
-	f.WithBatcher(b)
-	assert.Equal(t, b, f.batcher)
+type ctxkey int
+
+const svidKey ctxkey = iota
+
+func With(ctx context.Context, spiffe *spiffe.SPIFFE) context.Context {
+	return context.WithValue(ctx, svidKey, spiffe.SVIDSource())
+}
+
+func From(ctx context.Context) (x509svid.Source, bool) {
+	svid, ok := ctx.Value(svidKey).(x509svid.Source)
+	return svid, ok
 }
