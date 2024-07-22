@@ -29,6 +29,7 @@ import (
 // - Delete(key T): Removes the mutex associated with the given key from the map.
 // - Clear(): Removes all mutexes from the map.
 // - ItemCount() int: Returns the number of items (mutexes) in the map.
+// - DeleteUnlock(key T): Removes the mutex associated with the given key from the map and releases the lock.
 type MutexMap[T comparable] interface {
 	Lock(key T)
 	Unlock(key T)
@@ -37,6 +38,7 @@ type MutexMap[T comparable] interface {
 	Delete(key T)
 	Clear()
 	ItemCount() int
+	DeleteUnlock(key T)
 }
 
 type mutexMap[T comparable] struct {
@@ -104,6 +106,16 @@ func (a *mutexMap[T]) Delete(key T) {
 	a.lock.Lock()
 	delete(a.items, key)
 	a.lock.Unlock()
+}
+
+func (a *mutexMap[T]) DeleteUnlock(key T) {
+	a.lock.Lock()
+	mutex, ok := a.items[key]
+	delete(a.items, key)
+	a.lock.Unlock()
+	if ok {
+		mutex.Unlock()
+	}
 }
 
 func (a *mutexMap[T]) Clear() {
