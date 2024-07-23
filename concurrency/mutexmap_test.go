@@ -15,8 +15,11 @@ package concurrency
 
 import (
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,7 +40,7 @@ func TestNewMutexMap_Add_Delete(t *testing.T) {
 	})
 
 	t.Run("Concurrently lock and unlock mutexes", func(t *testing.T) {
-		var counter int
+		var counter atomic.Int64
 		var wg sync.WaitGroup
 
 		numGoroutines := 10
@@ -48,13 +51,13 @@ func TestNewMutexMap_Add_Delete(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				mm.Lock("key1")
-				counter++
+				counter.Add(1)
 				mm.Unlock("key1")
 			}()
 		}
 		wg.Wait()
 
-		require.Equal(t, 10, counter)
+		require.Equal(t, int64(10), counter.Load())
 	})
 
 	t.Run("RLock and RUnlock mutex", func(t *testing.T) {
@@ -65,24 +68,33 @@ func TestNewMutexMap_Add_Delete(t *testing.T) {
 	})
 
 	t.Run("Concurrently RLock and RUnlock mutexes", func(t *testing.T) {
-		var counter int
+		var counter atomic.Int64
 		var wg sync.WaitGroup
 
 		numGoroutines := 10
-		wg.Add(numGoroutines)
+		wg.Add(numGoroutines * 2)
 
 		// Concurrently RLock and RUnlock for each key
 		for i := 0; i < numGoroutines; i++ {
 			go func() {
 				defer wg.Done()
 				mm.RLock("key1")
-				counter++
+				counter.Add(1)
+			}()
+		}
+
+		assert.EventuallyWithT(t, func(ct *assert.CollectT) {
+			assert.Equal(ct, int64(10), counter.Load())
+		}, 5*time.Second, 10*time.Millisecond)
+
+		for i := 0; i < numGoroutines; i++ {
+			go func() {
+				defer wg.Done()
 				mm.RUnlock("key1")
 			}()
 		}
-		wg.Wait()
 
-		require.Equal(t, 10, counter)
+		wg.Wait()
 	})
 
 	t.Run("Delete mutex", func(t *testing.T) {
