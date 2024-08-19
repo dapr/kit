@@ -58,50 +58,57 @@ func (a *mutexMap[T]) Lock(key T) {
 	a.lock.RLock()
 	mutex, ok := a.items[key]
 	a.lock.RUnlock()
-	if !ok {
-		a.lock.Lock()
-		mutex, ok = a.items[key]
-		if !ok {
-			mutex = &sync.RWMutex{}
-			a.items[key] = mutex
-		}
-		a.lock.Unlock()
+	if ok {
+		mutex.Lock()
+		return
 	}
+
+	a.lock.Lock()
+	mutex, ok = a.items[key]
+	if !ok {
+		mutex = &sync.RWMutex{}
+		a.items[key] = mutex
+	}
+	a.lock.Unlock()
 	mutex.Lock()
 }
 
 func (a *mutexMap[T]) Unlock(key T) {
 	a.lock.RLock()
 	mutex, ok := a.items[key]
-	a.lock.RUnlock()
 	if ok {
 		mutex.Unlock()
 	}
+	a.lock.RUnlock()
 }
 
 func (a *mutexMap[T]) RLock(key T) {
 	a.lock.RLock()
 	mutex, ok := a.items[key]
 	a.lock.RUnlock()
-	if !ok {
-		a.lock.Lock()
-		mutex, ok = a.items[key]
-		if !ok {
-			mutex = &sync.RWMutex{}
-			a.items[key] = mutex
-		}
-		a.lock.Unlock()
+
+	if ok {
+		mutex.RLock()
+		return
 	}
+
+	a.lock.Lock()
+	mutex, ok = a.items[key]
+	if !ok {
+		mutex = &sync.RWMutex{}
+		a.items[key] = mutex
+	}
+	a.lock.Unlock()
 	mutex.RLock()
 }
 
 func (a *mutexMap[T]) RUnlock(key T) {
 	a.lock.RLock()
 	mutex, ok := a.items[key]
-	a.lock.RUnlock()
 	if ok {
 		mutex.RUnlock()
 	}
+	a.lock.RUnlock()
 }
 
 func (a *mutexMap[T]) Delete(key T) {
@@ -113,21 +120,21 @@ func (a *mutexMap[T]) Delete(key T) {
 func (a *mutexMap[T]) DeleteUnlock(key T) {
 	a.lock.Lock()
 	mutex, ok := a.items[key]
-	delete(a.items, key)
-	a.lock.Unlock()
 	if ok {
 		mutex.Unlock()
 	}
+	delete(a.items, key)
+	a.lock.Unlock()
 }
 
 func (a *mutexMap[T]) DeleteRUnlock(key T) {
 	a.lock.Lock()
 	mutex, ok := a.items[key]
-	delete(a.items, key)
-	a.lock.Unlock()
 	if ok {
 		mutex.RUnlock()
 	}
+	delete(a.items, key)
+	a.lock.Unlock()
 }
 
 func (a *mutexMap[T]) Clear() {
