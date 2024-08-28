@@ -54,7 +54,6 @@ func TestGetEnvIntWithRangeWrongValues(t *testing.T) {
 			require.Error(t, err)
 			require.Contains(t, err.Error(), tt.error)
 			require.Equal(t, defaultValue, val)
-
 		})
 	}
 }
@@ -74,7 +73,8 @@ func TestGetEnvIntWithRangeValidValues(t *testing.T) {
 			"should return result is env variable value is valid",
 			"4",
 			4,
-		}}
+		},
+	}
 
 	for _, tt := range testValues {
 		t.Run(tt.name, func(t *testing.T) {
