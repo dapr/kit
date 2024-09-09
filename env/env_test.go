@@ -1,4 +1,17 @@
-package utils
+/*
+Copyright 2024 The Dapr Authors
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package env
 
 import (
 	"testing"
@@ -7,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetEnvIntWithRangeWrongValues(t *testing.T) {
+func TestGetIntWithRangeWrongValues(t *testing.T) {
 	testValues := []struct {
 		name      string
 		envVarVal string
@@ -43,7 +56,7 @@ func TestGetEnvIntWithRangeWrongValues(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("MY_ENV", tt.envVarVal)
 
-			val, err := GetEnvDurationWithRange("MY_ENV", defaultValue, tt.min, tt.max)
+			val, err := GetDurationWithRange("MY_ENV", defaultValue, tt.min, tt.max)
 			require.Error(t, err)
 			require.Contains(t, err.Error(), tt.error)
 			require.Equal(t, defaultValue, val)
@@ -75,7 +88,7 @@ func TestGetEnvDurationWithRangeValidValues(t *testing.T) {
 				t.Setenv("MY_ENV", tt.envVarVal)
 			}
 
-			val, err := GetEnvDurationWithRange("MY_ENV", 3*time.Second, time.Second, 5*time.Second)
+			val, err := GetDurationWithRange("MY_ENV", 3*time.Second, time.Second, 5*time.Second)
 			require.NoError(t, err)
 			require.Equal(t, tt.result, val)
 		})
