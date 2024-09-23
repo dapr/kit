@@ -21,11 +21,11 @@ import (
 // Favoured over sync.Map as it is typed.
 type Map[K comparable, T any] interface {
 	Clear()
-	Delete(K)
-	Load(K) (T, bool)
-	LoadAndDelete(K) (T, bool)
-	Range(func(K, T) bool)
-	Store(K, T)
+	Delete(key K)
+	Load(key K) (T, bool)
+	LoadAndDelete(key K) (T, bool)
+	Range(fn func(key K, value T) bool)
+	Store(key K, value T)
 }
 
 type mapimpl[K comparable, T any] struct {
@@ -64,11 +64,11 @@ func (m *mapimpl[K, T]) LoadAndDelete(k K) (T, bool) {
 	return v, ok
 }
 
-func (m *mapimpl[K, T]) Range(f func(K, T) bool) {
+func (m *mapimpl[K, T]) Range(fn func(K, T) bool) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	for k, v := range m.m {
-		if !f(k, v) {
+		if !fn(k, v) {
 			break
 		}
 	}
