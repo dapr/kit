@@ -23,7 +23,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/dapr/kit/ptr"
-	"github.com/dapr/kit/utils"
+	kitstrings "github.com/dapr/kit/strings"
 )
 
 func toTruthyBoolHookFunc() mapstructure.DecodeHookFunc {
@@ -37,10 +37,10 @@ func toTruthyBoolHookFunc() mapstructure.DecodeHookFunc {
 		data any,
 	) (any, error) {
 		if f == stringType && t == boolType {
-			return utils.IsTruthy(data.(string)), nil
+			return kitstrings.IsTruthy(data.(string)), nil
 		}
 		if f == stringType && t == boolPtrType {
-			return ptr.Of(utils.IsTruthy(data.(string))), nil
+			return ptr.Of(kitstrings.IsTruthy(data.(string))), nil
 		}
 		return data, nil
 	}
