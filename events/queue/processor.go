@@ -14,16 +14,12 @@ limitations under the License.
 package queue
 
 import (
-	"errors"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	kclock "k8s.io/utils/clock"
 )
-
-// ErrProcessorStopped is returned when the processor is not running.
-var ErrProcessorStopped = errors.New("processor is stopped")
 
 // Processor manages the queue of items and processes them at the correct time.
 type Processor[K comparable, T queueable[K]] struct {
@@ -59,9 +55,9 @@ func (p *Processor[K, T]) WithClock(clock kclock.Clock) *Processor[K, T] {
 
 // Enqueue adds a new item to the queue.
 // If a item with the same ID already exists, it'll be replaced.
-func (p *Processor[K, T]) Enqueue(r T) error {
+func (p *Processor[K, T]) Enqueue(r T) {
 	if p.stopped.Load() {
-		return ErrProcessorStopped
+		return
 	}
 
 	// Insert or replace the item in the queue
@@ -74,14 +70,12 @@ func (p *Processor[K, T]) Enqueue(r T) error {
 	isFirst = isFirst || (peek == r) // This is also going to be true if the item just added landed at the front of the queue
 	p.process(isFirst)
 	p.lock.Unlock()
-
-	return nil
 }
 
 // Dequeue removes a item from the queue.
-func (p *Processor[K, T]) Dequeue(key K) error {
+func (p *Processor[K, T]) Dequeue(key K) {
 	if p.stopped.Load() {
-		return ErrProcessorStopped
+		return
 	}
 
 	// We need to check if this is the next item in the queue, as that requires stopping the processor
@@ -93,8 +87,6 @@ func (p *Processor[K, T]) Dequeue(key K) error {
 		p.process(true)
 	}
 	p.lock.Unlock()
-
-	return nil
 }
 
 // Close stops the processor.
