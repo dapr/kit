@@ -1,6 +1,6 @@
 module github.com/dapr/kit
 
-go 1.21
+go 1.23.1
 
 require (
 	github.com/alphadose/haxmap v1.3.1
