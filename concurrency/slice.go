@@ -17,7 +17,7 @@ import "sync"
 
 // Slice is a concurrent safe types slice
 type Slice[T any] interface {
-	Add(...T) int
+	Add(items ...T) int
 	Len() int
 	Slice() []T
 }
