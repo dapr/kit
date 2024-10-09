@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package concurrency
+package cmap
 
 import (
 	"sync"
@@ -23,8 +23,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewMutexMap_Add_Delete(t *testing.T) {
-	mm := NewMutexMap[string]().(*mutexMap[string])
+func TestNewMutex_Add_Delete(t *testing.T) {
+	mm := NewMutex[string]().(*mutex[string])
 
 	t.Run("New mutex map", func(t *testing.T) {
 		require.NotNil(t, mm)
