@@ -11,13 +11,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package concurrency
+package slice
 
 import "sync"
 
 // Slice is a concurrent safe types slice
 type Slice[T any] interface {
-	Add(items ...T) int
+	Append(items ...T) int
 	Len() int
 	Slice() []T
 }
@@ -27,11 +27,11 @@ type slice[T any] struct {
 	data []T
 }
 
-func NewSlice[T any]() Slice[T] {
+func New[T any]() Slice[T] {
 	return new(slice[T])
 }
 
-func (s *slice[T]) Add(items ...T) int {
+func (s *slice[T]) Append(items ...T) int {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.data = append(s.data, items...)
