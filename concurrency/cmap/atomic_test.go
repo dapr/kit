@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package concurrency
+package cmap
 
 import (
 	"sync"
@@ -21,8 +21,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAtomicMapInt32_New_Get_Delete(t *testing.T) {
-	m := NewAtomicMap[string, int32]().(*atomicMap[string, int32])
+func TestAtomicInt32_New_Get_Delete(t *testing.T) {
+	m := NewAtomic[string, int32]().(*atomicMap[string, int32])
 
 	require.NotNil(t, m)
 	require.NotNil(t, m.items)

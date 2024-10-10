@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package concurrency
+package cmap
 
 import (
 	"sync"
@@ -43,7 +43,7 @@ func (a *AtomicValue[T]) Add(v T) T {
 	return a.value
 }
 
-type AtomicMap[K comparable, T constraints.Integer] interface {
+type Atomic[K comparable, T constraints.Integer] interface {
 	Get(key K) (*AtomicValue[T], bool)
 	GetOrCreate(key K, createT T) *AtomicValue[T]
 	Delete(key K)
@@ -56,7 +56,7 @@ type atomicMap[K comparable, T constraints.Integer] struct {
 	items map[K]*AtomicValue[T]
 }
 
-func NewAtomicMap[K comparable, T constraints.Integer]() AtomicMap[K, T] {
+func NewAtomic[K comparable, T constraints.Integer]() Atomic[K, T] {
 	return &atomicMap[K, T]{
 		items: make(map[K]*AtomicValue[T]),
 	}
