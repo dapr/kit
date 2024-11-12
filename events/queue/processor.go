@@ -22,7 +22,7 @@ import (
 )
 
 // Processor manages the queue of items and processes them at the correct time.
-type Processor[K comparable, T queueable[K]] struct {
+type Processor[K comparable, T Queueable[K]] struct {
 	executeFn          func(r T)
 	queue              queue[K, T]
 	clock              kclock.Clock
@@ -36,7 +36,7 @@ type Processor[K comparable, T queueable[K]] struct {
 
 // NewProcessor returns a new Processor object.
 // executeFn is the callback invoked when the item is to be executed; this will be invoked in a background goroutine.
-func NewProcessor[K comparable, T queueable[K]](executeFn func(r T)) *Processor[K, T] {
+func NewProcessor[K comparable, T Queueable[K]](executeFn func(r T)) *Processor[K, T] {
 	return &Processor[K, T]{
 		executeFn:          executeFn,
 		queue:              newQueue[K, T](),

@@ -18,8 +18,8 @@ import (
 	"time"
 )
 
-// queueable is the interface for items that can be added to the queue.
-type queueable[T comparable] interface {
+// Queueable is the interface for items that can be added to the queue.
+type Queueable[T comparable] interface {
 	comparable
 	Key() T
 	ScheduledTime() time.Time
@@ -29,13 +29,13 @@ type queueable[T comparable] interface {
 // It acts as a "priority queue", in which items are added in order of when they're scheduled.
 // Internally, it uses a heap (from container/heap) that allows Insert and Pop operations to be completed in O(log N) time (where N is the queue's length).
 // Note: methods in this struct are not safe for concurrent use. Callers should use locks to ensure consistency.
-type queue[K comparable, T queueable[K]] struct {
+type queue[K comparable, T Queueable[K]] struct {
 	heap  *queueHeap[K, T]
 	items map[K]*queueItem[K, T]
 }
 
 // newQueue creates a new queue.
-func newQueue[K comparable, T queueable[K]]() queue[K, T] {
+func newQueue[K comparable, T Queueable[K]]() queue[K, T] {
 	return queue[K, T]{
 		heap:  new(queueHeap[K, T]),
 		items: make(map[K]*queueItem[K, T]),
@@ -122,14 +122,14 @@ func (p *queue[K, T]) Update(r T) {
 	heap.Fix(p.heap, item.index)
 }
 
-type queueItem[K comparable, T queueable[K]] struct {
+type queueItem[K comparable, T Queueable[K]] struct {
 	value T
 
 	// The index of the item in the heap. This is maintained by the heap.Interface methods.
 	index int
 }
 
-type queueHeap[K comparable, T queueable[K]] []*queueItem[K, T]
+type queueHeap[K comparable, T Queueable[K]] []*queueItem[K, T]
 
 func (pq queueHeap[K, T]) Len() int {
 	return len(pq)

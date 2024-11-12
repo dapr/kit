@@ -26,6 +26,8 @@ type Map[K comparable, T any] interface {
 	LoadAndDelete(key K) (T, bool)
 	Range(fn func(key K, value T) bool)
 	Store(key K, value T)
+	Len() int
+	Keys() []K
 }
 
 type mapimpl[K comparable, T any] struct {
@@ -78,4 +80,20 @@ func (m *mapimpl[K, T]) Store(k K, v T) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	m.m[k] = v
+}
+
+func (m *mapimpl[K, T]) Len() int {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	return len(m.m)
+}
+
+func (m *mapimpl[K, T]) Keys() []K {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	keys := make([]K, 0, len(m.m))
+	for k := range m.m {
+		keys = append(keys, k)
+	}
+	return keys
 }
