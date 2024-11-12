@@ -18,11 +18,9 @@ func verify(t *testing.T, r *Ring[int], nn int, sum int) {
 	// iteration
 	n = 0
 	s := 0
-	r.Do(func(p any) {
+	r.Do(func(p int) {
 		n++
-		if p != nil {
-			s += p.(int)
-		}
+		s += p
 	})
 	if n != nn {
 		t.Errorf("number of forward iterations == %d; expected %d", n, nn)
