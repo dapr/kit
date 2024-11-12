@@ -112,11 +112,11 @@ func makeN(n int) *Ring[int] {
 func sumN(n int) int { return (n*n + n) / 2 }
 
 func TestNew(t *testing.T) {
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		r := New[int](i)
 		verify(t, r, i, -1)
 	}
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		r := makeN(i)
 		verify(t, r, i, sumN(i))
 	}
@@ -194,7 +194,7 @@ func TestUnlink(t *testing.T) {
 func TestLinkUnlink(t *testing.T) {
 	for i := 1; i < 4; i++ {
 		ri := New[int](i)
-		for j := 0; j < i; j++ {
+		for j := range i {
 			rj := ri.Unlink(j)
 			verify(t, rj, j, -1)
 			verify(t, ri, i-j, -1)
