@@ -283,7 +283,6 @@ linters:
     - wsl
     - gomnd
     - testpackage
-    - goerr113
     - nestif
     - nlreturn
     - noctx

@@ -5,29 +5,14 @@
 package ring
 
 import (
-	"fmt"
 	"testing"
 )
 
-// For debugging - keep around.
-func dump(r *Ring[string]) {
-	if r == nil {
-		fmt.Println("empty")
-		return
-	}
-	i, n := 0, r.Len()
-	for p := r; i < n; p = p.next {
-		fmt.Printf("%4d: %p = {<- %p | %p ->}\n", i, p, p.prev, p.next)
-		i++
-	}
-	fmt.Println()
-}
-
-func verify(t *testing.T, r *Ring[int], N int, sum int) {
+func verify(t *testing.T, r *Ring[int], nn int, sum int) {
 	// Len
 	n := r.Len()
-	if n != N {
-		t.Errorf("r.Len() == %d; expected %d", n, N)
+	if n != nn {
+		t.Errorf("r.Len() == %d; expected %d", n, nn)
 	}
 
 	// iteration
@@ -39,8 +24,8 @@ func verify(t *testing.T, r *Ring[int], N int, sum int) {
 			s += p.(int)
 		}
 	})
-	if n != N {
-		t.Errorf("number of forward iterations == %d; expected %d", n, N)
+	if n != nn {
+		t.Errorf("number of forward iterations == %d; expected %d", n, nn)
 	}
 	if sum >= 0 && s != sum {
 		t.Errorf("forward ring sum = %d; expected %d", s, sum)
@@ -76,15 +61,15 @@ func verify(t *testing.T, r *Ring[int], N int, sum int) {
 	if r.Move(0) != r {
 		t.Errorf("r.Move(0) != r")
 	}
-	if r.Move(N) != r {
-		t.Errorf("r.Move(%d) != r", N)
+	if r.Move(nn) != r {
+		t.Errorf("r.Move(%d) != r", nn)
 	}
-	if r.Move(-N) != r {
-		t.Errorf("r.Move(%d) != r", -N)
+	if r.Move(-nn) != r {
+		t.Errorf("r.Move(%d) != r", -nn)
 	}
-	for i := 0; i < 10; i++ {
-		ni := N + i
-		mi := ni % N
+	for i := range 10 {
+		ni := nn + i
+		mi := ni % nn
 		if r.Move(ni) != r.Move(mi) {
 			t.Errorf("r.Move(%d) != r.Move(%d)", ni, mi)
 		}
