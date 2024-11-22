@@ -57,7 +57,7 @@ type Error struct {
 	// Tag is a string identifying the error, used with HTTP responses only.
 	tag string
 
-	// Category is a string identifying the category of the error, used for error code metrics only.
+	// Category is a string identifying the category of the error (i.e. "actor", "job", "pubsub), used for error code metrics only.
 	category string
 }
 
@@ -87,15 +87,17 @@ func (e *Error) GrpcStatusCode() grpcCodes.Code {
 	return e.grpcCode
 }
 
-// ErrorCode returns the error code from the error
+// ErrorCode returns the error code from the error, prioritizing the legacy Error.Tag, otherwise the ErrorInfo.Reason
 func (e *Error) ErrorCode() string {
+	errorCode := e.tag
 	for _, detail := range e.details {
 		if _, ok := detail.(*errdetails.ErrorInfo); ok {
-			_, errorCode := convertErrorDetails(detail, *e)
-			return errorCode
+			if _, errInfoReason := convertErrorDetails(detail, *e); errInfoReason != "" {
+				return errInfoReason
+			}
 		}
 	}
-	return ""
+	return errorCode
 }
 
 // Category returns the error code's category

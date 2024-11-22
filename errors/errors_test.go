@@ -45,6 +45,7 @@ func TestError_HTTPStatusCode(t *testing.T) {
 		httpStatusCode,
 		"Test Msg",
 		"SOME_ERROR",
+		"some_category",
 	).
 		WithErrorInfo("fake", map[string]string{"fake": "test"}).
 		Build()
@@ -60,6 +61,7 @@ func TestError_GrpcStatusCode(t *testing.T) {
 		http.StatusTeapot,
 		"Test Msg",
 		"SOME_ERROR",
+		"some_category",
 	).
 		WithErrorInfo("fake", map[string]string{"fake": "test"}).
 		Build()
@@ -125,6 +127,7 @@ func TestError_Error(t *testing.T) {
 				http.StatusTeapot,
 				"Msg",
 				"SOME_ERROR",
+				"some_category",
 			).WithErrorInfo("fake", map[string]string{"fake": "test"}),
 			fields: fields{
 				message:  "Msg",
@@ -139,6 +142,7 @@ func TestError_Error(t *testing.T) {
 				http.StatusTeapot,
 				"Msg",
 				"SOME_ERROR",
+				"some_category",
 			).WithErrorInfo("fake", map[string]string{"fake": "test"}),
 			fields: fields{
 				message: "Msg",
@@ -152,6 +156,7 @@ func TestError_Error(t *testing.T) {
 				http.StatusTeapot,
 				"Msg",
 				"SOME_ERROR",
+				"some_category",
 			).WithErrorInfo("fake", map[string]string{"fake": "test"}),
 			fields: fields{
 				grpcCode: grpcCodes.Canceled,
@@ -186,6 +191,7 @@ func TestErrorBuilder_WithErrorInfo(t *testing.T) {
 		httpCode: http.StatusTeapot,
 		message:  "fake_message",
 		tag:      "DAPR_FAKE_TAG",
+		category: "some_category",
 		details: []proto.Message{
 			details,
 		},
@@ -196,6 +202,7 @@ func TestErrorBuilder_WithErrorInfo(t *testing.T) {
 		http.StatusTeapot,
 		"fake_message",
 		"DAPR_FAKE_TAG",
+		"some_category",
 	).
 		WithErrorInfo(reason, metadata)
 
@@ -222,6 +229,7 @@ func TestErrorBuilder_WithDetails(t *testing.T) {
 		httpCode int
 		message  string
 		tag      string
+		category string
 	}
 
 	type args struct {
@@ -283,6 +291,7 @@ func TestErrorBuilder_WithDetails(t *testing.T) {
 				test.fields.httpCode,
 				test.fields.message,
 				test.fields.tag,
+				test.fields.category,
 			).WithDetails(test.args.a...)
 
 			assert.Equal(t, test.want, kitErr.Build())
@@ -292,7 +301,7 @@ func TestErrorBuilder_WithDetails(t *testing.T) {
 
 func TestWithErrorHelp(t *testing.T) {
 	// Initialize the Error struct with some default values
-	err := NewBuilder(grpcCodes.InvalidArgument, http.StatusBadRequest, "Internal error", "INTERNAL_ERROR")
+	err := NewBuilder(grpcCodes.InvalidArgument, http.StatusBadRequest, "Internal error", "INTERNAL_ERROR", "some_category")
 
 	// Define test data for the help links
 	links := []*errdetails.Help_Link{
@@ -319,7 +328,7 @@ func TestWithErrorHelp(t *testing.T) {
 
 func TestWithErrorFieldViolation(t *testing.T) {
 	// Initialize the Error struct with some default values
-	err := NewBuilder(grpcCodes.InvalidArgument, http.StatusBadRequest, "Internal error", "INTERNAL_ERROR")
+	err := NewBuilder(grpcCodes.InvalidArgument, http.StatusBadRequest, "Internal error", "INTERNAL_ERROR", "some_category")
 
 	// Define test data for the field violation
 	fieldName := "testField"
@@ -348,6 +357,7 @@ func TestError_JSONErrorValue(t *testing.T) {
 		httpCode int
 		message  string
 		tag      string
+		category string
 	}
 
 	tests := []struct {
@@ -657,7 +667,7 @@ func TestError_JSONErrorValue(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			kitErr := NewBuilder(test.fields.grpcCode, test.fields.httpCode, test.fields.message, test.fields.tag).
+			kitErr := NewBuilder(test.fields.grpcCode, test.fields.httpCode, test.fields.message, test.fields.tag, test.fields.category).
 				WithDetails(test.fields.details...)
 
 			got := kitErr.err.JSONErrorValue()
@@ -705,6 +715,7 @@ func TestError_GRPCStatus(t *testing.T) {
 		httpCode int
 		message  string
 		tag      string
+		category string
 	}
 
 	tests := []struct {
@@ -769,6 +780,7 @@ func TestError_GRPCStatus(t *testing.T) {
 				test.fields.httpCode,
 				test.fields.message,
 				test.fields.tag,
+				test.fields.category,
 			).WithDetails(test.fields.details...)
 
 			got := kitErr.err.GRPCStatus()
@@ -787,6 +799,7 @@ func TestErrorBuilder_Build(t *testing.T) {
 			http.StatusTeapot,
 			"Test Msg",
 			"SOME_ERROR",
+			"some_category",
 		).WithErrorInfo("fake", map[string]string{"fake": "test"}).Build()
 
 		builtErr, ok := built.(Error)
@@ -803,6 +816,33 @@ func TestErrorBuilder_Build(t *testing.T) {
 		}
 
 		assert.True(t, containsErrorInfo)
+		assert.Equal(t, "SOME_ERROR", builtErr.ErrorCode())
+	})
+
+	t.Run("With_ErrorInfo (legacy tag absent)", func(t *testing.T) {
+		built := NewBuilder(
+			grpcCodes.ResourceExhausted,
+			http.StatusTeapot,
+			"Test Msg",
+			"",
+			"some_category",
+		).WithErrorInfo("SOME_ERROR", map[string]string{"fake": "test"}).Build()
+
+		builtErr, ok := built.(Error)
+		require.True(t, ok)
+
+		containsErrorInfo := false
+
+		for _, detail := range builtErr.details {
+			_, isErrInfo := detail.(*errdetails.ErrorInfo)
+			if isErrInfo {
+				containsErrorInfo = true
+				break
+			}
+		}
+
+		assert.True(t, containsErrorInfo)
+		assert.Equal(t, "SOME_ERROR", builtErr.ErrorCode())
 	})
 
 	t.Run("Without_ErrorInfo", func(t *testing.T) {
@@ -811,6 +851,7 @@ func TestErrorBuilder_Build(t *testing.T) {
 			http.StatusTeapot,
 			"Test Msg",
 			"SOME_ERROR",
+			"some_category",
 		)
 
 		assert.PanicsWithValue(t, "Must include ErrorInfo in error details.", func() {
