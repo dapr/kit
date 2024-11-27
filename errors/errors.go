@@ -56,6 +56,9 @@ type Error struct {
 
 	// Tag is a string identifying the error, used with HTTP responses only.
 	tag string
+
+	// Category is a string identifying the category of the error (i.e. "actor", "job", "pubsub), used for error code metrics only.
+	category string
 }
 
 // ErrorBuilder is used to build the error
@@ -82,6 +85,24 @@ func (e *Error) HTTPStatusCode() int {
 // GrpcStatusCode gets the error grpc code
 func (e *Error) GrpcStatusCode() grpcCodes.Code {
 	return e.grpcCode
+}
+
+// ErrorCode returns the error code from the error, prioritizing the legacy Error.Tag, otherwise the ErrorInfo.Reason
+func (e *Error) ErrorCode() string {
+	errorCode := e.tag
+	for _, detail := range e.details {
+		if _, ok := detail.(*errdetails.ErrorInfo); ok {
+			if _, errInfoReason := convertErrorDetails(detail, *e); errInfoReason != "" {
+				return errInfoReason
+			}
+		}
+	}
+	return errorCode
+}
+
+// Category returns the error code's category
+func (e *Error) Category() string {
+	return e.category
 }
 
 // Error implements the error interface.
@@ -334,7 +355,7 @@ ErrorBuilder
 **************************************/
 
 // NewBuilder create a new ErrorBuilder using the supplied required error fields
-func NewBuilder(grpcCode grpcCodes.Code, httpCode int, message string, tag string) *ErrorBuilder {
+func NewBuilder(grpcCode grpcCodes.Code, httpCode int, message string, tag string, category string) *ErrorBuilder {
 	return &ErrorBuilder{
 		err: Error{
 			details:  make([]proto.Message, 0),
@@ -342,6 +363,7 @@ func NewBuilder(grpcCode grpcCodes.Code, httpCode int, message string, tag strin
 			httpCode: httpCode,
 			message:  message,
 			tag:      tag,
+			category: category,
 		},
 	}
 }
