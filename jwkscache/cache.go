@@ -37,9 +37,9 @@ import (
 	"github.com/lestrrat-go/httprc"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 
+	"github.com/dapr/kit/crypto/pem"
 	"github.com/dapr/kit/fswatcher"
 	"github.com/dapr/kit/logger"
-	"github.com/dapr/kit/utils"
 )
 
 const (
@@ -198,7 +198,7 @@ func (c *JWKSCache) initJWKSFromURL(ctx context.Context, url string) error {
 
 		// Load CA certificates if we have one
 		if c.caCertificate != "" {
-			caCert, err := utils.GetPEM(c.caCertificate)
+			caCert, err := pem.GetPEM(c.caCertificate)
 			if err != nil {
 				return fmt.Errorf("failed to load CA certificate: %w", err)
 			}
