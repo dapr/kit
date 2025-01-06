@@ -15,7 +15,6 @@ package broadcaster
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"sync/atomic"
 )
@@ -92,12 +91,7 @@ func (b *Broadcaster[T]) subscribe(ctx context.Context, ch chan<- T) {
 				return
 			case <-b.closeCh:
 				return
-			case env := <-bufferedCh:
-				select {
-				case ch <- env:
-				case <-ctx.Done():
-				case <-b.closeCh:
-				}
+			case ch <- <-bufferedCh:
 			}
 		}
 	}()
@@ -125,7 +119,6 @@ func (b *Broadcaster[T]) Close() {
 	defer b.wg.Wait()
 	b.lock.Lock()
 	if b.closed.CompareAndSwap(false, true) {
-		fmt.Printf(">>HERE!!!!\n")
 		close(b.closeCh)
 	}
 	b.lock.Unlock()
