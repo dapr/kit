@@ -20,6 +20,8 @@ import (
 	"sync/atomic"
 )
 
+const bufferSize = 10
+
 type eventCh[T any] struct {
 	id           uint64
 	ch           chan<- T
@@ -60,7 +62,7 @@ func (b *Broadcaster[T]) subscribe(ctx context.Context, ch chan<- T) {
 
 	id := b.currentID
 	b.currentID++
-	bufferedCh := make(chan T, 10)
+	bufferedCh := make(chan T, bufferSize)
 	closeEventCh := make(chan struct{})
 	b.eventChs = append(b.eventChs, &eventCh[T]{
 		id:           id,
