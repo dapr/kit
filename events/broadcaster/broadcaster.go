@@ -91,7 +91,14 @@ func (b *Broadcaster[T]) subscribe(ctx context.Context, ch chan<- T) {
 				return
 			case <-b.closeCh:
 				return
-			case ch <- <-bufferedCh:
+			case val := <-bufferedCh:
+				select {
+				case <-ctx.Done():
+					return
+				case <-b.closeCh:
+					return
+				case ch <- val:
+				}
 			}
 		}
 	}()
