@@ -27,6 +27,7 @@ type Options struct {
 	Target string
 }
 
+// Dir atomically writes files to a given directory.
 type Dir struct {
 	log logger.Logger
 
