@@ -28,6 +28,9 @@ import (
 	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
 	"k8s.io/utils/clock"
 
+	"github.com/dapr/kit/concurrency/dir"
+	"github.com/dapr/kit/crypto/pem"
+	"github.com/dapr/kit/crypto/spiffe/trustanchors"
 	"github.com/dapr/kit/logger"
 )
 
@@ -38,6 +41,14 @@ type (
 type Options struct {
 	Log           logger.Logger
 	RequestSVIDFn RequestSVIDFn
+
+	// WriteIdentityToFile is used to write the identity private key and
+	// certificate chain to file. The certificate chain and private key will be
+	// written to the `tls.cert` and `tls.key` files respectively in the given
+	// directory.
+	WriteIdentityToFile *string
+
+	TrustAnchors trustanchors.Interface
 }
 
 // SPIFFE is a readable/writeable store of a SPIFFE X.509 SVID.
@@ -45,6 +56,9 @@ type Options struct {
 type SPIFFE struct {
 	currentSVID   *x509svid.SVID
 	requestSVIDFn RequestSVIDFn
+
+	dir          *dir.Dir
+	trustAnchors trustanchors.Interface
 
 	log     logger.Logger
 	lock    sync.RWMutex
@@ -54,8 +68,18 @@ type SPIFFE struct {
 }
 
 func New(opts Options) *SPIFFE {
+	var sdir *dir.Dir
+	if opts.WriteIdentityToFile != nil {
+		sdir = dir.New(dir.Options{
+			Log:    opts.Log,
+			Target: *opts.WriteIdentityToFile,
+		})
+	}
+
 	return &SPIFFE{
 		requestSVIDFn: opts.RequestSVIDFn,
+		dir:           sdir,
+		trustAnchors:  opts.TrustAnchors,
 		log:           opts.Log,
 		clock:         clock.RealClock{},
 		readyCh:       make(chan struct{}),
@@ -163,6 +187,31 @@ func (s *SPIFFE) fetchIdentityCertificate(ctx context.Context) (*x509svid.SVID, 
 	spiffeID, err := x509svid.IDFromCert(workloadcert[0])
 	if err != nil {
 		return nil, fmt.Errorf("error parsing spiffe id from newly signed certificate: %w", err)
+	}
+
+	if s.dir != nil {
+		pkPEM, err := pem.EncodePrivateKey(key)
+		if err != nil {
+			return nil, err
+		}
+
+		certPEM, err := pem.EncodeX509Chain(workloadcert)
+		if err != nil {
+			return nil, err
+		}
+
+		td, err := s.trustAnchors.CurrentTrustAnchors(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := s.dir.Write(map[string][]byte{
+			"key.pem":  pkPEM,
+			"cert.pem": certPEM,
+			"ca.pem":   td,
+		}); err != nil {
+			return nil, err
+		}
 	}
 
 	return &x509svid.SVID{
