@@ -23,6 +23,11 @@ import (
 	"github.com/dapr/kit/concurrency"
 )
 
+var (
+	ErrNotImplemented      = errors.New("not implemented")
+	ErrTrustDomainNotFound = errors.New("trust domain not found")
+)
+
 type OptionsMulti struct {
 	TrustAnchors map[spiffeid.TrustDomain]Interface
 }
@@ -50,8 +55,8 @@ func (m *multi) Run(ctx context.Context) error {
 	return r.Run(ctx)
 }
 
-func (m *multi) CurrentTrustAnchors(ctx context.Context) ([]byte, error) {
-	return nil, errors.New("not implemented")
+func (m *multi) CurrentTrustAnchors(context.Context) ([]byte, error) {
+	return nil, ErrNotImplemented
 }
 
 func (m *multi) GetX509BundleForTrustDomain(td spiffeid.TrustDomain) (*x509bundle.Bundle, error) {
@@ -61,9 +66,9 @@ func (m *multi) GetX509BundleForTrustDomain(td spiffeid.TrustDomain) (*x509bundl
 		}
 	}
 
-	return nil, errors.New("trust domain not found")
+	return nil, ErrTrustDomainNotFound
 }
 
-func (m *multi) Watch(ctx context.Context, ch chan<- []byte) {
+func (m *multi) Watch(context.Context, chan<- []byte) {
 	return
 }
