@@ -15,7 +15,7 @@ package signals
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
 	"os/signal"
 
@@ -45,7 +45,8 @@ func Context() context.Context {
 	go func() {
 		sig := <-sigCh
 		log.Infof(`Received signal '%s'; beginning shutdown`, sig)
-		cancel(fmt.Errorf("cancelling context, received signal %s", sig))
+		//nolint:err113
+		cancel(errors.New("cancelling context, received signal " + sig.String()))
 		sig = <-sigCh
 		log.Fatalf(
 			`Received signal '%s' during shutdown; exiting immediately`,
