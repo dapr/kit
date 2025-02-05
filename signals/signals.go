@@ -15,6 +15,7 @@ package signals
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/signal"
 
@@ -37,14 +38,15 @@ func Context() context.Context {
 	// panics when called twice
 	close(onlyOneSignalHandler)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancelCause(context.Background())
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, shutdownSignals...)
 
 	go func() {
 		sig := <-sigCh
 		log.Infof(`Received signal '%s'; beginning shutdown`, sig)
-		cancel()
+		//nolint:err113
+		cancel(errors.New("cancelling context, received signal " + sig.String()))
 		sig = <-sigCh
 		log.Fatalf(
 			`Received signal '%s' during shutdown; exiting immediately`,
