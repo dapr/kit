@@ -37,7 +37,8 @@ type holdresp struct {
 }
 
 type OuterCancel struct {
-	ch chan *hold
+	ch        chan *hold
+	cancelErr error
 
 	lock chan struct{}
 
@@ -50,13 +51,14 @@ type OuterCancel struct {
 	shutdownLock *fifo.Mutex
 }
 
-func NewOuterCancel() *OuterCancel {
+func NewOuterCancel(cancelErr error) *OuterCancel {
 	return &OuterCancel{
 		lock:         make(chan struct{}, 1),
 		ch:           make(chan *hold, 1),
 		rcancels:     make(map[uint64]context.CancelFunc),
 		closeCh:      make(chan struct{}),
 		shutdownLock: fifo.New(),
+		cancelErr:    cancelErr,
 	}
 }
 
@@ -122,7 +124,7 @@ func (o *OuterCancel) handleHold(h *hold) {
 		o.rcancelLock.Lock()
 		if !done {
 			close(doneCh)
-			cancel(errors.New("placement is disseminating"))
+			cancel(o.cancelErr)
 			delete(o.rcancels, i)
 			o.wg.Done()
 			done = true
