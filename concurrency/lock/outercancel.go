@@ -37,8 +37,9 @@ type holdresp struct {
 }
 
 type OuterCancel struct {
-	ch        chan *hold
-	cancelErr error
+	ch              chan *hold
+	cancelErr       error
+	gracefulTimeout time.Duration
 
 	lock chan struct{}
 
@@ -51,14 +52,15 @@ type OuterCancel struct {
 	shutdownLock *fifo.Mutex
 }
 
-func NewOuterCancel(cancelErr error) *OuterCancel {
+func NewOuterCancel(cancelErr error, gracefulTimeout time.Duration) *OuterCancel {
 	return &OuterCancel{
-		lock:         make(chan struct{}, 1),
-		ch:           make(chan *hold, 1),
-		rcancels:     make(map[uint64]context.CancelFunc),
-		closeCh:      make(chan struct{}),
-		shutdownLock: fifo.New(),
-		cancelErr:    cancelErr,
+		lock:            make(chan struct{}, 1),
+		ch:              make(chan *hold, 1),
+		rcancels:        make(map[uint64]context.CancelFunc),
+		closeCh:         make(chan struct{}),
+		shutdownLock:    fifo.New(),
+		cancelErr:       cancelErr,
+		gracefulTimeout: gracefulTimeout,
 	}
 }
 
@@ -134,7 +136,7 @@ func (o *OuterCancel) handleHold(h *hold) {
 
 	rcancelGrace := func() {
 		select {
-		case <-time.After(2 * time.Second):
+		case <-time.After(o.gracefulTimeout):
 		case <-o.closeCh:
 		case <-doneCh:
 		}
