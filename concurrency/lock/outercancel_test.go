@@ -29,7 +29,7 @@ func Test_OuterCancel(t *testing.T) {
 	t.Run("can rlock multiple times", func(t *testing.T) {
 		t.Parallel()
 
-		l := NewOuterCancel(errors.New(""))
+		l := NewOuterCancel(errors.New(""), time.Second)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		t.Cleanup(cancel)
@@ -66,7 +66,7 @@ func Test_OuterCancel(t *testing.T) {
 	t.Run("rlock unlock removes cancel state", func(t *testing.T) {
 		t.Parallel()
 
-		l := NewOuterCancel(errors.New(""))
+		l := NewOuterCancel(errors.New(""), time.Second)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		t.Cleanup(cancel)
@@ -92,7 +92,7 @@ func Test_OuterCancel(t *testing.T) {
 	t.Run("calling lock cancels all current rlocks", func(t *testing.T) {
 		t.Parallel()
 
-		l := NewOuterCancel(errors.New(""))
+		l := NewOuterCancel(errors.New(""), time.Second)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		t.Cleanup(cancel)
@@ -122,7 +122,7 @@ func Test_OuterCancel(t *testing.T) {
 	t.Run("rlock when closed should error", func(t *testing.T) {
 		t.Parallel()
 
-		l := NewOuterCancel(errors.New(""))
+		l := NewOuterCancel(errors.New(""), time.Second)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
@@ -142,7 +142,7 @@ func Test_OuterCancel(t *testing.T) {
 	t.Run("lock continues to work after close", func(t *testing.T) {
 		t.Parallel()
 
-		l := NewOuterCancel(errors.New(""))
+		l := NewOuterCancel(errors.New(""), time.Second)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
@@ -158,7 +158,7 @@ func Test_OuterCancel(t *testing.T) {
 	t.Run("rlock blocks until outter unlocks", func(t *testing.T) {
 		t.Parallel()
 
-		l := NewOuterCancel(errors.New(""))
+		l := NewOuterCancel(errors.New(""), time.Second)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		t.Cleanup(cancel)
@@ -192,7 +192,7 @@ func Test_OuterCancel(t *testing.T) {
 	t.Run("lock blocks until outter unlocks", func(t *testing.T) {
 		t.Parallel()
 
-		l := NewOuterCancel(errors.New(""))
+		l := NewOuterCancel(errors.New(""), time.Second)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		t.Cleanup(cancel)
