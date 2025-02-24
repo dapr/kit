@@ -26,6 +26,7 @@ import (
 func Test_OuterCancel(t *testing.T) {
 	t.Parallel()
 
+	//nolint:err113
 	terr := errors.New("test")
 
 	t.Run("can rlock multiple times", func(t *testing.T) {
