@@ -28,8 +28,6 @@ import (
 
 var (
 	ErrManagerAlreadyClosed = errors.New("runner manager already closed")
-
-	log = logger.NewLogger("dapr.kit.concurrency")
 )
 
 // RunnerCloserManager is a RunnerManager that also implements Closing of the
@@ -64,7 +62,7 @@ type RunnerCloserManager struct {
 // NewRunnerCloserManager creates a new RunnerCloserManager with the given
 // grace period and runners.
 // If gracePeriod is nil, the grace period is infinite.
-func NewRunnerCloserManager(gracePeriod *time.Duration, runners ...Runner) *RunnerCloserManager {
+func NewRunnerCloserManager(log logger.Logger, gracePeriod *time.Duration, runners ...Runner) *RunnerCloserManager {
 	c := &RunnerCloserManager{
 		mngr:               NewRunnerManager(runners...),
 		clock:              clock.RealClock{},

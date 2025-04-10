@@ -24,7 +24,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	clocktesting "k8s.io/utils/clock/testing"
+
+	"github.com/dapr/kit/logger"
 )
+
+var log = logger.NewLogger("test")
 
 type mockCloser func() error
 
@@ -34,12 +38,12 @@ func (m mockCloser) Close() error {
 
 func Test_RunnerClosterManager(t *testing.T) {
 	t.Run("runner with no tasks or closers should return nil", func(t *testing.T) {
-		require.NoError(t, NewRunnerCloserManager(nil).Run(context.Background()))
+		require.NoError(t, NewRunnerCloserManager(log, nil).Run(context.Background()))
 	})
 
 	t.Run("runner with a task that completes should return nil", func(t *testing.T) {
 		var i atomic.Int32
-		require.NoError(t, NewRunnerCloserManager(nil, func(context.Context) error {
+		require.NoError(t, NewRunnerCloserManager(log, nil, func(context.Context) error {
 			i.Add(1)
 			return nil
 		}).Run(context.Background()))
@@ -48,7 +52,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("runner with a task and closer that completes should return nil", func(t *testing.T) {
 		var i atomic.Int32
-		mngr := NewRunnerCloserManager(nil, func(context.Context) error {
+		mngr := NewRunnerCloserManager(log, nil, func(context.Context) error {
 			i.Add(1)
 			return nil
 		})
@@ -62,7 +66,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("runner with multiple tasks and closers that complete should return nil", func(t *testing.T) {
 		var i atomic.Int32
-		mngr := NewRunnerCloserManager(nil,
+		mngr := NewRunnerCloserManager(log, nil,
 			func(context.Context) error {
 				i.Add(1)
 				return nil
@@ -100,22 +104,22 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("a runner that errors should error but still call the closers", func(t *testing.T) {
 		var i atomic.Int32
-		mngr := NewRunnerCloserManager(nil,
-			func(ctx context.Context) error {
+		mngr := NewRunnerCloserManager(log, nil,
+			func(context.Context) error {
 				i.Add(1)
 				return errors.New("error")
 			},
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return nil
 			},
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return nil
 			},
 		)
 		require.NoError(t, mngr.AddCloser(
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return nil
 			},
@@ -127,22 +131,22 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("a runner that has closter errors should error", func(t *testing.T) {
 		var i atomic.Int32
-		mngr := NewRunnerCloserManager(nil,
-			func(ctx context.Context) error {
+		mngr := NewRunnerCloserManager(log, nil,
+			func(context.Context) error {
 				i.Add(1)
 				return nil
 			},
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return nil
 			},
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return nil
 			},
 		)
 		require.NoError(t, mngr.AddCloser(
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return errors.New("error")
 			},
@@ -154,22 +158,22 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("a runner with multiple errors should collect all errors (string match)", func(t *testing.T) {
 		var i atomic.Int32
-		mngr := NewRunnerCloserManager(nil,
-			func(ctx context.Context) error {
+		mngr := NewRunnerCloserManager(log, nil,
+			func(context.Context) error {
 				i.Add(1)
 				return errors.New("error")
 			},
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return errors.New("error")
 			},
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return errors.New("error")
 			},
 		)
 		require.NoError(t, mngr.AddCloser(
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return errors.New("closererror")
 			},
@@ -191,22 +195,22 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("a runner with multiple errors should collect all errors (unique)", func(t *testing.T) {
 		var i atomic.Int32
-		mngr := NewRunnerCloserManager(nil,
-			func(ctx context.Context) error {
+		mngr := NewRunnerCloserManager(log, nil,
+			func(context.Context) error {
 				i.Add(1)
 				return errors.New("error1")
 			},
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return errors.New("error2")
 			},
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return errors.New("error3")
 			},
 		)
 		require.NoError(t, mngr.AddCloser(
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return errors.New("closererror1")
 			},
@@ -231,26 +235,26 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("should be able to add runner with New, Add and AddCloser", func(t *testing.T) {
 		var i atomic.Int32
-		mngr := NewRunnerCloserManager(nil,
-			func(ctx context.Context) error {
+		mngr := NewRunnerCloserManager(log, nil,
+			func(context.Context) error {
 				i.Add(1)
 				return nil
 			},
 		)
 		require.NoError(t, mngr.Add(
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return nil
 			},
 		))
 		require.NoError(t, mngr.Add(
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return nil
 			},
 		))
 		require.NoError(t, mngr.AddCloser(
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return nil
 			},
@@ -267,8 +271,8 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("when a runner returns, expect context to be cancelled for other runners, but not for closers returning", func(t *testing.T) {
 		var i atomic.Int32
-		mngr := NewRunnerCloserManager(nil,
-			func(ctx context.Context) error {
+		mngr := NewRunnerCloserManager(log, nil,
+			func(context.Context) error {
 				i.Add(1)
 				return nil
 			},
@@ -295,7 +299,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 		closer1Ch := make(chan struct{})
 		closer2Ch := make(chan struct{})
 		require.NoError(t, mngr.AddCloser(
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				close(closer1Ch)
 				return nil
@@ -327,7 +331,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("when a runner errors, expect context to be cancelled for other runners, but closers should still run", func(t *testing.T) {
 		var i atomic.Int32
-		mngr := NewRunnerCloserManager(nil,
+		mngr := NewRunnerCloserManager(log, nil,
 			func(ctx context.Context) error {
 				i.Add(1)
 				select {
@@ -346,7 +350,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 				}
 				return errors.New("error2")
 			},
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				i.Add(1)
 				return errors.New("error3")
 			},
@@ -384,7 +388,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("a manger started twice should error", func(t *testing.T) {
 		var i atomic.Int32
-		m := NewRunnerCloserManager(nil, func(ctx context.Context) error {
+		m := NewRunnerCloserManager(log, nil, func(context.Context) error {
 			i.Add(1)
 			return nil
 		})
@@ -396,12 +400,12 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("a manger started twice should error", func(t *testing.T) {
 		var i atomic.Int32
-		m := NewRunnerCloserManager(nil, func(ctx context.Context) error {
+		m := NewRunnerCloserManager(log, nil, func(context.Context) error {
 			i.Add(1)
 			return nil
 		})
 
-		require.NoError(t, m.AddCloser(func(ctx context.Context) error {
+		require.NoError(t, m.AddCloser(func(context.Context) error {
 			i.Add(1)
 			return nil
 		}))
@@ -416,13 +420,13 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("adding a task to a started manager should error", func(t *testing.T) {
 		var i atomic.Int32
-		m := NewRunnerCloserManager(nil, func(ctx context.Context) error {
+		m := NewRunnerCloserManager(log, nil, func(context.Context) error {
 			i.Add(1)
 			return nil
 		})
 		require.NoError(t, m.Run(context.Background()))
 		assert.Equal(t, int32(1), i.Load())
-		err := m.Add(func(ctx context.Context) error {
+		err := m.Add(func(context.Context) error {
 			i.Add(1)
 			return nil
 		})
@@ -433,14 +437,14 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("adding a closer to a closing manager should error", func(t *testing.T) {
 		var i atomic.Int32
-		m := NewRunnerCloserManager(nil, func(ctx context.Context) error {
+		m := NewRunnerCloserManager(log, nil, func(context.Context) error {
 			i.Add(1)
 			return nil
 		})
 		require.NoError(t, m.Run(context.Background()))
 		assert.Equal(t, int32(1), i.Load())
 		require.NoError(t, m.Close())
-		err := m.AddCloser(func(ctx context.Context) error {
+		err := m.AddCloser(func(context.Context) error {
 			i.Add(1)
 			return nil
 		})
@@ -450,19 +454,19 @@ func Test_RunnerClosterManager(t *testing.T) {
 	})
 
 	t.Run("if grace period is not given, should have no force shutdown", func(t *testing.T) {
-		mngr := NewRunnerCloserManager(nil)
+		mngr := NewRunnerCloserManager(log, nil)
 		assert.Empty(t, mngr.closers)
 	})
 
 	t.Run("if grace period is given, should have force shutdown", func(t *testing.T) {
 		dur := time.Second
-		mngr := NewRunnerCloserManager(&dur)
+		mngr := NewRunnerCloserManager(log, &dur)
 		assert.Len(t, mngr.closers, 1)
 	})
 
 	t.Run("if closing but grace period not reached, should return", func(t *testing.T) {
 		dur := time.Second
-		mngr := NewRunnerCloserManager(&dur)
+		mngr := NewRunnerCloserManager(log, &dur)
 
 		var i atomic.Int32
 		require.NoError(t, mngr.AddCloser(func() {
@@ -505,7 +509,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("if closing and grace period is reached, should force shutdown", func(t *testing.T) {
 		dur := time.Second
-		mngr := NewRunnerCloserManager(&dur)
+		mngr := NewRunnerCloserManager(log, &dur)
 		assert.Len(t, mngr.closers, 1)
 
 		clock := clocktesting.NewFakeClock(time.Now())
@@ -555,7 +559,7 @@ func TestClose(t *testing.T) {
 	t.Run("calling close should stop the main runner and call all closers", func(t *testing.T) {
 		var i atomic.Int32
 		runnerWaiting := make(chan struct{})
-		mngr := NewRunnerCloserManager(nil, func(ctx context.Context) error {
+		mngr := NewRunnerCloserManager(log, nil, func(ctx context.Context) error {
 			close(runnerWaiting)
 			<-ctx.Done()
 			i.Add(1)
@@ -591,7 +595,7 @@ func TestClose(t *testing.T) {
 	t.Run("calling close should wait for all closers to return", func(t *testing.T) {
 		var i atomic.Int32
 		runnerWaiting := make(chan struct{})
-		mngr := NewRunnerCloserManager(nil, func(ctx context.Context) error {
+		mngr := NewRunnerCloserManager(log, nil, func(ctx context.Context) error {
 			close(runnerWaiting)
 			<-ctx.Done()
 			i.Add(1)
@@ -667,7 +671,7 @@ func TestClose(t *testing.T) {
 		dur := time.Second
 		var i atomic.Int32
 		runnerWaiting := make(chan struct{})
-		mngr := NewRunnerCloserManager(&dur, func(ctx context.Context) error {
+		mngr := NewRunnerCloserManager(log, &dur, func(ctx context.Context) error {
 			close(runnerWaiting)
 			<-ctx.Done()
 			i.Add(1)
@@ -754,7 +758,7 @@ func TestClose(t *testing.T) {
 		dur := time.Second
 		var i atomic.Int32
 		runnerWaiting := make(chan struct{})
-		mngr := NewRunnerCloserManager(&dur, func(ctx context.Context) error {
+		mngr := NewRunnerCloserManager(log, &dur, func(ctx context.Context) error {
 			close(runnerWaiting)
 			<-ctx.Done()
 			i.Add(1)
@@ -820,14 +824,14 @@ func TestClose(t *testing.T) {
 	})
 
 	t.Run("calling close should return the errors from the main runner and all closers", func(t *testing.T) {
-		mngr := NewRunnerCloserManager(nil,
-			func(ctx context.Context) error {
+		mngr := NewRunnerCloserManager(log, nil,
+			func(context.Context) error {
 				return errors.New("error1")
 			},
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				return errors.New("error2")
 			},
-			func(ctx context.Context) error {
+			func(context.Context) error {
 				return errors.New("error3")
 			},
 		)
@@ -864,8 +868,8 @@ func TestClose(t *testing.T) {
 
 	t.Run("calling Close before Run should return immediately", func(t *testing.T) {
 		dur := time.Second
-		mngr := NewRunnerCloserManager(&dur,
-			func(ctx context.Context) error {
+		mngr := NewRunnerCloserManager(log, &dur,
+			func(context.Context) error {
 				return errors.New("error1")
 			},
 		)
@@ -892,7 +896,7 @@ func TestAddCloser(t *testing.T) {
 			expErr:  errors.Join(errors.New("unsupported closer type: int")),
 		},
 		"Add various supported closer types": {
-			closers: []any{new(mockCloser), func(ctx context.Context) error { return nil }, func() error { return nil }, func() {}},
+			closers: []any{new(mockCloser), func(context.Context) error { return nil }, func() error { return nil }, func() {}},
 			expErr:  nil,
 		},
 		"Add combination of supported and unsupported closer types": {
@@ -903,13 +907,13 @@ func TestAddCloser(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := NewRunnerCloserManager(nil).AddCloser(test.closers...)
+			err := NewRunnerCloserManager(log, nil).AddCloser(test.closers...)
 			assert.Equalf(t, test.expErr, err, "%v", err)
 		})
 	}
 
 	t.Run("no error if adding a closer during main routine", func(t *testing.T) {
-		mngr := NewRunnerCloserManager(nil, func(ctx context.Context) error {
+		mngr := NewRunnerCloserManager(log, nil, func(ctx context.Context) error {
 			<-ctx.Done()
 			return nil
 		})
@@ -925,7 +929,7 @@ func TestAddCloser(t *testing.T) {
 	})
 
 	t.Run("should error if closing", func(t *testing.T) {
-		mngr := NewRunnerCloserManager(nil)
+		mngr := NewRunnerCloserManager(log, nil)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		closerCh := make(chan struct{})
@@ -968,7 +972,7 @@ func TestAddCloser(t *testing.T) {
 	})
 
 	t.Run("should error if manager already returned", func(t *testing.T) {
-		mngr := NewRunnerCloserManager(nil)
+		mngr := NewRunnerCloserManager(log, nil)
 		require.NoError(t, mngr.Run(context.Background()))
 		assert.Equal(t, mngr.AddCloser(nil), errors.New("runner manager already closed"))
 	})
@@ -976,7 +980,7 @@ func TestAddCloser(t *testing.T) {
 
 func TestWaitUntilShutdown(t *testing.T) {
 	dur := time.Second * 3
-	mngr := NewRunnerCloserManager(&dur, func(ctx context.Context) error {
+	mngr := NewRunnerCloserManager(log, &dur, func(ctx context.Context) error {
 		<-ctx.Done()
 		return nil
 	})
