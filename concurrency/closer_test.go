@@ -21,10 +21,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dapr/kit/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	clocktesting "k8s.io/utils/clock/testing"
+
+	"github.com/dapr/kit/logger"
 )
 
 var log = logger.NewLogger("test")
