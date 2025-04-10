@@ -388,7 +388,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("a manger started twice should error", func(t *testing.T) {
 		var i atomic.Int32
-		m := NewRunnerCloserManager(log, nil, func(ctx context.Context) error {
+		m := NewRunnerCloserManager(log, nil, func(context.Context) error {
 			i.Add(1)
 			return nil
 		})
@@ -400,12 +400,12 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("a manger started twice should error", func(t *testing.T) {
 		var i atomic.Int32
-		m := NewRunnerCloserManager(log, nil, func(ctx context.Context) error {
+		m := NewRunnerCloserManager(log, nil, func(context.Context) error {
 			i.Add(1)
 			return nil
 		})
 
-		require.NoError(t, m.AddCloser(func(ctx context.Context) error {
+		require.NoError(t, m.AddCloser(func(context.Context) error {
 			i.Add(1)
 			return nil
 		}))
