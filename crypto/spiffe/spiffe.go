@@ -175,10 +175,14 @@ func (s *SPIFFE) runRotation(ctx context.Context) {
 			cert = identity.X509SVID.Certificates[0]
 			s.lock.Unlock()
 			renewTime = renewalTime(cert.NotBefore, cert.NotAfter)
-			s.log.Infof("Successfully renewed workload identity; new cert expires on: %s", cert.NotAfter.String())
+
+			msg := "Successfully renewed workload identity; new cert expires on: %s"
+			args := []interface{}{cert.NotAfter.String()}
 			if identity.JWTSVID != nil {
-				s.log.Infof("New JWT SVID expires on: %s", identity.JWTSVID.Expiry.String())
+				msg += ", new jwt expires on: %s"
+				args = append(args, identity.JWTSVID.Expiry.String())
 			}
+			s.log.Infof(msg, args...)
 
 		case <-ctx.Done():
 			return
