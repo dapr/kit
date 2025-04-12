@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -92,12 +91,10 @@ func (f *file) Run(ctx context.Context) error {
 	defer close(f.closeCh)
 
 	for {
-		_, err := os.Stat(f.caPath)
-		if err == nil {
-			break
-		}
-		if !errors.Is(err, os.ErrNotExist) {
+		if found, err := filesExist(f.caPath, f.jwksPath); err != nil {
 			return err
+		} else if found {
+			break
 		}
 
 		// Trust anchors file not be provided yet, wait.
@@ -115,8 +112,13 @@ func (f *file) Run(ctx context.Context) error {
 		return err
 	}
 
+	targets := []string{f.caPath}
+	if f.jwksPath != "" {
+		targets = append(targets, f.jwksPath)
+	}
+
 	fs, err := fswatcher.New(fswatcher.Options{
-		Targets:  []string{filepath.Dir(f.caPath)},
+		Targets:  targets,
 		Interval: &f.fsWatcherInterval,
 	})
 	if err != nil {
@@ -126,6 +128,10 @@ func (f *file) Run(ctx context.Context) error {
 	close(f.readyCh)
 
 	f.log.Infof("Watching trust anchors file '%s' for changes", f.caPath)
+	if f.jwksPath != "" {
+		f.log.Infof("Watching JWT bundle file '%s' for changes", f.jwksPath)
+	}
+
 	return concurrency.NewRunnerManager(
 		func(ctx context.Context) error {
 			return fs.Run(ctx, f.caEvent)
@@ -261,4 +267,20 @@ func (f *file) Watch(ctx context.Context, ch chan<- []byte) {
 			}
 		}
 	}
+}
+
+func filesExist(paths ...string) (bool, error) {
+	for _, path := range paths {
+		if path == "" {
+			continue
+		}
+
+		if _, err := os.Stat(path); err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				return false, nil
+			}
+			return false, fmt.Errorf("failed to stat file '%s': %w", path, err)
+		}
+	}
+	return true, nil
 }
