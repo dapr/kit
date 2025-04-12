@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/spiffe/go-spiffe/v2/bundle/jwtbundle"
 	"github.com/spiffe/go-spiffe/v2/bundle/x509bundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 
@@ -63,6 +64,16 @@ func (m *multi) GetX509BundleForTrustDomain(td spiffeid.TrustDomain) (*x509bundl
 	for tad, ta := range m.trustAnchors {
 		if td.Compare(tad) == 0 {
 			return ta.GetX509BundleForTrustDomain(td)
+		}
+	}
+
+	return nil, ErrTrustDomainNotFound
+}
+
+func (m *multi) GetJWTBundleForTrustDomain(td spiffeid.TrustDomain) (*jwtbundle.Bundle, error) {
+	for tad, ta := range m.trustAnchors {
+		if td.Compare(tad) == 0 {
+			return ta.GetJWTBundleForTrustDomain(td)
 		}
 	}
 

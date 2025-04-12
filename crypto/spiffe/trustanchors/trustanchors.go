@@ -16,6 +16,7 @@ package trustanchors
 import (
 	"context"
 
+	"github.com/spiffe/go-spiffe/v2/bundle/jwtbundle"
 	"github.com/spiffe/go-spiffe/v2/bundle/x509bundle"
 )
 
@@ -23,8 +24,10 @@ import (
 // Allows consumers to get the current trust anchor bundle, and subscribe to
 // bundle updates.
 type Interface interface {
-	// Source implements the SPIFFE trust anchor bundle source.
+	// Source implements the SPIFFE trust anchor x509 bundle source.
 	x509bundle.Source
+	// Source implements the SPIFFE trust anchor jwt bundle source.
+	jwtbundle.Source
 
 	// CurrentTrustAnchors returns the current trust anchor PEM bundle.
 	CurrentTrustAnchors(ctx context.Context) ([]byte, error)
