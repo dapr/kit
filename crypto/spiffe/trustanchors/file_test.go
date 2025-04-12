@@ -32,8 +32,8 @@ func TestFile_Run(t *testing.T) {
 	t.Run("if Run multiple times, expect error", func(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -75,8 +75,8 @@ func TestFile_Run(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 
 		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -103,8 +103,8 @@ func TestFile_Run(t *testing.T) {
 		require.NoError(t, os.WriteFile(tmp, nil, 0o600))
 
 		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -128,8 +128,8 @@ func TestFile_Run(t *testing.T) {
 		require.NoError(t, os.WriteFile(tmp, []byte("garbage data"), 0o600))
 
 		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -155,8 +155,8 @@ func TestFile_Run(t *testing.T) {
 		require.NoError(t, os.WriteFile(tmp, root, 0o600))
 
 		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -181,8 +181,8 @@ func TestFile_Run(t *testing.T) {
 		require.NoError(t, os.WriteFile(tmp, pki.RootCertPEM, 0o600))
 
 		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -212,8 +212,8 @@ func TestFile_Run(t *testing.T) {
 		require.NoError(t, os.WriteFile(tmp, root, 0o600))
 
 		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -243,8 +243,8 @@ func TestFile_Run(t *testing.T) {
 		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
 
 		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -274,8 +274,8 @@ func TestFile_Run(t *testing.T) {
 		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
 
 		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -312,8 +312,8 @@ func TestFile_GetX509BundleForTrustDomain(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, root, 0o600))
 		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -337,7 +337,7 @@ func TestFile_GetX509BundleForTrustDomain(t *testing.T) {
 		require.NoError(t, err)
 		bundle, err := f.GetX509BundleForTrustDomain(trustDomain1)
 		require.NoError(t, err)
-		assert.Equal(t, f.bundle, bundle)
+		assert.Equal(t, f.x509Bundle, bundle)
 		b1, err := bundle.Marshal()
 		require.NoError(t, err)
 		assert.Equal(t, pki.RootCertPEM, b1)
@@ -346,7 +346,7 @@ func TestFile_GetX509BundleForTrustDomain(t *testing.T) {
 		require.NoError(t, err)
 		bundle, err = f.GetX509BundleForTrustDomain(trustDomain2)
 		require.NoError(t, err)
-		assert.Equal(t, f.bundle, bundle)
+		assert.Equal(t, f.x509Bundle, bundle)
 		b2, err := bundle.Marshal()
 		require.NoError(t, err)
 		assert.Equal(t, pki.RootCertPEM, b2)
@@ -360,8 +360,8 @@ func TestFile_Watch(t *testing.T) {
 		require.NoError(t, os.WriteFile(tmp, pki.RootCertPEM, 0o600))
 
 		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -401,8 +401,8 @@ func TestFile_Watch(t *testing.T) {
 		require.NoError(t, os.WriteFile(tmp, pki.RootCertPEM, 0o600))
 
 		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -447,8 +447,8 @@ func TestFile_Watch(t *testing.T) {
 		require.NoError(t, os.WriteFile(tmp, pki1.RootCertPEM, 0o600))
 
 		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -530,8 +530,8 @@ func TestFile_CurrentTrustAnchors(t *testing.T) {
 		require.NoError(t, os.WriteFile(tmp, pki1.RootCertPEM, 0o600))
 
 		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)

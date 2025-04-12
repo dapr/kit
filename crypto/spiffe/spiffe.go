@@ -39,8 +39,13 @@ import (
 // containing both X.509 certificates and a JWT token.
 type SVIDResponse struct {
 	X509Certificates []*x509.Certificate
-	JWT              string
-	Audiences        []string
+
+	// JWT is a string as Go does not have a native JWT type and we
+	// did not want to rely on a 3rd party library for this interface.
+	// This does mean that the JWT may need to be re-parsed and additional
+	//
+	JWT       string
+	Audiences []string
 }
 
 // Identity contains both X.509 and JWT SVIDs for a workload.
@@ -227,6 +232,10 @@ func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 
 	// If we have a JWT token, parse it and include it in the identity
 	if svidResponse.JWT != "" {
+		s.trustAnchors.GetX509BundleForTrustDomain(spiffeID.TrustDomain())
+		// we are using ParseInsecure here as the expectation is that the
+		// requestSVIDFn will have already parsed and validate the JWT SVID
+		// before returning it.
 		jwtSvid, err := jwtsvid.ParseInsecure(svidResponse.JWT, svidResponse.Audiences)
 		if err != nil {
 			s.log.Warnf("Failed to parse JWT SVID: %v", err)

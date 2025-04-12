@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/spiffe/go-spiffe/v2/bundle/jwtbundle"
 	"github.com/spiffe/go-spiffe/v2/bundle/x509bundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 
@@ -28,22 +29,41 @@ import (
 // static is a TrustAcnhors implementation that uses a static list of trust
 // anchors.
 type static struct {
-	bundle  *x509bundle.Bundle
-	anchors []byte
-	running atomic.Bool
-	closeCh chan struct{}
+	x509Bundle *x509bundle.Bundle
+	jwtBundle  *jwtbundle.Bundle
+	anchors    []byte
+	running    atomic.Bool
+	closeCh    chan struct{}
 }
 
-func FromStatic(anchors []byte) (Interface, error) {
-	trustAnchorCerts, err := pem.DecodePEMCertificates(anchors)
+type OptionsStatic struct {
+	Anchors []byte
+	Jwks    []byte
+}
+
+func FromStatic(opts OptionsStatic) (Interface, error) {
+	// Create empty trust domain for now
+	emptyTD := spiffeid.TrustDomain{}
+
+	var jwtBundle *jwtbundle.Bundle
+	if opts.Jwks != nil {
+		var err error
+		jwtBundle, err = jwtbundle.Parse(emptyTD, opts.Jwks)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create JWT bundle: %w", err)
+		}
+	}
+
+	trustAnchorCerts, err := pem.DecodePEMCertificates(opts.Anchors)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode trust anchors: %w", err)
 	}
 
 	return &static{
-		anchors: anchors,
-		bundle:  x509bundle.FromX509Authorities(spiffeid.TrustDomain{}, trustAnchorCerts),
-		closeCh: make(chan struct{}),
+		anchors:    opts.Anchors,
+		x509Bundle: x509bundle.FromX509Authorities(emptyTD, trustAnchorCerts),
+		jwtBundle:  jwtBundle,
+		closeCh:    make(chan struct{}),
 	}, nil
 }
 
@@ -63,7 +83,11 @@ func (s *static) Run(ctx context.Context) error {
 }
 
 func (s *static) GetX509BundleForTrustDomain(spiffeid.TrustDomain) (*x509bundle.Bundle, error) {
-	return s.bundle, nil
+	return s.x509Bundle, nil
+}
+
+func (s *static) GetJWTBundleForTrustDomain(td spiffeid.TrustDomain) (*jwtbundle.Bundle, error) {
+	return s.jwtBundle, nil
 }
 
 func (s *static) Watch(ctx context.Context, _ chan<- []byte) {

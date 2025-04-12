@@ -21,6 +21,12 @@ import (
 	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
 )
 
+var (
+	errNoX509SVIDAvailable = errors.New("no X509 SVID available")
+	errNoJWTSVIDAvailable  = errors.New("no JWT SVID available")
+	errAudienceMismatch    = errors.New("JWT SVID has different audiences than requested")
+)
+
 // svidSource is an implementation of both go-spiffe x509svid.Source and jwtsvid.Source interfaces.
 type svidSource struct {
 	spiffe *SPIFFE
@@ -36,7 +42,7 @@ func (s *svidSource) GetX509SVID() (*x509svid.SVID, error) {
 
 	svid := s.spiffe.currentX509SVID
 	if svid == nil {
-		return nil, errors.New("no X509 SVID available")
+		return nil, errNoX509SVIDAvailable
 	}
 
 	return svid, nil
@@ -44,7 +50,7 @@ func (s *svidSource) GetX509SVID() (*x509svid.SVID, error) {
 
 // FetchJWTSVID returns the current JWT SVID.
 // Implements the go-spiffe jwtsvid.Source interface.
-func (s *svidSource) FetchJWTSVID(ctx context.Context, params jwtsvid.Params) (*jwtsvid.SVID, error) {
+func (s *svidSource) FetchJWTSVID(_ context.Context, params jwtsvid.Params) (*jwtsvid.SVID, error) {
 	s.spiffe.lock.RLock()
 	defer s.spiffe.lock.RUnlock()
 
@@ -52,11 +58,12 @@ func (s *svidSource) FetchJWTSVID(ctx context.Context, params jwtsvid.Params) (*
 
 	svid := s.spiffe.currentJWTSVID
 	if svid == nil {
-		return nil, errors.New("no JWT SVID available")
+		return nil, errNoJWTSVIDAvailable
 	}
 
+	// verify that the audience being requested is the same as the audience in the SVID
 	if !audiencesMatch(svid.Audience, []string{params.Audience}) {
-		return nil, errors.New("JWT SVID has different audiences than requested")
+		return nil, errAudienceMismatch
 	}
 
 	return svid, nil
