@@ -29,6 +29,11 @@ type eventCh[T any] struct {
 	ch chan<- T
 }
 
+type Options struct {
+	Interval time.Duration
+	Clock    clock.Clock
+}
+
 // Batcher is a one to many event batcher. It batches events and sends them to
 // the added event channel subscribers. Events are sent to the channels after
 // the interval has elapsed. If events with the same key are received within
@@ -47,22 +52,24 @@ type Batcher[K comparable, T any] struct {
 }
 
 // New creates a new Batcher with the given interval and key type.
-func New[K comparable, T any](interval time.Duration) *Batcher[K, T] {
+func New[K comparable, T any](opts Options) *Batcher[K, T] {
+	cl := opts.Clock
+	if cl == nil {
+		cl = clock.RealClock{}
+	}
+
 	b := &Batcher[K, T]{
-		interval: interval,
-		clock:    clock.RealClock{},
+		interval: opts.Interval,
+		clock:    cl,
 		closeCh:  make(chan struct{}),
 	}
 
-	b.queue = queue.NewProcessor[K, *item[K, T]](b.execute)
+	b.queue = queue.NewProcessor[K, *item[K, T]](queue.Options[K, *item[K, T]]{
+		ExecuteFn: b.execute,
+		Clock:     opts.Clock,
+	})
 
 	return b
-}
-
-// WithClock sets the clock used by the batcher. Used for testing.
-func (b *Batcher[K, T]) WithClock(clock clock.Clock) {
-	b.queue.WithClock(clock)
-	b.clock = clock
 }
 
 // Subscribe adds a new event channel subscriber. If the batcher is closed, the

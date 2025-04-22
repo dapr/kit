@@ -20,6 +20,7 @@ type Slice[T any] interface {
 	Append(items ...T) int
 	Len() int
 	Slice() []T
+	Store(items ...T)
 }
 
 type slice[T any] struct {
@@ -48,4 +49,10 @@ func (s *slice[T]) Slice() []T {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	return s.data
+}
+
+func (s *slice[T]) Store(items ...T) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.data = items
 }
