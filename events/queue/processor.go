@@ -18,7 +18,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"k8s.io/utils/clock"
 	kclock "k8s.io/utils/clock"
 )
 
@@ -45,7 +44,7 @@ type Processor[K comparable, T Queueable[K]] struct {
 func NewProcessor[K comparable, T Queueable[K]](opts Options[K, T]) *Processor[K, T] {
 	cl := opts.Clock
 	if cl == nil {
-		cl = clock.RealClock{}
+		cl = kclock.RealClock{}
 	}
 	return &Processor[K, T]{
 		executeFn:          opts.ExecuteFn,

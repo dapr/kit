@@ -15,9 +15,6 @@ package loop
 
 import (
 	"context"
-	"sync/atomic"
-
-	"github.com/dapr/kit/concurrency/fifo"
 )
 
 type HandlerFunc[T any] func(context.Context, T) error
@@ -31,8 +28,6 @@ type Loop[T any] struct {
 	handler HandlerFunc[T]
 
 	closeCh chan struct{}
-	closed  atomic.Bool
-	lock    fifo.Mutex
 }
 
 func New[T any](opts Options[T]) *Loop[T] {
