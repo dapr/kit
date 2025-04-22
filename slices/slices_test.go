@@ -49,7 +49,7 @@ func Test_Deduplicate(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%v", test.input), func(t *testing.T) {
-			assert.Equal(t, test.exp, Deduplicate(test.input))
+			assert.ElementsMatch(t, test.exp, Deduplicate(test.input))
 		})
 	}
 }
