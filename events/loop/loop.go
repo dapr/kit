@@ -20,7 +20,8 @@ import (
 type HandlerFunc[T any] func(context.Context, T) error
 
 type Options[T any] struct {
-	Handler HandlerFunc[T]
+	Handler    HandlerFunc[T]
+	BufferSize *uint64
 }
 
 type Loop[T any] struct {
@@ -31,8 +32,13 @@ type Loop[T any] struct {
 }
 
 func New[T any](opts Options[T]) *Loop[T] {
+	size := 1
+	if opts.BufferSize != nil {
+		size = int(*opts.BufferSize)
+	}
+
 	return &Loop[T]{
-		queue:   make(chan T, 1),
+		queue:   make(chan T, size),
 		closeCh: make(chan struct{}),
 		handler: opts.Handler,
 	}
@@ -46,7 +52,10 @@ func (l *Loop[T]) Run(ctx context.Context) error {
 		select {
 		case req = <-l.queue:
 		case <-ctx.Done():
-			return ctx.Err()
+		}
+
+		if err := ctx.Err(); err != nil {
+			return err
 		}
 
 		if err := l.handler(ctx, req); err != nil {
