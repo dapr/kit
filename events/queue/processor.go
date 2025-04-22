@@ -56,7 +56,7 @@ func NewProcessor[K comparable, T Queueable[K]](opts Options[K, T]) *Processor[K
 	}
 }
 
-// Enqueue adds a new item to the queue.
+// Enqueue adds a new items to the queue.
 // If a item with the same ID already exists, it'll be replaced.
 func (p *Processor[K, T]) Enqueue(rs ...T) {
 	if p.stopped.Load() {
