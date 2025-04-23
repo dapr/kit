@@ -23,6 +23,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"os"
 )
 
 // DecodePEMCertificatesChain takes a PEM-encoded x509 certificates byte array
@@ -186,4 +187,25 @@ func PublicKeysEqual(a, b crypto.PublicKey) (bool, error) {
 	default:
 		return false, fmt.Errorf("unrecognised public key type: %T", a)
 	}
+}
+
+// GetPEM loads a PEM-encoded file (certificate or key).
+func GetPEM(val string) ([]byte, error) {
+	// If val is already a PEM-encoded string, return it as-is
+	if IsValidPEM(val) {
+		return []byte(val), nil
+	}
+
+	// Assume it's a file
+	pemBytes, err := os.ReadFile(val)
+	if err != nil {
+		return nil, fmt.Errorf("value is neither a valid file path or nor a valid PEM-encoded string: %w", err)
+	}
+	return pemBytes, nil
+}
+
+// IsValidPEM validates the provided input has PEM formatted block.
+func IsValidPEM(val string) bool {
+	block, _ := pem.Decode([]byte(val))
+	return block != nil
 }
