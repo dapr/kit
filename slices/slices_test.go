@@ -1,8 +1,5 @@
-//go:build unit
-// +build unit
-
 /*
-Copyright 2023 The Dapr Authors
+Copyright 2025 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -14,24 +11,45 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package fswatcher
+package slices
 
 import (
+	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/dapr/kit/events/batcher"
 )
 
-func TestWithBatcher(t *testing.T) {
-	b := batcher.New[string, struct{}](batcher.Options{
-		Interval: time.Millisecond * 10,
-	})
-	f, err := New(Options{})
-	require.NoError(t, err)
-	f.WithBatcher(b)
-	assert.Equal(t, b, f.batcher)
+func Test_Deduplicate(t *testing.T) {
+	tests := []struct {
+		input []int
+		exp   []int
+	}{
+		{
+			input: []int{1, 2, 3},
+			exp:   []int{1, 2, 3},
+		},
+		{
+			input: []int{1, 2, 2, 3, 1},
+			exp:   []int{1, 2, 3},
+		},
+		{
+			input: []int{5, 5, 5, 5},
+			exp:   []int{5},
+		},
+		{
+			input: []int{},
+			exp:   []int{},
+		},
+		{
+			input: []int{42},
+			exp:   []int{42},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("%v", test.input), func(t *testing.T) {
+			assert.ElementsMatch(t, test.exp, Deduplicate(test.input))
+		})
+	}
 }

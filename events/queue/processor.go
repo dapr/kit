@@ -21,6 +21,11 @@ import (
 	kclock "k8s.io/utils/clock"
 )
 
+type Options[K comparable, T Queueable[K]] struct {
+	ExecuteFn func(r T)
+	Clock     kclock.Clock
+}
+
 // Processor manages the queue of items and processes them at the correct time.
 type Processor[K comparable, T Queueable[K]] struct {
 	executeFn          func(r T)
@@ -36,40 +41,45 @@ type Processor[K comparable, T Queueable[K]] struct {
 
 // NewProcessor returns a new Processor object.
 // executeFn is the callback invoked when the item is to be executed; this will be invoked in a background goroutine.
-func NewProcessor[K comparable, T Queueable[K]](executeFn func(r T)) *Processor[K, T] {
+func NewProcessor[K comparable, T Queueable[K]](opts Options[K, T]) *Processor[K, T] {
+	cl := opts.Clock
+	if cl == nil {
+		cl = kclock.RealClock{}
+	}
 	return &Processor[K, T]{
-		executeFn:          executeFn,
+		executeFn:          opts.ExecuteFn,
 		queue:              newQueue[K, T](),
 		processorRunningCh: make(chan struct{}, 1),
 		stopCh:             make(chan struct{}),
 		resetCh:            make(chan struct{}, 1),
-		clock:              kclock.RealClock{},
+		clock:              cl,
 	}
 }
 
-// WithClock sets the clock used by the processor. Used for testing.
-func (p *Processor[K, T]) WithClock(clock kclock.Clock) *Processor[K, T] {
-	p.clock = clock
-	return p
-}
-
-// Enqueue adds a new item to the queue.
+// Enqueue adds a new items to the queue.
 // If a item with the same ID already exists, it'll be replaced.
-func (p *Processor[K, T]) Enqueue(r T) {
+func (p *Processor[K, T]) Enqueue(rs ...T) {
 	if p.stopped.Load() {
 		return
 	}
 
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	for _, r := range rs {
+		p.enqueue(r)
+	}
+}
+
+func (p *Processor[K, T]) enqueue(r T) {
 	// Insert or replace the item in the queue
 	// If the item added or replaced is the first one in the queue, we need to know that
-	p.lock.Lock()
 	peek, ok := p.queue.Peek()
 	isFirst := (ok && peek.Key() == r.Key()) // This is going to be true if the item being replaced is the first one in the queue
 	p.queue.Insert(r, true)
 	peek, _ = p.queue.Peek()         // No need to check for "ok" here because we know this will return an item
 	isFirst = isFirst || (peek == r) // This is also going to be true if the item just added landed at the front of the queue
 	p.process(isFirst)
-	p.lock.Unlock()
 }
 
 // Dequeue removes a item from the queue.

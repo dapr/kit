@@ -26,22 +26,23 @@ func TestNew(t *testing.T) {
 	t.Parallel()
 
 	interval := time.Millisecond * 10
-	b := New[string, struct{}](interval)
-	assert.Equal(t, interval, b.interval)
+	b := New[string, struct{}](Options{Interval: interval})
 	assert.False(t, b.closed.Load())
 }
 
 func TestWithClock(t *testing.T) {
-	b := New[string, struct{}](time.Millisecond * 10)
 	fakeClock := testingclock.NewFakeClock(time.Now())
-	b.WithClock(fakeClock)
+	b := New[string, struct{}](Options{
+		Interval: time.Millisecond * 10,
+		Clock:    fakeClock,
+	})
 	assert.Equal(t, fakeClock, b.clock)
 }
 
 func TestSubscribe(t *testing.T) {
 	t.Parallel()
 
-	b := New[string, struct{}](time.Millisecond * 10)
+	b := New[string, struct{}](Options{Interval: time.Millisecond * 10})
 	ch := make(chan struct{})
 	b.Subscribe(context.Background(), ch)
 	assert.Len(t, b.eventChs, 1)
@@ -51,8 +52,10 @@ func TestBatch(t *testing.T) {
 	t.Parallel()
 
 	fakeClock := testingclock.NewFakeClock(time.Now())
-	b := New[string, struct{}](time.Millisecond * 10)
-	b.WithClock(fakeClock)
+	b := New[string, struct{}](Options{
+		Interval: time.Millisecond * 10,
+		Clock:    fakeClock,
+	})
 	ch1 := make(chan struct{})
 	ch2 := make(chan struct{})
 	ch3 := make(chan struct{})
@@ -104,8 +107,10 @@ func TestBatch(t *testing.T) {
 
 	t.Run("ensure items are received in order with latest value", func(t *testing.T) {
 		fakeClock := testingclock.NewFakeClock(time.Now())
-		b := New[int, int](time.Millisecond * 10)
-		b.WithClock(fakeClock)
+		b := New[int, int](Options{
+			Interval: time.Millisecond * 10,
+			Clock:    fakeClock,
+		})
 		t.Cleanup(b.Close)
 		ch1 := make(chan int, 10)
 		ch2 := make(chan int, 10)
@@ -136,7 +141,7 @@ func TestBatch(t *testing.T) {
 func TestClose(t *testing.T) {
 	t.Parallel()
 
-	b := New[string, struct{}](time.Millisecond * 10)
+	b := New[string, struct{}](Options{Interval: time.Millisecond * 10})
 	ch := make(chan struct{})
 	b.Subscribe(context.Background(), ch)
 	assert.Len(t, b.eventChs, 1)
@@ -148,7 +153,7 @@ func TestClose(t *testing.T) {
 func TestSubscribeAfterClose(t *testing.T) {
 	t.Parallel()
 
-	b := New[string, struct{}](time.Millisecond * 10)
+	b := New[string, struct{}](Options{Interval: time.Millisecond * 10})
 	b.Close()
 	ch := make(chan struct{})
 	b.Subscribe(context.Background(), ch)

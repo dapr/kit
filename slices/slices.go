@@ -1,8 +1,5 @@
-//go:build unit
-// +build unit
-
 /*
-Copyright 2023 The Dapr Authors
+Copyright 2021 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -14,24 +11,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package fswatcher
+package slices
 
-import (
-	"testing"
-	"time"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/dapr/kit/events/batcher"
-)
-
-func TestWithBatcher(t *testing.T) {
-	b := batcher.New[string, struct{}](batcher.Options{
-		Interval: time.Millisecond * 10,
-	})
-	f, err := New(Options{})
-	require.NoError(t, err)
-	f.WithBatcher(b)
-	assert.Equal(t, b, f.batcher)
+// Deduplicate removes duplicate elements from a slice.
+func Deduplicate[S ~[]E, E comparable](s S) S {
+	ded := make(map[E]struct{}, len(s))
+	for _, v := range s {
+		ded[v] = struct{}{}
+	}
+	unique := make(S, 0, len(ded))
+	for v := range ded {
+		unique = append(unique, v)
+	}
+	return unique
 }

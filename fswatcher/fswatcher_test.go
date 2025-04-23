@@ -191,8 +191,10 @@ func TestFSWatcher(t *testing.T) {
 
 	t.Run("should batch events of the same file for multiple events", func(t *testing.T) {
 		clock := clocktesting.NewFakeClock(time.Time{})
-		batcher := batcher.New[string, struct{}](time.Millisecond * 500)
-		batcher.WithClock(clock)
+		batcher := batcher.New[string, struct{}](batcher.Options{
+			Interval: time.Millisecond * 500,
+			Clock:    clock,
+		})
 		dir1 := t.TempDir()
 		dir2 := t.TempDir()
 		fp1 := filepath.Join(dir1, "test1.txt")

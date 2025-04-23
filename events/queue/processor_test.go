@@ -31,10 +31,12 @@ func TestProcessor(t *testing.T) {
 	// Create the processor
 	clock := clocktesting.NewFakeClock(time.Now())
 	executeCh := make(chan *queueableItem)
-	processor := NewProcessor[string](func(r *queueableItem) {
-		executeCh <- r
+	processor := NewProcessor[string, *queueableItem](Options[string, *queueableItem]{
+		ExecuteFn: func(r *queueableItem) {
+			executeCh <- r
+		},
+		Clock: clock,
 	})
-	processor.clock = clock
 
 	assertExecutedItem := func(t *testing.T) *queueableItem {
 		t.Helper()
@@ -347,10 +349,12 @@ func TestClose(t *testing.T) {
 	// Create the processor
 	clock := clocktesting.NewFakeClock(time.Now())
 	executeCh := make(chan *queueableItem)
-	processor := NewProcessor[string](func(r *queueableItem) {
-		executeCh <- r
+	processor := NewProcessor[string, *queueableItem](Options[string, *queueableItem]{
+		ExecuteFn: func(r *queueableItem) {
+			executeCh <- r
+		},
+		Clock: clock,
 	})
-	processor.clock = clock
 
 	processor.Enqueue(newTestItem(1, clock.Now().Add(time.Second)))
 	processor.Enqueue(newTestItem(2, clock.Now().Add(time.Second*2)))
