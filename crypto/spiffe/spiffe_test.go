@@ -47,8 +47,10 @@ func Test_Run(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		s := New(Options{
 			Log: logger.NewLogger("test"),
-			RequestSVIDFn: func(context.Context, []byte) ([]*x509.Certificate, error) {
-				return []*x509.Certificate{pki.LeafCert}, nil
+			RequestSVIDFn: func(context.Context, []byte) (*SVIDResponse, error) {
+				return &SVIDResponse{
+					X509Certificates: []*x509.Certificate{pki.LeafCert},
+				}, nil
 			},
 		})
 
@@ -79,7 +81,7 @@ func Test_Run(t *testing.T) {
 	t.Run("should return error if initial fetch errors", func(t *testing.T) {
 		s := New(Options{
 			Log: logger.NewLogger("test"),
-			RequestSVIDFn: func(context.Context, []byte) ([]*x509.Certificate, error) {
+			RequestSVIDFn: func(context.Context, []byte) (*SVIDResponse, error) {
 				return nil, errors.New("this is an error")
 			},
 		})
@@ -95,9 +97,11 @@ func Test_Run(t *testing.T) {
 		var fetches atomic.Int32
 		s := New(Options{
 			Log: logger.NewLogger("test"),
-			RequestSVIDFn: func(context.Context, []byte) ([]*x509.Certificate, error) {
+			RequestSVIDFn: func(context.Context, []byte) (*SVIDResponse, error) {
 				fetches.Add(1)
-				return []*x509.Certificate{pki.LeafCert}, nil
+				return &SVIDResponse{
+					X509Certificates: []*x509.Certificate{pki.LeafCert},
+				}, nil
 			},
 		})
 		now := time.Now()
@@ -144,9 +148,11 @@ func Test_Run(t *testing.T) {
 		var fetches atomic.Int32
 		s := New(Options{
 			Log: logger.NewLogger("test"),
-			RequestSVIDFn: func(context.Context, []byte) ([]*x509.Certificate, error) {
+			RequestSVIDFn: func(context.Context, []byte) (*SVIDResponse, error) {
 				fetches.Add(1)
-				return respCert, respErr
+				return &SVIDResponse{
+					X509Certificates: respCert,
+				}, respErr
 			},
 		})
 		now := time.Now()
