@@ -37,7 +37,7 @@ func TestWithX509FromX509(t *testing.T) {
 	source := &mockX509Source{}
 	ctx := WithX509(context.Background(), source)
 
-	retrieved, ok := FromX509(ctx)
+	retrieved, ok := X509From(ctx)
 	if !ok {
 		t.Error("Failed to retrieve X509 source from context")
 	}
@@ -50,7 +50,7 @@ func TestWithJWTFromJWT(t *testing.T) {
 	source := &mockJWTSource{}
 	ctx := WithJWT(context.Background(), source)
 
-	retrieved, ok := FromJWT(ctx)
+	retrieved, ok := JWTFrom(ctx)
 	if !ok {
 		t.Error("Failed to retrieve JWT source from context")
 	}

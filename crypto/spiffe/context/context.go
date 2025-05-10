@@ -52,14 +52,14 @@ func WithJWT(ctx context.Context, source jwtsvid.Source) context.Context {
 	return context.WithValue(ctx, jwtSvidKey, source)
 }
 
-// FromX509 retrieves the x509 SVID source from the context.
-func FromX509(ctx context.Context) (x509svid.Source, bool) {
+// X509From retrieves the x509 SVID source from the context.
+func X509From(ctx context.Context) (x509svid.Source, bool) {
 	svid, ok := ctx.Value(x509SvidKey).(x509svid.Source)
 	return svid, ok
 }
 
-// FromJWT retrieves the JWT SVID source from the context.
-func FromJWT(ctx context.Context) (jwtsvid.Source, bool) {
+// JWTFrom retrieves the JWT SVID source from the context.
+func JWTFrom(ctx context.Context) (jwtsvid.Source, bool) {
 	svid, ok := ctx.Value(jwtSvidKey).(jwtsvid.Source)
 	return svid, ok
 }

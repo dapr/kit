@@ -62,6 +62,7 @@ func (s *svidSource) FetchJWTSVID(_ context.Context, params jwtsvid.Params) (*jw
 	}
 
 	// verify that the audience being requested is the same as the audience in the SVID
+	// WARN: we do not check extra audiences here.
 	if !audiencesMatch(svid.Audience, []string{params.Audience}) {
 		return nil, errAudienceMismatch
 	}
