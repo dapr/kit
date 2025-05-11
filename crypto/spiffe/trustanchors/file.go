@@ -33,6 +33,14 @@ import (
 	"github.com/dapr/kit/logger"
 )
 
+var (
+	// ErrTrustAnchorsClosed is returned when an operation is performed on closed trust anchors.
+	ErrTrustAnchorsClosed = errors.New("trust anchors is closed")
+
+	// ErrFailedToReadTrustAnchorsFile is returned when the trust anchors file cannot be read.
+	ErrFailedToReadTrustAnchorsFile = errors.New("failed to read trust anchors file")
+)
+
 type OptionsFile struct {
 	Log      logger.Logger
 	CAPath   string
@@ -145,7 +153,7 @@ func (f *file) Run(ctx context.Context) error {
 					f.log.Info("Trust anchors file changed, reloading trust anchors")
 
 					if err = f.updateAnchors(ctx); err != nil {
-						return fmt.Errorf("failed to read trust anchors file '%s': %v", f.caPath, err)
+						return fmt.Errorf("%w: '%s': %v", ErrFailedToReadTrustAnchorsFile, f.caPath, err)
 					}
 				}
 			}
@@ -158,7 +166,7 @@ func (f *file) CurrentTrustAnchors(ctx context.Context) ([]byte, error) {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case <-f.closeCh:
-		return nil, errors.New("trust anchors is closed")
+		return nil, ErrTrustAnchorsClosed
 	case <-f.readyCh:
 	}
 
@@ -219,7 +227,7 @@ func (f *file) updateAnchors(ctx context.Context) error {
 func (f *file) GetX509BundleForTrustDomain(_ spiffeid.TrustDomain) (*x509bundle.Bundle, error) {
 	select {
 	case <-f.closeCh:
-		return nil, errors.New("trust anchors is closed")
+		return nil, ErrTrustAnchorsClosed
 	case <-f.readyCh:
 	}
 
@@ -232,7 +240,7 @@ func (f *file) GetX509BundleForTrustDomain(_ spiffeid.TrustDomain) (*x509bundle.
 func (f *file) GetJWTBundleForTrustDomain(_ spiffeid.TrustDomain) (*jwtbundle.Bundle, error) {
 	select {
 	case <-f.closeCh:
-		return nil, errors.New("trust anchors is closed")
+		return nil, ErrTrustAnchorsClosed
 	case <-f.readyCh:
 	}
 

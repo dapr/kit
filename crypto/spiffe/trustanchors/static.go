@@ -86,7 +86,7 @@ func (s *static) GetX509BundleForTrustDomain(spiffeid.TrustDomain) (*x509bundle.
 	return s.x509Bundle, nil
 }
 
-func (s *static) GetJWTBundleForTrustDomain(td spiffeid.TrustDomain) (*jwtbundle.Bundle, error) {
+func (s *static) GetJWTBundleForTrustDomain(_ spiffeid.TrustDomain) (*jwtbundle.Bundle, error) {
 	return s.jwtBundle, nil
 }
 
