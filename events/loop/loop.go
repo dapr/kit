@@ -19,13 +19,13 @@ import (
 )
 
 type Handler[T any] interface {
-	Handle(context.Context, T) error
+	Handle(ctx context.Context, t T) error
 }
 
 type Interface[T any] interface {
-	Run(context.Context) error
-	Enqueue(T)
-	Close(T)
+	Run(ctx context.Context) error
+	Enqueue(t T)
+	Close(t T)
 	Reset(h Handler[T], size uint64) Interface[T]
 }
 

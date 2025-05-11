@@ -19,6 +19,6 @@ import (
 	"github.com/dapr/kit/events/loop"
 )
 
-func Test_Fake(t *testing.T) {
+func Test_Fake(*testing.T) {
 	var _ loop.Interface[int] = New[int]()
 }
