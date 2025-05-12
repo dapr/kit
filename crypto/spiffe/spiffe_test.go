@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
+	"github.com/spiffe/go-spiffe/v2/svid/jwtsvid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	clocktesting "k8s.io/utils/clock/testing"
@@ -37,6 +38,70 @@ func Test_renewalTime(t *testing.T) {
 	in1Min := now.Add(time.Minute)
 	in30 := now.Add(time.Second * 30)
 	assert.Equal(t, in30, renewalTime(now, in1Min))
+}
+
+func Test_calculateRenewalTime(t *testing.T) {
+	now := time.Now()
+
+	certShort := &x509.Certificate{
+		NotBefore: now,
+		NotAfter:  now.Add(10 * time.Hour),
+	}
+
+	certLong := &x509.Certificate{
+		NotBefore: now,
+		NotAfter:  now.Add(24 * time.Hour),
+	}
+
+	// Expected renewal times for certificates (50% of validity period)
+	certShortRenewal := now.Add(5 * time.Hour)
+
+	// Create JWT SVIDs with different expiry times
+	jwtEarlier := &jwtsvid.SVID{
+		Expiry: now.Add(8 * time.Hour),
+	}
+
+	jwtLater := &jwtsvid.SVID{
+		Expiry: now.Add(30 * time.Hour),
+	}
+
+	// Expected JWT renewal time (50% of remaining time)
+	jwtEarlierRenewal := now.Add(4 * time.Hour)
+
+	tests := []struct {
+		name     string
+		cert     *x509.Certificate
+		jwt      *jwtsvid.SVID
+		expected time.Time
+	}{
+		{
+			name:     "Certificate only",
+			cert:     certShort,
+			jwt:      nil,
+			expected: certShortRenewal,
+		},
+		{
+			name:     "Certificate and JWT, JWT earlier",
+			cert:     certLong,
+			jwt:      jwtEarlier,
+			expected: jwtEarlierRenewal,
+		},
+		{
+			name:     "Certificate and JWT, Certificate earlier",
+			cert:     certShort,
+			jwt:      jwtLater,
+			expected: certShortRenewal,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := calculateRenewalTime(now, tt.cert, tt.jwt)
+
+			assert.WithinDuration(t, tt.expected, actual, time.Millisecond,
+				"Renewal time does not match expected value")
+		})
+	}
 }
 
 func Test_Run(t *testing.T) {

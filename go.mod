@@ -3,6 +3,7 @@ module github.com/dapr/kit
 go 1.23.1
 
 require (
+	github.com/alecthomas/assert/v2 v2.11.0
 	github.com/alphadose/haxmap v1.3.1
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/fsnotify/fsnotify v1.7.0
@@ -26,11 +27,13 @@ require (
 )
 
 require (
+	github.com/alecthomas/repr v0.4.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.1 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/iter v1.0.2 // indirect

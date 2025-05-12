@@ -19,6 +19,8 @@ import (
 
 	"github.com/spiffe/go-spiffe/v2/svid/jwtsvid"
 	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type mockX509Source struct{}
@@ -38,12 +40,8 @@ func TestWithX509FromX509(t *testing.T) {
 	ctx := WithX509(context.Background(), source)
 
 	retrieved, ok := X509From(ctx)
-	if !ok {
-		t.Error("Failed to retrieve X509 source from context")
-	}
-	if retrieved != source {
-		t.Error("Retrieved source does not match the original source")
-	}
+	assert.True(t, ok, "Failed to retrieve X509 source from context")
+	assert.Equal(t, x509svid.Source(source), retrieved, "Retrieved source does not match the original source")
 }
 
 func TestWithJWTFromJWT(t *testing.T) {
@@ -51,12 +49,8 @@ func TestWithJWTFromJWT(t *testing.T) {
 	ctx := WithJWT(context.Background(), source)
 
 	retrieved, ok := JWTFrom(ctx)
-	if !ok {
-		t.Error("Failed to retrieve JWT source from context")
-	}
-	if retrieved != source {
-		t.Error("Retrieved source does not match the original source")
-	}
+	assert.True(t, ok, "Failed to retrieve JWT source from context")
+	assert.Equal(t, jwtsvid.Source(source), retrieved, "Retrieved source does not match the original source")
 }
 
 func TestWithFrom(t *testing.T) {
@@ -65,10 +59,6 @@ func TestWithFrom(t *testing.T) {
 
 	// Should be able to retrieve using the legacy From function
 	retrieved, ok := From(ctx)
-	if !ok {
-		t.Error("Failed to retrieve X509 source from context using legacy From")
-	}
-	if retrieved != x509Source {
-		t.Error("Retrieved source does not match the original source using legacy From")
-	}
+	assert.True(t, ok, "Failed to retrieve X509 source from context using legacy From")
+	assert.Equal(t, x509svid.Source(x509Source), retrieved, "Retrieved source does not match the original source using legacy From")
 }
