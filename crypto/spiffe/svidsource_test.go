@@ -22,7 +22,6 @@ import (
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/spiffe/go-spiffe/v2/svid/jwtsvid"
 	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -66,7 +65,7 @@ func TestFetchJWTSVID(t *testing.T) {
 			Audience: "",
 		})
 
-		assert.Nil(t, svid)
+		require.Nil(t, svid)
 		require.ErrorIs(t, err, errAudienceRequired)
 	})
 
@@ -84,7 +83,7 @@ func TestFetchJWTSVID(t *testing.T) {
 			Audience: "test-audience",
 		})
 
-		assert.Nil(t, svid)
+		require.Nil(t, svid)
 		require.ErrorIs(t, err, errNoJWTSVIDAvailable)
 	})
 
@@ -106,13 +105,13 @@ func TestFetchJWTSVID(t *testing.T) {
 			Audience: "requested-audience",
 		})
 
-		assert.Nil(t, svid)
+		require.Nil(t, svid)
 		require.Error(t, err)
 
 		// Verify the specific error type and contents
 		audienceErr, ok := err.(*audienceMismatchError)
 		require.True(t, ok, "Expected audienceMismatchError")
-		assert.Equal(t, "JWT SVID has different audiences than requested: expected requested-audience, got actual-audience", audienceErr.Error())
+		require.Equal(t, "JWT SVID has different audiences than requested: expected requested-audience, got actual-audience", audienceErr.Error())
 	})
 
 	t.Run("should return JWT SVID when audience matches", func(t *testing.T) {
@@ -132,8 +131,8 @@ func TestFetchJWTSVID(t *testing.T) {
 			Audience: "test-audience",
 		})
 
-		assert.NoError(t, err)
-		assert.Equal(t, mockJWTSVID, svid)
+		require.NoError(t, err)
+		require.Equal(t, mockJWTSVID, svid)
 	})
 
 	t.Run("should wait for readyCh before checking SVID", func(t *testing.T) {
@@ -168,7 +167,7 @@ func TestFetchJWTSVID(t *testing.T) {
 			}{svid, err}
 		}()
 
-		// Assert that fetch is blocked
+		// require that fetch is blocked
 		select {
 		case <-resultCh:
 			t.Fatal("FetchJWTSVID should be blocked until readyCh is closed")
@@ -183,7 +182,7 @@ func TestFetchJWTSVID(t *testing.T) {
 		select {
 		case result := <-resultCh:
 			require.NoError(t, result.err)
-			assert.NotNil(t, result.svid)
+			require.NotNil(t, result.svid)
 		case <-time.After(100 * time.Millisecond):
 			t.Fatal("FetchJWTSVID should have completed after readyCh was closed")
 		}
