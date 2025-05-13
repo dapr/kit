@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package trustanchors
+package static
 
 import (
 	"context"
@@ -24,6 +24,7 @@ import (
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 
 	"github.com/dapr/kit/crypto/pem"
+	"github.com/dapr/kit/crypto/spiffe/trustanchors"
 )
 
 // static is a TrustAcnhors implementation that uses a static list of trust
@@ -36,12 +37,12 @@ type static struct {
 	closeCh    chan struct{}
 }
 
-type OptionsStatic struct {
+type Options struct {
 	Anchors []byte
 	Jwks    []byte
 }
 
-func FromStatic(opts OptionsStatic) (Interface, error) {
+func From(opts Options) (trustanchors.Interface, error) {
 	// Create empty trust domain for now
 	emptyTD := spiffeid.TrustDomain{}
 

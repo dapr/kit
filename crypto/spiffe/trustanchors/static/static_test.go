@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package trustanchors
+package static
 
 import (
 	"context"
@@ -27,30 +27,30 @@ import (
 
 func TestFromStatic(t *testing.T) {
 	t.Run("empty root should return error", func(t *testing.T) {
-		_, err := FromStatic(OptionsStatic{})
+		_, err := From(Options{})
 		require.Error(t, err)
 	})
 
 	t.Run("garbage data should return error", func(t *testing.T) {
-		_, err := FromStatic(OptionsStatic{Anchors: []byte("garbage data")})
+		_, err := From(Options{Anchors: []byte("garbage data")})
 		require.Error(t, err)
 	})
 
 	t.Run("just garbage data should return error", func(t *testing.T) {
-		_, err := FromStatic(OptionsStatic{Anchors: []byte("garbage data")})
+		_, err := From(Options{Anchors: []byte("garbage data")})
 		require.Error(t, err)
 	})
 
 	t.Run("garbage data in root should return error", func(t *testing.T) {
 		pki := test.GenPKI(t, test.PKIOptions{})
 		root := pki.RootCertPEM[10:]
-		_, err := FromStatic(OptionsStatic{Anchors: root})
+		_, err := From(Options{Anchors: root})
 		require.Error(t, err)
 	})
 
 	t.Run("single root should be correctly parsed", func(t *testing.T) {
 		pki := test.GenPKI(t, test.PKIOptions{})
-		ta, err := FromStatic(OptionsStatic{Anchors: pki.RootCertPEM})
+		ta, err := From(Options{Anchors: pki.RootCertPEM})
 		require.NoError(t, err)
 		taPEM, err := ta.CurrentTrustAnchors(context.Background())
 		require.NoError(t, err)
@@ -61,7 +61,7 @@ func TestFromStatic(t *testing.T) {
 		pki := test.GenPKI(t, test.PKIOptions{})
 		//nolint:gocritic
 		root := append(pki.RootCertPEM, []byte("garbage data")...)
-		ta, err := FromStatic(OptionsStatic{Anchors: root})
+		ta, err := From(Options{Anchors: root})
 		require.NoError(t, err)
 		taPEM, err := ta.CurrentTrustAnchors(context.Background())
 		require.NoError(t, err)
@@ -72,7 +72,7 @@ func TestFromStatic(t *testing.T) {
 		pki1, pki2 := test.GenPKI(t, test.PKIOptions{}), test.GenPKI(t, test.PKIOptions{})
 		//nolint:gocritic
 		roots := append(pki1.RootCertPEM, pki2.RootCertPEM...)
-		ta, err := FromStatic(OptionsStatic{Anchors: roots})
+		ta, err := From(Options{Anchors: roots})
 		require.NoError(t, err)
 		taPEM, err := ta.CurrentTrustAnchors(context.Background())
 		require.NoError(t, err)
@@ -85,7 +85,7 @@ func TestStatic_GetX509BundleForTrustDomain(t *testing.T) {
 		pki := test.GenPKI(t, test.PKIOptions{})
 		//nolint:gocritic
 		root := append(pki.RootCertPEM, []byte("garbage data")...)
-		ta, err := FromStatic(OptionsStatic{Anchors: root})
+		ta, err := From(Options{Anchors: root})
 		require.NoError(t, err)
 		s, ok := ta.(*static)
 		require.True(t, ok)
@@ -113,7 +113,7 @@ func TestStatic_GetX509BundleForTrustDomain(t *testing.T) {
 func TestStatic_Run(t *testing.T) {
 	t.Run("Run multiple times should return error", func(t *testing.T) {
 		pki := test.GenPKI(t, test.PKIOptions{})
-		ta, err := FromStatic(OptionsStatic{Anchors: pki.RootCertPEM})
+		ta, err := From(Options{Anchors: pki.RootCertPEM})
 		require.NoError(t, err)
 		s, ok := ta.(*static)
 		require.True(t, ok)
@@ -154,7 +154,7 @@ func TestStatic_Run(t *testing.T) {
 func TestStatic_Watch(t *testing.T) {
 	t.Run("should return when context is cancelled", func(t *testing.T) {
 		pki := test.GenPKI(t, test.PKIOptions{})
-		ta, err := FromStatic(OptionsStatic{Anchors: pki.RootCertPEM})
+		ta, err := From(Options{Anchors: pki.RootCertPEM})
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -176,7 +176,7 @@ func TestStatic_Watch(t *testing.T) {
 
 	t.Run("should return when cancel is closed via closed Run", func(t *testing.T) {
 		pki := test.GenPKI(t, test.PKIOptions{})
-		ta, err := FromStatic(OptionsStatic{Anchors: pki.RootCertPEM})
+		ta, err := From(Options{Anchors: pki.RootCertPEM})
 		require.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())

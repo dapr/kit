@@ -16,6 +16,8 @@ package spiffe
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/spiffe/go-spiffe/v2/svid/jwtsvid"
 	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
@@ -24,7 +26,7 @@ import (
 var (
 	errNoX509SVIDAvailable = errors.New("no X509 SVID available")
 	errNoJWTSVIDAvailable  = errors.New("no JWT SVID available")
-	errAudienceMismatch    = errors.New("JWT SVID has different audiences than requested")
+	errAudienceRequired    = errors.New("audience is required")
 )
 
 // svidSource is an implementation of both go-spiffe x509svid.Source and jwtsvid.Source interfaces.
@@ -48,11 +50,26 @@ func (s *svidSource) GetX509SVID() (*x509svid.SVID, error) {
 	return svid, nil
 }
 
+// audienceMismatchError is an error that contains information about mismatched audiences
+type audienceMismatchError struct {
+	Expected []string
+	Actual   []string
+}
+
+func (e *audienceMismatchError) Error() string {
+	return fmt.Sprintf("JWT SVID has different audiences than requested: expected %s, got %s",
+		strings.Join(e.Expected, ", "), strings.Join(e.Actual, ", "))
+}
+
 // FetchJWTSVID returns the current JWT SVID.
 // Implements the go-spiffe jwtsvid.Source interface.
 func (s *svidSource) FetchJWTSVID(_ context.Context, params jwtsvid.Params) (*jwtsvid.SVID, error) {
 	s.spiffe.lock.RLock()
 	defer s.spiffe.lock.RUnlock()
+
+	if params.Audience == "" {
+		return nil, errAudienceRequired
+	}
 
 	<-s.spiffe.readyCh
 
@@ -64,7 +81,10 @@ func (s *svidSource) FetchJWTSVID(_ context.Context, params jwtsvid.Params) (*jw
 	// verify that the audience being requested is the same as the audience in the SVID
 	// WARN: we do not check extra audiences here.
 	if !audiencesMatch(svid.Audience, []string{params.Audience}) {
-		return nil, errAudienceMismatch
+		return nil, &audienceMismatchError{
+			Expected: []string{params.Audience},
+			Actual:   svid.Audience,
+		}
 	}
 
 	return svid, nil

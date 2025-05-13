@@ -244,10 +244,15 @@ func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 		// we are using ParseInsecure here as the expectation is that the
 		// requestSVIDFn will have already parsed and validate the JWT SVID
 		// before returning it.
+		//
+		// we are parsing the token using our SPIFFE ID's trust domain
+		// as the audience as we expect the issuer to always include
+		// that as an audience since that ensures that the token is
+		// valid for us and our trust domain.
 		audiences := []string{spiffeID.TrustDomain().Name()}
 		jwtSvid, err := jwtsvid.ParseInsecure(svidResponse.JWT, audiences)
 		if err != nil {
-			s.log.Warnf("Failed to parse JWT SVID: %v", err)
+			s.log.Errorf("Failed to parse JWT SVID: %v, continuing without JWT SVID", err)
 		} else {
 			identity.JWTSVID = jwtSvid
 			s.log.Infof("Successfully received JWT SVID with expiry: %s", jwtSvid.Expiry.String())
@@ -277,7 +282,7 @@ func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 		}
 
 		if svidResponse.JWT != "" {
-			files["token.jwt"] = []byte(svidResponse.JWT)
+			files["jwt_svid.token"] = []byte(svidResponse.JWT)
 		}
 
 		if err := s.dir.Write(files); err != nil {

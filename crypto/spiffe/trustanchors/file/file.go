@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package trustanchors
+package file
 
 import (
 	"context"
@@ -29,6 +29,7 @@ import (
 
 	"github.com/dapr/kit/concurrency"
 	"github.com/dapr/kit/crypto/pem"
+	"github.com/dapr/kit/crypto/spiffe/trustanchors"
 	"github.com/dapr/kit/fswatcher"
 	"github.com/dapr/kit/logger"
 )
@@ -41,10 +42,10 @@ var (
 	ErrFailedToReadTrustAnchorsFile = errors.New("failed to read trust anchors file")
 )
 
-type OptionsFile struct {
+type Options struct {
 	Log      logger.Logger
 	CAPath   string
-	JwksPath string
+	JwksPath *string
 }
 
 // file is a TrustAnchors implementation that uses a file as the source of trust
@@ -52,7 +53,7 @@ type OptionsFile struct {
 type file struct {
 	log        logger.Logger
 	caPath     string
-	jwksPath   string
+	jwksPath   *string
 	x509Bundle *x509bundle.Bundle
 	jwtBundle  *jwtbundle.Bundle
 	rootPEM    []byte
@@ -76,7 +77,7 @@ type file struct {
 	caEvent chan struct{}
 }
 
-func FromFile(opts OptionsFile) Interface {
+func From(opts Options) trustanchors.Interface {
 	return &file{
 		fsWatcherInterval:     time.Millisecond * 500,
 		initFileWatchInterval: time.Second,
@@ -99,7 +100,12 @@ func (f *file) Run(ctx context.Context) error {
 	defer close(f.closeCh)
 
 	for {
-		if found, err := filesExist(f.caPath, f.jwksPath); err != nil {
+		fs := []string{f.caPath}
+		if f.jwksPath != nil {
+			fs = append(fs, *f.jwksPath)
+		}
+
+		if found, err := filesExist(fs...); err != nil {
 			return err
 		} else if found {
 			break
@@ -121,8 +127,8 @@ func (f *file) Run(ctx context.Context) error {
 	}
 
 	targets := []string{f.caPath}
-	if f.jwksPath != "" {
-		targets = append(targets, f.jwksPath)
+	if f.jwksPath != nil {
+		targets = append(targets, *f.jwksPath)
 	}
 
 	fs, err := fswatcher.New(fswatcher.Options{
@@ -136,7 +142,7 @@ func (f *file) Run(ctx context.Context) error {
 	close(f.readyCh)
 
 	f.log.Infof("Watching trust anchors file '%s' for changes", f.caPath)
-	if f.jwksPath != "" {
+	if f.jwksPath != nil {
 		f.log.Infof("Watching JWT bundle file '%s' for changes", f.jwksPath)
 	}
 
@@ -194,10 +200,10 @@ func (f *file) updateAnchors(ctx context.Context) error {
 	f.rootPEM = rootPEMs
 	f.x509Bundle = x509bundle.FromX509Authorities(spiffeid.TrustDomain{}, trustAnchorCerts)
 
-	if f.jwksPath != "" {
-		jwks, err := os.ReadFile(f.jwksPath)
+	if f.jwksPath != nil {
+		jwks, err := os.ReadFile(*f.jwksPath)
 		if err != nil {
-			return fmt.Errorf("failed to read JWT bundle file '%s': %w", f.jwksPath, err)
+			return fmt.Errorf("failed to read JWT bundle file '%s': %w", *f.jwksPath, err)
 		}
 
 		jwtBundle, err := jwtbundle.Parse(spiffeid.TrustDomain{}, jwks)

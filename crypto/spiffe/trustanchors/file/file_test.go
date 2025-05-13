@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package trustanchors
+package file
 
 import (
 	"context"
@@ -31,7 +31,7 @@ import (
 func TestFile_Run(t *testing.T) {
 	t.Run("if Run multiple times, expect error", func(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
-		ta := FromFile(OptionsFile{
+		ta := From(Options{
 			Log:    logger.NewLogger("test"),
 			CAPath: tmp,
 		})
@@ -74,7 +74,7 @@ func TestFile_Run(t *testing.T) {
 	t.Run("if file is not found and context cancelled, should return ctx.Err", func(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 
-		ta := FromFile(OptionsFile{
+		ta := From(Options{
 			Log:    logger.NewLogger("test"),
 			CAPath: tmp,
 		})
@@ -102,7 +102,7 @@ func TestFile_Run(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, nil, 0o600))
 
-		ta := FromFile(OptionsFile{
+		ta := From(Options{
 			Log:    logger.NewLogger("test"),
 			CAPath: tmp,
 		})
@@ -127,7 +127,7 @@ func TestFile_Run(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, []byte("garbage data"), 0o600))
 
-		ta := FromFile(OptionsFile{
+		ta := From(Options{
 			Log:    logger.NewLogger("test"),
 			CAPath: tmp,
 		})
@@ -154,7 +154,7 @@ func TestFile_Run(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, root, 0o600))
 
-		ta := FromFile(OptionsFile{
+		ta := From(Options{
 			Log:    logger.NewLogger("test"),
 			CAPath: tmp,
 		})
@@ -180,7 +180,7 @@ func TestFile_Run(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, pki.RootCertPEM, 0o600))
 
-		ta := FromFile(OptionsFile{
+		ta := From(Options{
 			Log:    logger.NewLogger("test"),
 			CAPath: tmp,
 		})
@@ -211,7 +211,7 @@ func TestFile_Run(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, root, 0o600))
 
-		ta := FromFile(OptionsFile{
+		ta := From(Options{
 			Log:    logger.NewLogger("test"),
 			CAPath: tmp,
 		})
@@ -242,7 +242,7 @@ func TestFile_Run(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
 
-		ta := FromFile(OptionsFile{
+		ta := From(Options{
 			Log:    logger.NewLogger("test"),
 			CAPath: tmp,
 		})
@@ -273,7 +273,7 @@ func TestFile_Run(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
 
-		ta := FromFile(OptionsFile{
+		ta := From(Options{
 			Log:    logger.NewLogger("test"),
 			CAPath: tmp,
 		})
@@ -311,7 +311,7 @@ func TestFile_GetX509BundleForTrustDomain(t *testing.T) {
 		root := append(pki.RootCertPEM, []byte("garbage data")...)
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, root, 0o600))
-		ta := FromFile(OptionsFile{
+		ta := From(Options{
 			Log:    logger.NewLogger("test"),
 			CAPath: tmp,
 		})
@@ -359,7 +359,7 @@ func TestFile_Watch(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, pki.RootCertPEM, 0o600))
 
-		ta := FromFile(OptionsFile{
+		ta := From(Options{
 			Log:    logger.NewLogger("test"),
 			CAPath: tmp,
 		})
@@ -400,7 +400,7 @@ func TestFile_Watch(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, pki.RootCertPEM, 0o600))
 
-		ta := FromFile(OptionsFile{
+		ta := From(Options{
 			Log:    logger.NewLogger("test"),
 			CAPath: tmp,
 		})
@@ -446,7 +446,7 @@ func TestFile_Watch(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, pki1.RootCertPEM, 0o600))
 
-		ta := FromFile(OptionsFile{
+		ta := From(Options{
 			Log:    logger.NewLogger("test"),
 			CAPath: tmp,
 		})
@@ -529,7 +529,7 @@ func TestFile_CurrentTrustAnchors(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, pki1.RootCertPEM, 0o600))
 
-		ta := FromFile(OptionsFile{
+		ta := From(Options{
 			Log:    logger.NewLogger("test"),
 			CAPath: tmp,
 		})
