@@ -176,14 +176,14 @@ func Test_Run(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		errCh := make(chan error)
 		go func() {
+			select {
+			case <-s.readyCh:
+				assert.Fail(t, "readyCh should not be closed")
+			default:
+			}
+
 			errCh <- s.Run(ctx)
 		}()
-
-		select {
-		case <-s.readyCh:
-			assert.Fail(t, "readyCh should not be closed")
-		default:
-		}
 
 		assert.Eventually(t, clock.HasWaiters, time.Second, time.Millisecond)
 		assert.Equal(t, int32(1), fetches.Load())
@@ -227,14 +227,14 @@ func Test_Run(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		errCh := make(chan error)
 		go func() {
+			select {
+			case <-s.readyCh:
+				assert.Fail(t, "readyCh should not be closed")
+			default:
+			}
+
 			errCh <- s.Run(ctx)
 		}()
-
-		select {
-		case <-s.readyCh:
-			assert.Fail(t, "readyCh should not be closed")
-		default:
-		}
 
 		assert.Eventually(t, clock.HasWaiters, time.Second, time.Millisecond)
 		assert.Equal(t, int32(1), fetches.Load())
