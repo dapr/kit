@@ -35,6 +35,12 @@ import (
 	"github.com/dapr/kit/logger"
 )
 
+const (
+	// renewalDivisor represents the divisor for calculating renewal time.
+	// A value of 2 means renewal at 50% of the validity period.
+	renewalDivisor = 2
+)
+
 // SVIDResponse represents the response from the SVID request function,
 // containing both X.509 certificates and a JWT token.
 type SVIDResponse struct {
@@ -303,7 +309,7 @@ func (s *SPIFFE) JWTSVIDSource() jwtsvid.Source {
 
 // renewalTime is 50% through the certificate validity period.
 func renewalTime(notBefore, notAfter time.Time) time.Time {
-	return notBefore.Add(notAfter.Sub(notBefore) / 2)
+	return notBefore.Add(notAfter.Sub(notBefore) / renewalDivisor)
 }
 
 // calculateRenewalTime returns the earlier renewal time between the X.509 certificate
@@ -315,7 +321,7 @@ func calculateRenewalTime(now time.Time, cert *x509.Certificate, jwtSVID *jwtsvi
 		return certRenewal
 	}
 
-	jwtRenewal := now.Add(jwtSVID.Expiry.Sub(now) / 2)
+	jwtRenewal := now.Add(jwtSVID.Expiry.Sub(now) / renewalDivisor)
 
 	if jwtRenewal.Before(certRenewal) {
 		return jwtRenewal

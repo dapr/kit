@@ -67,7 +67,7 @@ func TestFetchJWTSVID(t *testing.T) {
 		})
 
 		assert.Nil(t, svid)
-		assert.ErrorIs(t, err, errAudienceRequired)
+		require.ErrorIs(t, err, errAudienceRequired)
 	})
 
 	t.Run("should return error when no JWT SVID available", func(t *testing.T) {
@@ -85,7 +85,7 @@ func TestFetchJWTSVID(t *testing.T) {
 		})
 
 		assert.Nil(t, svid)
-		assert.ErrorIs(t, err, errNoJWTSVIDAvailable)
+		require.ErrorIs(t, err, errNoJWTSVIDAvailable)
 	})
 
 	t.Run("should return error when audience doesn't match", func(t *testing.T) {
@@ -107,7 +107,7 @@ func TestFetchJWTSVID(t *testing.T) {
 		})
 
 		assert.Nil(t, svid)
-		assert.Error(t, err)
+		require.Error(t, err)
 
 		// Verify the specific error type and contents
 		audienceErr, ok := err.(*audienceMismatchError)
@@ -182,7 +182,7 @@ func TestFetchJWTSVID(t *testing.T) {
 		// Now fetch should complete
 		select {
 		case result := <-resultCh:
-			assert.NoError(t, result.err)
+			require.NoError(t, result.err)
 			assert.NotNil(t, result.svid)
 		case <-time.After(100 * time.Millisecond):
 			t.Fatal("FetchJWTSVID should have completed after readyCh was closed")
