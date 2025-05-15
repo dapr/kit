@@ -15,58 +15,91 @@ package loop
 
 import (
 	"context"
+	"sync"
 )
 
-type HandlerFunc[T any] func(context.Context, T) error
-
-type Options[T any] struct {
-	Handler    HandlerFunc[T]
-	BufferSize *uint64
+type Handler[T any] interface {
+	Handle(ctx context.Context, t T) error
 }
 
-type Loop[T any] struct {
+type Interface[T any] interface {
+	Run(ctx context.Context) error
+	Enqueue(t T)
+	Close(t T)
+	Reset(h Handler[T], size uint64) Interface[T]
+}
+
+type loop[T any] struct {
 	queue   chan T
-	handler HandlerFunc[T]
+	handler Handler[T]
 
+	closed  bool
 	closeCh chan struct{}
+	lock    sync.RWMutex
 }
 
-func New[T any](opts Options[T]) *Loop[T] {
-	size := 1
-	if opts.BufferSize != nil {
-		size = int(*opts.BufferSize)
-	}
-
-	return &Loop[T]{
+func New[T any](h Handler[T], size uint64) Interface[T] {
+	return &loop[T]{
 		queue:   make(chan T, size),
+		handler: h,
 		closeCh: make(chan struct{}),
-		handler: opts.Handler,
 	}
 }
 
-func (l *Loop[T]) Run(ctx context.Context) error {
+func Empty[T any]() Interface[T] {
+	return new(loop[T])
+}
+
+func (l *loop[T]) Run(ctx context.Context) error {
 	defer close(l.closeCh)
 
 	for {
-		var req T
-		select {
-		case req = <-l.queue:
-		case <-ctx.Done():
+		req, ok := <-l.queue
+		if !ok {
+			return nil
 		}
 
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-
-		if err := l.handler(ctx, req); err != nil {
+		if err := l.handler.Handle(ctx, req); err != nil {
 			return err
 		}
 	}
 }
 
-func (l *Loop[T]) Enqueue(req T) {
+func (l *loop[T]) Enqueue(req T) {
+	l.lock.RLock()
+	defer l.lock.RUnlock()
+
+	if l.closed {
+		return
+	}
+
 	select {
 	case l.queue <- req:
 	case <-l.closeCh:
 	}
+}
+
+func (l *loop[T]) Close(req T) {
+	l.lock.Lock()
+	l.closed = true
+	l.queue <- req
+	close(l.queue)
+	l.lock.Unlock()
+	<-l.closeCh
+}
+
+func (l *loop[T]) Reset(h Handler[T], size uint64) Interface[T] {
+	if l == nil {
+		return New[T](h, size)
+	}
+
+	l.closed = false
+	l.closeCh = make(chan struct{})
+	l.handler = h
+
+	// TODO: @joshvanl: use a ring buffer so that we don't need to reallocate and
+	// improve performance.
+	l.queue = make(chan T, size)
+
+	return l
 }
