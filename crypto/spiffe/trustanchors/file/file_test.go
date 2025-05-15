@@ -547,6 +547,7 @@ func TestFile_CurrentTrustAnchors(t *testing.T) {
 		//nolint:gocritic
 		roots := append(pki1.RootCertPEM, pki2.RootCertPEM...)
 		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
+		time.Sleep(time.Millisecond * 10) // adding a small delay to ensure the file watcher has time to pick up the change
 		assert.EventuallyWithT(t, func(c *assert.CollectT) {
 			pem, err := ta.CurrentTrustAnchors(context.Background())
 			require.NoError(t, err)
@@ -556,6 +557,7 @@ func TestFile_CurrentTrustAnchors(t *testing.T) {
 		//nolint:gocritic
 		roots = append(pki1.RootCertPEM, append(pki2.RootCertPEM, pki3.RootCertPEM...)...)
 		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
+		time.Sleep(time.Millisecond * 10) // adding a small delay to ensure the file watcher has time to pick up the change
 		assert.EventuallyWithT(t, func(c *assert.CollectT) {
 			pem, err := ta.CurrentTrustAnchors(context.Background())
 			require.NoError(t, err)
