@@ -25,6 +25,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/spiffe/go-spiffe/v2/svid/jwtsvid"
 	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
 	"k8s.io/utils/clock"
 
@@ -34,8 +35,29 @@ import (
 	"github.com/dapr/kit/logger"
 )
 
+const (
+	// renewalDivisor represents the divisor for calculating renewal time.
+	// A value of 2 means renewal at 50% of the validity period.
+	renewalDivisor = 2
+)
+
+// SVIDResponse represents the response from the SVID request function,
+// containing both X.509 certificates and a JWT token.
+type SVIDResponse struct {
+	X509Certificates []*x509.Certificate
+	JWT              *string
+}
+
+// Identity contains both X.509 and JWT SVIDs for a workload.
+type Identity struct {
+	X509SVID *x509svid.SVID
+	JWTSVID  *jwtsvid.SVID
+}
+
 type (
-	RequestSVIDFn func(context.Context, []byte) ([]*x509.Certificate, error)
+	// RequestSVIDFn is the function type that requests SVIDs from a SPIFFE server,
+	// returning both X.509 certificates and a JWT token.
+	RequestSVIDFn func(context.Context, []byte) (*SVIDResponse, error)
 )
 
 type Options struct {
@@ -51,11 +73,12 @@ type Options struct {
 	TrustAnchors trustanchors.Interface
 }
 
-// SPIFFE is a readable/writeable store of a SPIFFE X.509 SVID.
-// Used to manage a workload SVID, and share read-only interfaces to consumers.
+// SPIFFE is a readable/writeable store of SPIFFE SVID credentials.
+// Used to manage workload SVIDs, and share read-only interfaces to consumers.
 type SPIFFE struct {
-	currentSVID   *x509svid.SVID
-	requestSVIDFn RequestSVIDFn
+	currentX509SVID *x509svid.SVID
+	currentJWTSVID  *jwtsvid.SVID
+	requestSVIDFn   RequestSVIDFn
 
 	dir          *dir.Dir
 	trustAnchors trustanchors.Interface
@@ -92,15 +115,16 @@ func (s *SPIFFE) Run(ctx context.Context) error {
 	}
 
 	s.lock.Lock()
-	s.log.Info("Fetching initial identity certificate")
-	initialCert, err := s.fetchIdentityCertificate(ctx)
+	s.log.Info("Fetching initial identity")
+	initialIdentity, err := s.fetchIdentity(ctx)
 	if err != nil {
 		close(s.readyCh)
 		s.lock.Unlock()
-		return fmt.Errorf("failed to retrieve the initial identity certificate: %w", err)
+		return fmt.Errorf("failed to retrieve the initial identity: %w", err)
 	}
 
-	s.currentSVID = initialCert
+	s.currentX509SVID = initialIdentity.X509SVID
+	s.currentJWTSVID = initialIdentity.JWTSVID
 	close(s.readyCh)
 	s.lock.Unlock()
 
@@ -121,28 +145,48 @@ func (s *SPIFFE) Ready(ctx context.Context) error {
 	}
 }
 
-// runRotation starts up the manager responsible for renewing the workload
-// certificate. Receives the initial certificate to calculate the next rotation
-// time.
+// logIdentityInfo creates a log message with expiry details for both X.509 and JWT SVIDs
+func (s *SPIFFE) logIdentityInfo(prefix string, cert *x509.Certificate, jwtSVID *jwtsvid.SVID, renewTime *time.Time) {
+	msg := prefix + "; cert expires on: %s"
+	args := []any{cert.NotAfter.String()}
+
+	if jwtSVID != nil {
+		msg += ", jwt expires on: %s"
+		args = append(args, jwtSVID.Expiry.String())
+	}
+
+	if renewTime != nil {
+		msg += ", renewal at: %s"
+		args = append(args, renewTime.String())
+	}
+
+	s.log.Infof(msg, args...)
+}
+
+// runRotation starts up the manager responsible for renewing the workload identity
 func (s *SPIFFE) runRotation(ctx context.Context) {
-	defer s.log.Debug("stopping workload cert expiry watcher")
+	defer s.log.Debug("stopping workload identity expiry watcher")
+
 	s.lock.RLock()
-	cert := s.currentSVID.Certificates[0]
+	cert := s.currentX509SVID.Certificates[0]
+	jwtSVID := s.currentJWTSVID
 	s.lock.RUnlock()
-	renewTime := renewalTime(cert.NotBefore, cert.NotAfter)
-	s.log.Infof("Starting workload cert expiry watcher; current cert expires on: %s, renewing at %s",
-		cert.NotAfter.String(), renewTime.String())
+
+	renewTime := calculateRenewalTime(time.Now(), cert, jwtSVID)
+	s.logIdentityInfo("Starting workload identity expiry watcher", cert, jwtSVID, renewTime)
 
 	for {
 		select {
 		case <-s.clock.After(min(time.Minute, renewTime.Sub(s.clock.Now()))):
-			if s.clock.Now().Before(renewTime) {
+			if s.clock.Now().Before(*renewTime) {
 				continue
 			}
-			s.log.Infof("Renewing workload cert; current cert expires on: %s", cert.NotAfter.String())
-			svid, err := s.fetchIdentityCertificate(ctx)
+
+			s.logIdentityInfo("Renewing workload identity", cert, jwtSVID, nil)
+
+			identity, err := s.fetchIdentity(ctx)
 			if err != nil {
-				s.log.Errorf("Error renewing identity certificate, trying again in 10 seconds: %s", err)
+				s.log.Errorf("Error renewing identity, trying again in 10 seconds: %s", err)
 				select {
 				case <-s.clock.After(10 * time.Second):
 					continue
@@ -150,12 +194,16 @@ func (s *SPIFFE) runRotation(ctx context.Context) {
 					return
 				}
 			}
+
 			s.lock.Lock()
-			s.currentSVID = svid
-			cert = svid.Certificates[0]
+			s.currentX509SVID = identity.X509SVID
+			s.currentJWTSVID = identity.JWTSVID
+			cert = identity.X509SVID.Certificates[0]
+			jwtSVID = identity.JWTSVID
 			s.lock.Unlock()
-			renewTime = renewalTime(cert.NotBefore, cert.NotAfter)
-			s.log.Infof("Successfully renewed workload cert; new cert expires on: %s", cert.NotAfter.String())
+
+			renewTime = calculateRenewalTime(time.Now(), cert, jwtSVID)
+			s.logIdentityInfo("Successfully renewed workload identity", cert, jwtSVID, renewTime)
 
 		case <-ctx.Done():
 			return
@@ -163,8 +211,8 @@ func (s *SPIFFE) runRotation(ctx context.Context) {
 	}
 }
 
-// fetchIdentityCertificate fetches a new SVID using the configured requester.
-func (s *SPIFFE) fetchIdentityCertificate(ctx context.Context) (*x509svid.SVID, error) {
+// Returns both X.509 SVID and JWT SVID (if available).
+func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate private key: %w", err)
@@ -175,18 +223,46 @@ func (s *SPIFFE) fetchIdentityCertificate(ctx context.Context) (*x509svid.SVID, 
 		return nil, fmt.Errorf("failed to create sidecar csr: %w", err)
 	}
 
-	workloadcert, err := s.requestSVIDFn(ctx, csrDER)
+	svidResponse, err := s.requestSVIDFn(ctx, csrDER)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(workloadcert) == 0 {
+	if len(svidResponse.X509Certificates) == 0 {
 		return nil, errors.New("no certificates received from sentry")
 	}
 
-	spiffeID, err := x509svid.IDFromCert(workloadcert[0])
+	spiffeID, err := x509svid.IDFromCert(svidResponse.X509Certificates[0])
 	if err != nil {
 		return nil, fmt.Errorf("error parsing spiffe id from newly signed certificate: %w", err)
+	}
+
+	identity := &Identity{
+		X509SVID: &x509svid.SVID{
+			ID:           spiffeID,
+			Certificates: svidResponse.X509Certificates,
+			PrivateKey:   key,
+		},
+	}
+
+	// If we have a JWT token, parse it and include it in the identity
+	if svidResponse.JWT != nil {
+		// we are using ParseInsecure here as the expectation is that the
+		// requestSVIDFn will have already parsed and validate the JWT SVID
+		// before returning it.
+		//
+		// we are parsing the token using our SPIFFE ID's trust domain
+		// as the audience as we expect the issuer to always include
+		// that as an audience since that ensures that the token is
+		// valid for us and our trust domain.
+		audiences := []string{spiffeID.TrustDomain().Name()}
+		jwtSvid, err := jwtsvid.ParseInsecure(*svidResponse.JWT, audiences)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse JWT SVID: %w", err)
+		}
+
+		identity.JWTSVID = jwtSvid
+		s.log.Infof("Successfully received JWT SVID with expiry: %s", jwtSvid.Expiry.String())
 	}
 
 	if s.dir != nil {
@@ -195,7 +271,7 @@ func (s *SPIFFE) fetchIdentityCertificate(ctx context.Context) (*x509svid.SVID, 
 			return nil, err
 		}
 
-		certPEM, err := pem.EncodeX509Chain(workloadcert)
+		certPEM, err := pem.EncodeX509Chain(svidResponse.X509Certificates)
 		if err != nil {
 			return nil, err
 		}
@@ -205,27 +281,72 @@ func (s *SPIFFE) fetchIdentityCertificate(ctx context.Context) (*x509svid.SVID, 
 			return nil, err
 		}
 
-		if err := s.dir.Write(map[string][]byte{
+		files := map[string][]byte{
 			"key.pem":  pkPEM,
 			"cert.pem": certPEM,
 			"ca.pem":   td,
-		}); err != nil {
+		}
+
+		if svidResponse.JWT != nil {
+			files["jwt_svid.token"] = []byte(*svidResponse.JWT)
+		}
+
+		if err := s.dir.Write(files); err != nil {
 			return nil, err
 		}
 	}
 
-	return &x509svid.SVID{
-		ID:           spiffeID,
-		Certificates: workloadcert,
-		PrivateKey:   key,
-	}, nil
+	return identity, nil
 }
 
-func (s *SPIFFE) SVIDSource() x509svid.Source {
+func (s *SPIFFE) X509SVIDSource() x509svid.Source {
+	return &svidSource{spiffe: s}
+}
+
+func (s *SPIFFE) JWTSVIDSource() jwtsvid.Source {
 	return &svidSource{spiffe: s}
 }
 
 // renewalTime is 50% through the certificate validity period.
 func renewalTime(notBefore, notAfter time.Time) time.Time {
-	return notBefore.Add(notAfter.Sub(notBefore) / 2)
+	return notBefore.Add(notAfter.Sub(notBefore) / renewalDivisor)
+}
+
+// calculateRenewalTime returns the earlier renewal time between the X.509 certificate
+// and JWT SVID (if available) to ensure timely renewal.
+func calculateRenewalTime(now time.Time, cert *x509.Certificate, jwtSVID *jwtsvid.SVID) *time.Time {
+	certRenewal := renewalTime(cert.NotBefore, cert.NotAfter)
+
+	if jwtSVID == nil {
+		return &certRenewal
+	}
+
+	jwtRenewal := now.Add(jwtSVID.Expiry.Sub(now) / renewalDivisor)
+
+	if jwtRenewal.Before(certRenewal) {
+		return &jwtRenewal
+	}
+	return &certRenewal
+}
+
+// audiencesMatch checks if the SVID audiences contain all the requested audiences
+func audiencesMatch(svidAudiences []string, requestedAudiences []string) bool {
+	if len(requestedAudiences) == 0 {
+		return true
+	}
+
+	// Create a map for faster lookup
+	audienceMap := make(map[string]struct{}, len(svidAudiences))
+	for _, audience := range svidAudiences {
+		audienceMap[audience] = struct{}{}
+	}
+
+	// Check if all requested audiences are in the SVID
+	for _, requested := range requestedAudiences {
+		if _, ok := audienceMap[requested]; !ok {
+			return false
+		}
+	}
+
+	return true
 }

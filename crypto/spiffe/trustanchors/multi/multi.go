@@ -11,16 +11,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package trustanchors
+package multi
 
 import (
 	"context"
 	"errors"
 
+	"github.com/spiffe/go-spiffe/v2/bundle/jwtbundle"
 	"github.com/spiffe/go-spiffe/v2/bundle/x509bundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 
 	"github.com/dapr/kit/concurrency"
+	"github.com/dapr/kit/crypto/spiffe/trustanchors"
 )
 
 var (
@@ -28,17 +30,17 @@ var (
 	ErrTrustDomainNotFound = errors.New("trust domain not found")
 )
 
-type OptionsMulti struct {
-	TrustAnchors map[spiffeid.TrustDomain]Interface
+type Options struct {
+	TrustAnchors map[spiffeid.TrustDomain]trustanchors.Interface
 }
 
 // multi is a TrustAnchors implementation which uses multiple trust anchors
 // which are indexed by trust domain.
 type multi struct {
-	trustAnchors map[spiffeid.TrustDomain]Interface
+	trustAnchors map[spiffeid.TrustDomain]trustanchors.Interface
 }
 
-func FromMulti(opts OptionsMulti) Interface {
+func From(opts Options) trustanchors.Interface {
 	return &multi{
 		trustAnchors: opts.TrustAnchors,
 	}
@@ -63,6 +65,16 @@ func (m *multi) GetX509BundleForTrustDomain(td spiffeid.TrustDomain) (*x509bundl
 	for tad, ta := range m.trustAnchors {
 		if td.Compare(tad) == 0 {
 			return ta.GetX509BundleForTrustDomain(td)
+		}
+	}
+
+	return nil, ErrTrustDomainNotFound
+}
+
+func (m *multi) GetJWTBundleForTrustDomain(td spiffeid.TrustDomain) (*jwtbundle.Bundle, error) {
+	for tad, ta := range m.trustAnchors {
+		if td.Compare(tad) == 0 {
+			return ta.GetJWTBundleForTrustDomain(td)
 		}
 	}
 

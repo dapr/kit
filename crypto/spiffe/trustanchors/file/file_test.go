@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package trustanchors
+package file
 
 import (
 	"context"
@@ -31,9 +31,9 @@ import (
 func TestFile_Run(t *testing.T) {
 	t.Run("if Run multiple times, expect error", func(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
-		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+		ta := From(Options{
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -74,9 +74,9 @@ func TestFile_Run(t *testing.T) {
 	t.Run("if file is not found and context cancelled, should return ctx.Err", func(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 
-		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+		ta := From(Options{
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -102,9 +102,9 @@ func TestFile_Run(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, nil, 0o600))
 
-		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+		ta := From(Options{
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -127,9 +127,9 @@ func TestFile_Run(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, []byte("garbage data"), 0o600))
 
-		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+		ta := From(Options{
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -154,9 +154,9 @@ func TestFile_Run(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, root, 0o600))
 
-		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+		ta := From(Options{
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -180,9 +180,9 @@ func TestFile_Run(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, pki.RootCertPEM, 0o600))
 
-		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+		ta := From(Options{
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -211,9 +211,9 @@ func TestFile_Run(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, root, 0o600))
 
-		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+		ta := From(Options{
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -242,9 +242,9 @@ func TestFile_Run(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
 
-		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+		ta := From(Options{
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -273,9 +273,9 @@ func TestFile_Run(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
 
-		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+		ta := From(Options{
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -311,9 +311,9 @@ func TestFile_GetX509BundleForTrustDomain(t *testing.T) {
 		root := append(pki.RootCertPEM, []byte("garbage data")...)
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, root, 0o600))
-		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+		ta := From(Options{
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -337,7 +337,7 @@ func TestFile_GetX509BundleForTrustDomain(t *testing.T) {
 		require.NoError(t, err)
 		bundle, err := f.GetX509BundleForTrustDomain(trustDomain1)
 		require.NoError(t, err)
-		assert.Equal(t, f.bundle, bundle)
+		assert.Equal(t, f.x509Bundle, bundle)
 		b1, err := bundle.Marshal()
 		require.NoError(t, err)
 		assert.Equal(t, pki.RootCertPEM, b1)
@@ -346,7 +346,7 @@ func TestFile_GetX509BundleForTrustDomain(t *testing.T) {
 		require.NoError(t, err)
 		bundle, err = f.GetX509BundleForTrustDomain(trustDomain2)
 		require.NoError(t, err)
-		assert.Equal(t, f.bundle, bundle)
+		assert.Equal(t, f.x509Bundle, bundle)
 		b2, err := bundle.Marshal()
 		require.NoError(t, err)
 		assert.Equal(t, pki.RootCertPEM, b2)
@@ -359,9 +359,9 @@ func TestFile_Watch(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, pki.RootCertPEM, 0o600))
 
-		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+		ta := From(Options{
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -400,9 +400,9 @@ func TestFile_Watch(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, pki.RootCertPEM, 0o600))
 
-		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+		ta := From(Options{
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -446,9 +446,9 @@ func TestFile_Watch(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, pki1.RootCertPEM, 0o600))
 
-		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+		ta := From(Options{
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -529,9 +529,9 @@ func TestFile_CurrentTrustAnchors(t *testing.T) {
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
 		require.NoError(t, os.WriteFile(tmp, pki1.RootCertPEM, 0o600))
 
-		ta := FromFile(OptionsFile{
-			Log:  logger.NewLogger("test"),
-			Path: tmp,
+		ta := From(Options{
+			Log:    logger.NewLogger("test"),
+			CAPath: tmp,
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
@@ -547,6 +547,7 @@ func TestFile_CurrentTrustAnchors(t *testing.T) {
 		//nolint:gocritic
 		roots := append(pki1.RootCertPEM, pki2.RootCertPEM...)
 		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
+		time.Sleep(time.Millisecond * 10) // adding a small delay to ensure the file watcher has time to pick up the change
 		assert.EventuallyWithT(t, func(c *assert.CollectT) {
 			pem, err := ta.CurrentTrustAnchors(context.Background())
 			require.NoError(t, err)
@@ -556,6 +557,7 @@ func TestFile_CurrentTrustAnchors(t *testing.T) {
 		//nolint:gocritic
 		roots = append(pki1.RootCertPEM, append(pki2.RootCertPEM, pki3.RootCertPEM...)...)
 		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
+		time.Sleep(time.Millisecond * 10) // adding a small delay to ensure the file watcher has time to pick up the change
 		assert.EventuallyWithT(t, func(c *assert.CollectT) {
 			pem, err := ta.CurrentTrustAnchors(context.Background())
 			require.NoError(t, err)

@@ -11,40 +11,52 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package trustanchors
+package file
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/spiffe/go-spiffe/v2/bundle/jwtbundle"
 	"github.com/spiffe/go-spiffe/v2/bundle/x509bundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"k8s.io/utils/clock"
 
 	"github.com/dapr/kit/concurrency"
 	"github.com/dapr/kit/crypto/pem"
+	"github.com/dapr/kit/crypto/spiffe/trustanchors"
 	"github.com/dapr/kit/fswatcher"
 	"github.com/dapr/kit/logger"
 )
 
-type OptionsFile struct {
-	Log  logger.Logger
-	Path string
+var (
+	// ErrTrustAnchorsClosed is returned when an operation is performed on closed trust anchors.
+	ErrTrustAnchorsClosed = errors.New("trust anchors is closed")
+
+	// ErrFailedToReadTrustAnchorsFile is returned when the trust anchors file cannot be read.
+	ErrFailedToReadTrustAnchorsFile = errors.New("failed to read trust anchors file")
+)
+
+type Options struct {
+	Log      logger.Logger
+	CAPath   string
+	JwksPath *string
 }
 
 // file is a TrustAnchors implementation that uses a file as the source of trust
 // anchors. The trust anchors will be updated when the file changes.
 type file struct {
-	log     logger.Logger
-	path    string
-	bundle  *x509bundle.Bundle
-	rootPEM []byte
+	log        logger.Logger
+	caPath     string
+	jwksPath   *string
+	x509Bundle *x509bundle.Bundle
+	jwtBundle  *jwtbundle.Bundle
+	rootPEM    []byte
 
 	// fswatcherInterval is the interval at which the trust anchors file changes
 	// are batched. Used for testing only, and 500ms otherwise.
@@ -65,17 +77,18 @@ type file struct {
 	caEvent chan struct{}
 }
 
-func FromFile(opts OptionsFile) Interface {
+func From(opts Options) trustanchors.Interface {
 	return &file{
 		fsWatcherInterval:     time.Millisecond * 500,
 		initFileWatchInterval: time.Second,
 
-		log:     opts.Log,
-		path:    opts.Path,
-		clock:   clock.RealClock{},
-		readyCh: make(chan struct{}),
-		closeCh: make(chan struct{}),
-		caEvent: make(chan struct{}),
+		log:      opts.Log,
+		caPath:   opts.CAPath,
+		jwksPath: opts.JwksPath,
+		clock:    clock.RealClock{},
+		readyCh:  make(chan struct{}),
+		closeCh:  make(chan struct{}),
+		caEvent:  make(chan struct{}),
 	}
 }
 
@@ -87,31 +100,39 @@ func (f *file) Run(ctx context.Context) error {
 	defer close(f.closeCh)
 
 	for {
-		_, err := os.Stat(f.path)
-		if err == nil {
-			break
+		fs := []string{f.caPath}
+		if f.jwksPath != nil {
+			fs = append(fs, *f.jwksPath)
 		}
-		if !errors.Is(err, os.ErrNotExist) {
+
+		if found, err := filesExist(fs...); err != nil {
 			return err
+		} else if found {
+			break
 		}
 
 		// Trust anchors file not be provided yet, wait.
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("failed to find trust anchors file '%s': %w", f.path, ctx.Err())
+			return fmt.Errorf("failed to find trust anchors file '%s': %w", f.caPath, ctx.Err())
 		case <-f.clock.After(f.initFileWatchInterval):
-			f.log.Warnf("Trust anchors file '%s' not found, waiting...", f.path)
+			f.log.Warnf("Trust anchors file '%s' not found, waiting...", f.caPath)
 		}
 	}
 
-	f.log.Infof("Trust anchors file '%s' found", f.path)
+	f.log.Infof("Trust anchors file '%s' found", f.caPath)
 
 	if err := f.updateAnchors(ctx); err != nil {
 		return err
 	}
 
+	targets := []string{f.caPath}
+	if f.jwksPath != nil {
+		targets = append(targets, *f.jwksPath)
+	}
+
 	fs, err := fswatcher.New(fswatcher.Options{
-		Targets:  []string{filepath.Dir(f.path)},
+		Targets:  targets,
 		Interval: &f.fsWatcherInterval,
 	})
 	if err != nil {
@@ -120,7 +141,11 @@ func (f *file) Run(ctx context.Context) error {
 
 	close(f.readyCh)
 
-	f.log.Infof("Watching trust anchors file '%s' for changes", f.path)
+	f.log.Infof("Watching trust anchors file '%s' for changes", f.caPath)
+	if f.jwksPath != nil {
+		f.log.Infof("Watching JWT bundle file '%s' for changes", f.jwksPath)
+	}
+
 	return concurrency.NewRunnerManager(
 		func(ctx context.Context) error {
 			return fs.Run(ctx, f.caEvent)
@@ -134,7 +159,7 @@ func (f *file) Run(ctx context.Context) error {
 					f.log.Info("Trust anchors file changed, reloading trust anchors")
 
 					if err = f.updateAnchors(ctx); err != nil {
-						return fmt.Errorf("failed to read trust anchors file '%s': %v", f.path, err)
+						return fmt.Errorf("%w: '%s': %v", ErrFailedToReadTrustAnchorsFile, f.caPath, err)
 					}
 				}
 			}
@@ -147,7 +172,7 @@ func (f *file) CurrentTrustAnchors(ctx context.Context) ([]byte, error) {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case <-f.closeCh:
-		return nil, errors.New("trust anchors is closed")
+		return nil, ErrTrustAnchorsClosed
 	case <-f.readyCh:
 	}
 
@@ -162,9 +187,9 @@ func (f *file) updateAnchors(ctx context.Context) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
-	rootPEMs, err := os.ReadFile(f.path)
+	rootPEMs, err := os.ReadFile(f.caPath)
 	if err != nil {
-		return fmt.Errorf("failed to read trust anchors file '%s': %w", f.path, err)
+		return fmt.Errorf("failed to read trust anchors file '%s': %w", f.caPath, err)
 	}
 
 	trustAnchorCerts, err := pem.DecodePEMCertificates(rootPEMs)
@@ -173,7 +198,20 @@ func (f *file) updateAnchors(ctx context.Context) error {
 	}
 
 	f.rootPEM = rootPEMs
-	f.bundle = x509bundle.FromX509Authorities(spiffeid.TrustDomain{}, trustAnchorCerts)
+	f.x509Bundle = x509bundle.FromX509Authorities(spiffeid.TrustDomain{}, trustAnchorCerts)
+
+	if f.jwksPath != nil {
+		jwks, err := os.ReadFile(*f.jwksPath)
+		if err != nil {
+			return fmt.Errorf("failed to read JWT bundle file '%s': %w", *f.jwksPath, err)
+		}
+
+		jwtBundle, err := jwtbundle.Parse(spiffeid.TrustDomain{}, jwks)
+		if err != nil {
+			return fmt.Errorf("failed to parse JWT bundle: %w", err)
+		}
+		f.jwtBundle = jwtBundle
+	}
 
 	var wg sync.WaitGroup
 	defer wg.Wait()
@@ -195,13 +233,26 @@ func (f *file) updateAnchors(ctx context.Context) error {
 func (f *file) GetX509BundleForTrustDomain(_ spiffeid.TrustDomain) (*x509bundle.Bundle, error) {
 	select {
 	case <-f.closeCh:
-		return nil, errors.New("trust anchors is closed")
+		return nil, ErrTrustAnchorsClosed
 	case <-f.readyCh:
 	}
 
 	f.lock.RLock()
 	defer f.lock.RUnlock()
-	bundle := f.bundle
+	bundle := f.x509Bundle
+	return bundle, nil
+}
+
+func (f *file) GetJWTBundleForTrustDomain(_ spiffeid.TrustDomain) (*jwtbundle.Bundle, error) {
+	select {
+	case <-f.closeCh:
+		return nil, ErrTrustAnchorsClosed
+	case <-f.readyCh:
+	}
+
+	f.lock.RLock()
+	defer f.lock.RUnlock()
+	bundle := f.jwtBundle
 	return bundle, nil
 }
 
@@ -230,4 +281,20 @@ func (f *file) Watch(ctx context.Context, ch chan<- []byte) {
 			}
 		}
 	}
+}
+
+func filesExist(paths ...string) (bool, error) {
+	for _, path := range paths {
+		if path == "" {
+			continue
+		}
+
+		if _, err := os.Stat(path); err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				return false, nil
+			}
+			return false, fmt.Errorf("failed to stat file '%s': %w", path, err)
+		}
+	}
+	return true, nil
 }
