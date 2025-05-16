@@ -26,7 +26,7 @@ import (
 var (
 	errNoX509SVIDAvailable = errors.New("no X509 SVID available")
 	errNoJWTSVIDAvailable  = errors.New("no JWT SVID available")
-	errAudienceRequired    = errors.New("audience is required")
+	errAudienceRequired    = errors.New("JWT audience is required")
 )
 
 // svidSource is an implementation of both go-spiffe x509svid.Source and jwtsvid.Source interfaces.
