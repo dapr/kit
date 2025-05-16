@@ -52,18 +52,18 @@ func (s *svidSource) GetX509SVID() (*x509svid.SVID, error) {
 
 // audienceMismatchError is an error that contains information about mismatched audiences
 type audienceMismatchError struct {
-	Expected []string
-	Actual   []string
+	expected []string
+	actual   []string
 }
 
 func (e *audienceMismatchError) Error() string {
 	return fmt.Sprintf("JWT SVID has different audiences than requested: expected %s, got %s",
-		strings.Join(e.Expected, ", "), strings.Join(e.Actual, ", "))
+		strings.Join(e.expected, ", "), strings.Join(e.actual, ", "))
 }
 
 // FetchJWTSVID returns the current JWT SVID.
 // Implements the go-spiffe jwtsvid.Source interface.
-func (s *svidSource) FetchJWTSVID(_ context.Context, params jwtsvid.Params) (*jwtsvid.SVID, error) {
+func (s *svidSource) FetchJWTSVID(ctx context.Context, params jwtsvid.Params) (*jwtsvid.SVID, error) {
 	s.spiffe.lock.RLock()
 	defer s.spiffe.lock.RUnlock()
 
@@ -71,7 +71,11 @@ func (s *svidSource) FetchJWTSVID(_ context.Context, params jwtsvid.Params) (*jw
 		return nil, errAudienceRequired
 	}
 
-	<-s.spiffe.readyCh
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-s.spiffe.readyCh:
+	}
 
 	svid := s.spiffe.currentJWTSVID
 	if svid == nil {
@@ -82,8 +86,8 @@ func (s *svidSource) FetchJWTSVID(_ context.Context, params jwtsvid.Params) (*jw
 	// WARN: we do not check extra audiences here.
 	if !audiencesMatch(svid.Audience, []string{params.Audience}) {
 		return nil, &audienceMismatchError{
-			Expected: []string{params.Audience},
-			Actual:   svid.Audience,
+			expected: []string{params.Audience},
+			actual:   svid.Audience,
 		}
 	}
 

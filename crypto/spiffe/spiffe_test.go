@@ -98,7 +98,7 @@ func Test_calculateRenewalTime(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			actual := calculateRenewalTime(now, tt.cert, tt.jwt)
 
-			assert.WithinDuration(t, tt.expected, actual, time.Millisecond,
+			assert.WithinDuration(t, tt.expected, *actual, time.Millisecond,
 				"Renewal time does not match expected value")
 		})
 	}

@@ -45,7 +45,7 @@ const (
 // containing both X.509 certificates and a JWT token.
 type SVIDResponse struct {
 	X509Certificates []*x509.Certificate
-	JWT              string
+	JWT              *string
 }
 
 // Identity contains both X.509 and JWT SVIDs for a workload.
@@ -146,16 +146,16 @@ func (s *SPIFFE) Ready(ctx context.Context) error {
 }
 
 // logIdentityInfo creates a log message with expiry details for both X.509 and JWT SVIDs
-func (s *SPIFFE) logIdentityInfo(prefix string, cert *x509.Certificate, jwtSVID *jwtsvid.SVID, renewTime time.Time) {
+func (s *SPIFFE) logIdentityInfo(prefix string, cert *x509.Certificate, jwtSVID *jwtsvid.SVID, renewTime *time.Time) {
 	msg := prefix + "; cert expires on: %s"
-	args := []interface{}{cert.NotAfter.String()}
+	args := []any{cert.NotAfter.String()}
 
 	if jwtSVID != nil {
 		msg += ", jwt expires on: %s"
 		args = append(args, jwtSVID.Expiry.String())
 	}
 
-	if !renewTime.IsZero() {
+	if renewTime != nil {
 		msg += ", renewal at: %s"
 		args = append(args, renewTime.String())
 	}
@@ -165,7 +165,7 @@ func (s *SPIFFE) logIdentityInfo(prefix string, cert *x509.Certificate, jwtSVID 
 
 // runRotation starts up the manager responsible for renewing the workload identity
 func (s *SPIFFE) runRotation(ctx context.Context) {
-	defer s.log.Debug("stopping workload cert expiry watcher")
+	defer s.log.Debug("stopping workload identity expiry watcher")
 
 	s.lock.RLock()
 	cert := s.currentX509SVID.Certificates[0]
@@ -173,16 +173,16 @@ func (s *SPIFFE) runRotation(ctx context.Context) {
 	s.lock.RUnlock()
 
 	renewTime := calculateRenewalTime(time.Now(), cert, jwtSVID)
-	s.logIdentityInfo("Starting workload cert expiry watcher", cert, jwtSVID, renewTime)
+	s.logIdentityInfo("Starting workload identity expiry watcher", cert, jwtSVID, renewTime)
 
 	for {
 		select {
 		case <-s.clock.After(min(time.Minute, renewTime.Sub(s.clock.Now()))):
-			if s.clock.Now().Before(renewTime) {
+			if s.clock.Now().Before(*renewTime) {
 				continue
 			}
 
-			s.logIdentityInfo("Renewing workload identity", cert, jwtSVID, time.Time{})
+			s.logIdentityInfo("Renewing workload identity", cert, jwtSVID, nil)
 
 			identity, err := s.fetchIdentity(ctx)
 			if err != nil {
@@ -246,7 +246,7 @@ func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 	}
 
 	// If we have a JWT token, parse it and include it in the identity
-	if svidResponse.JWT != "" {
+	if svidResponse.JWT != nil {
 		// we are using ParseInsecure here as the expectation is that the
 		// requestSVIDFn will have already parsed and validate the JWT SVID
 		// before returning it.
@@ -256,9 +256,9 @@ func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 		// that as an audience since that ensures that the token is
 		// valid for us and our trust domain.
 		audiences := []string{spiffeID.TrustDomain().Name()}
-		jwtSvid, err := jwtsvid.ParseInsecure(svidResponse.JWT, audiences)
+		jwtSvid, err := jwtsvid.ParseInsecure(*svidResponse.JWT, audiences)
 		if err != nil {
-			s.log.Errorf("Failed to parse JWT SVID: %v, continuing without JWT SVID", err)
+			return nil, fmt.Errorf("failed to parse JWT SVID: %w", err)
 		} else {
 			identity.JWTSVID = jwtSvid
 			s.log.Infof("Successfully received JWT SVID with expiry: %s", jwtSvid.Expiry.String())
@@ -287,8 +287,8 @@ func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 			"ca.pem":   td,
 		}
 
-		if svidResponse.JWT != "" {
-			files["jwt_svid.token"] = []byte(svidResponse.JWT)
+		if svidResponse.JWT != nil {
+			files["jwt_svid.token"] = []byte(*svidResponse.JWT)
 		}
 
 		if err := s.dir.Write(files); err != nil {
@@ -314,19 +314,19 @@ func renewalTime(notBefore, notAfter time.Time) time.Time {
 
 // calculateRenewalTime returns the earlier renewal time between the X.509 certificate
 // and JWT SVID (if available) to ensure timely renewal.
-func calculateRenewalTime(now time.Time, cert *x509.Certificate, jwtSVID *jwtsvid.SVID) time.Time {
+func calculateRenewalTime(now time.Time, cert *x509.Certificate, jwtSVID *jwtsvid.SVID) *time.Time {
 	certRenewal := renewalTime(cert.NotBefore, cert.NotAfter)
 
 	if jwtSVID == nil {
-		return certRenewal
+		return &certRenewal
 	}
 
 	jwtRenewal := now.Add(jwtSVID.Expiry.Sub(now) / renewalDivisor)
 
 	if jwtRenewal.Before(certRenewal) {
-		return jwtRenewal
+		return &jwtRenewal
 	}
-	return certRenewal
+	return &certRenewal
 }
 
 // audiencesMatch checks if the SVID audiences contain all the requested audiences
