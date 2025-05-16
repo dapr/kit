@@ -259,10 +259,10 @@ func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 		jwtSvid, err := jwtsvid.ParseInsecure(*svidResponse.JWT, audiences)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse JWT SVID: %w", err)
-		} else {
-			identity.JWTSVID = jwtSvid
-			s.log.Infof("Successfully received JWT SVID with expiry: %s", jwtSvid.Expiry.String())
 		}
+
+		identity.JWTSVID = jwtSvid
+		s.log.Infof("Successfully received JWT SVID with expiry: %s", jwtSvid.Expiry.String())
 	}
 
 	if s.dir != nil {
