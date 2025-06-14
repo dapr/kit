@@ -33,16 +33,18 @@ type loop[T any] struct {
 	queue   chan T
 	handler Handler[T]
 
-	closed  bool
-	closeCh chan struct{}
-	lock    sync.RWMutex
+	closed   bool
+	closeCh  chan struct{}
+	closedCh chan struct{}
+	lock     sync.RWMutex
 }
 
 func New[T any](h Handler[T], size uint64) Interface[T] {
 	return &loop[T]{
-		queue:   make(chan T, size),
-		handler: h,
-		closeCh: make(chan struct{}),
+		queue:    make(chan T, size),
+		handler:  h,
+		closeCh:  make(chan struct{}),
+		closedCh: make(chan struct{}),
 	}
 }
 
@@ -51,7 +53,7 @@ func Empty[T any]() Interface[T] {
 }
 
 func (l *loop[T]) Run(ctx context.Context) error {
-	defer close(l.closeCh)
+	defer close(l.closedCh)
 
 	for {
 		req, ok := <-l.queue
@@ -75,17 +77,20 @@ func (l *loop[T]) Enqueue(req T) {
 
 	select {
 	case l.queue <- req:
-	case <-l.closeCh:
+	case <-l.closedCh:
 	}
 }
 
 func (l *loop[T]) Close(req T) {
 	l.lock.Lock()
 	l.closed = true
-	l.queue <- req
+	select {
+	case l.queue <- req:
+	case <-l.closedCh:
+	}
 	close(l.queue)
 	l.lock.Unlock()
-	<-l.closeCh
+	<-l.closedCh
 }
 
 func (l *loop[T]) Reset(h Handler[T], size uint64) Interface[T] {
@@ -93,7 +98,11 @@ func (l *loop[T]) Reset(h Handler[T], size uint64) Interface[T] {
 		return New[T](h, size)
 	}
 
+	l.lock.Lock()
+	defer l.lock.Unlock()
+
 	l.closed = false
+	l.closedCh = make(chan struct{})
 	l.closeCh = make(chan struct{})
 	l.handler = h
 
