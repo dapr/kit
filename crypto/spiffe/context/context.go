@@ -35,7 +35,7 @@ func With(ctx context.Context, spiffe *spiffe.SPIFFE) context.Context {
 	return context.WithValue(ctx, x509SvidKey, spiffe.X509SVIDSource())
 }
 
-// Deprecated: use FromX509 instead.
+// Deprecated: use X509From instead.
 // From retrieves the x509 SVID source from the context.
 func From(ctx context.Context) (x509svid.Source, bool) {
 	svid, ok := ctx.Value(x509SvidKey).(x509svid.Source)
