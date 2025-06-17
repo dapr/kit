@@ -82,7 +82,10 @@ func (l *loop[T]) Enqueue(req T) {
 func (l *loop[T]) Close(req T) {
 	l.lock.Lock()
 	l.closed = true
-	l.queue <- req
+	select {
+	case l.queue <- req:
+	case <-l.closeCh:
+	}
 	close(l.queue)
 	l.lock.Unlock()
 	<-l.closeCh
@@ -92,6 +95,9 @@ func (l *loop[T]) Reset(h Handler[T], size uint64) Interface[T] {
 	if l == nil {
 		return New[T](h, size)
 	}
+
+	l.lock.Lock()
+	defer l.lock.Unlock()
 
 	l.closed = false
 	l.closeCh = make(chan struct{})
