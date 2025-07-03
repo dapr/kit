@@ -60,17 +60,12 @@ func (r *RunnerManager) Run(ctx context.Context) error {
 		return ErrManagerAlreadyStarted
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
 
 	errCh := make(chan error)
 	for _, runner := range r.runners {
 		go func(runner Runner) {
-			// Since the task returned, we need to cancel all other tasks.
-			// This is a noop if the parent context is already cancelled, or another
-			// task returned before this one.
-			defer cancel()
-
 			// Ignore context cancelled errors since errors from a runner manager
 			// will likely determine the exit code of the program.
 			// Context cancelled errors are also not really useful to the user in
@@ -78,9 +73,14 @@ func (r *RunnerManager) Run(ctx context.Context) error {
 			rErr := runner(ctx)
 			if rErr != nil && !errors.Is(rErr, context.Canceled) {
 				errCh <- rErr
+				// Since the task returned, we need to cancel all other tasks.
+				// This is a noop if the parent context is already cancelled, or another
+				// task returned before this one.
+				cancel(rErr)
 				return
 			}
 			errCh <- nil
+			cancel(nil)
 		}(runner)
 	}
 
