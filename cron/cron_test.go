@@ -792,9 +792,17 @@ func TestMockClock(t *testing.T) {
 func TestMillisecond(t *testing.T) {
 	clk := clocktesting.NewFakeClock(time.Now())
 	cron := New(WithClock(clk))
-	counter := atomic.Int64{}
+	counter1ms := atomic.Int64{}
+	counter15ms := atomic.Int64{}
+	counter100ms := atomic.Int64{}
+	cron.AddFunc("@every 1ms", func() {
+		counter1ms.Add(1)
+	})
 	cron.AddFunc("@every 15ms", func() {
-		counter.Add(1)
+		counter15ms.Add(1)
+	})
+	cron.AddFunc("@every 100ms", func() {
+		counter100ms.Add(1)
 	})
 
 	cron.Start()
@@ -803,7 +811,9 @@ func TestMillisecond(t *testing.T) {
 		assert.Eventually(t, clk.HasWaiters, OneSecond, 1*time.Millisecond)
 		clk.Step(1 * time.Millisecond)
 	}
-	assert.Equal(t, int64(66), counter.Load())
+	assert.Equal(t, int64(999), counter1ms.Load())
+	assert.Equal(t, int64(66), counter15ms.Load())
+	assert.Equal(t, int64(9), counter100ms.Load())
 }
 
 func TestMultiThreadedStartAndStop(*testing.T) {
