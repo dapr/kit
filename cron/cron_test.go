@@ -799,7 +799,7 @@ func TestMillisecond(t *testing.T) {
 
 	cron.Start()
 	defer cron.Stop()
-	for i := 0; i <= 1000; i++ {
+	for range 1000 {
 		assert.Eventually(t, clk.HasWaiters, OneSecond, 1*time.Millisecond)
 		clk.Step(1 * time.Millisecond)
 	}

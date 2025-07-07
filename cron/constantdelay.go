@@ -14,7 +14,6 @@ You can check the original license at:
 		https://github.com/robfig/cron/blob/master/LICENSE
 */
 
-// nolint
 package cron
 
 import "time"
@@ -39,5 +38,6 @@ func Every(duration time.Duration) ConstantDelaySchedule {
 // Next returns the next time this should be run.
 // This rounds so that the next activation time will be on the millisecond.
 func (schedule ConstantDelaySchedule) Next(t time.Time) time.Time {
-	return t.Add(schedule.Delay - time.Duration(t.Nanosecond()%1000000)*time.Nanosecond)
+	const nanoSecondInMillisecond = 1000000
+	return t.Add(schedule.Delay - time.Duration(t.Nanosecond()%nanoSecondInMillisecond)*time.Nanosecond)
 }
