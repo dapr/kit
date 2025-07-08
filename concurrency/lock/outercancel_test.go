@@ -162,8 +162,8 @@ func Test_OuterCancel(t *testing.T) {
 		t.Parallel()
 
 		l := NewOuterCancel(terr, time.Second)
-		//nolint:usetesting
-		ctx, cancel := context.WithCancel(context.Background())
+
+		ctx, cancel := context.WithCancel(t.Context())
 		t.Cleanup(cancel)
 
 		go l.Run(ctx)
@@ -179,6 +179,7 @@ func Test_OuterCancel(t *testing.T) {
 			t.Cleanup(c1)
 			close(gotRLock)
 		}()
+
 		t.Cleanup(func() {
 			require.NoError(t, <-errCh)
 		})
@@ -190,6 +191,7 @@ func Test_OuterCancel(t *testing.T) {
 		}
 
 		lcancel()
+		<-gotRLock
 	})
 
 	t.Run("lock blocks until outter unlocks", func(t *testing.T) {
