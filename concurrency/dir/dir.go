@@ -50,11 +50,11 @@ func New(opts Options) *Dir {
 func (d *Dir) Write(files map[string][]byte) error {
 	newDir := filepath.Join(d.base, fmt.Sprintf("%d-%s", time.Now().UTC().UnixNano(), d.targetDir))
 
-	if err := os.MkdirAll(d.base, os.ModeDir); err != nil {
+	if err := os.MkdirAll(d.base, 0o700); err != nil {
 		return err
 	}
 
-	if err := os.MkdirAll(newDir, os.ModeDir); err != nil {
+	if err := os.MkdirAll(newDir, 0o700); err != nil {
 		return err
 	}
 
