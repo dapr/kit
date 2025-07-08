@@ -241,7 +241,7 @@ func TestRetryNotifyRecoverCancel(t *testing.T) {
 
 	var notifyCalls, recoveryCalls int
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	b := config.NewBackOffWithContext(ctx)
 	errC := make(chan error, 1)
 	startedC := make(chan struct{}, 100)

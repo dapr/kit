@@ -40,7 +40,7 @@ func TestJWKSCache(t *testing.T) {
 
 	t.Run("init with value", func(t *testing.T) {
 		cache := NewJWKSCache(testJWKS1, log)
-		err := cache.initCache(context.Background())
+		err := cache.initCache(t.Context())
 		require.NoError(t, err)
 
 		set := cache.KeySet()
@@ -53,7 +53,7 @@ func TestJWKSCache(t *testing.T) {
 
 	t.Run("init with base64-encoded value", func(t *testing.T) {
 		cache := NewJWKSCache(base64.StdEncoding.EncodeToString([]byte(testJWKS1)), log)
-		err := cache.initCache(context.Background())
+		err := cache.initCache(t.Context())
 		require.NoError(t, err)
 
 		set := cache.KeySet()
@@ -68,12 +68,12 @@ func TestJWKSCache(t *testing.T) {
 		// Create a temporary directory and put the JWKS in there
 		dir := t.TempDir()
 		path := filepath.Join(dir, "jwks.json")
-		err := os.WriteFile(path, []byte(testJWKS1), 0o666)
+		err := os.WriteFile(path, []byte(testJWKS1), 0o600)
 		require.NoError(t, err)
 
 		// Should wait for first file to be loaded before initialization is reported as completed
 		cache := NewJWKSCache(path, log)
-		err = cache.initCache(context.Background())
+		err = cache.initCache(t.Context())
 		require.NoError(t, err)
 
 		set := cache.KeySet()
@@ -87,7 +87,7 @@ func TestJWKSCache(t *testing.T) {
 		time.Sleep(time.Second)
 
 		// Update the file and verify it's picked up
-		err = os.WriteFile(path, []byte(testJWKS2), 0o666)
+		err = os.WriteFile(path, []byte(testJWKS2), 0o600)
 		require.NoError(t, err)
 
 		assert.Eventually(t, func() bool {
@@ -127,7 +127,7 @@ func TestJWKSCache(t *testing.T) {
 		cache := NewJWKSCache("http://localhost/jwks.json", log)
 		cache.SetHTTPClient(client)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
 		defer cancel()
 		err := cache.initCache(ctx)
 		require.NoError(t, err)
@@ -142,7 +142,7 @@ func TestJWKSCache(t *testing.T) {
 
 	t.Run("start and wait for init", func(t *testing.T) {
 		cache := NewJWKSCache(testJWKS1, log)
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
 		defer cancel()
 
 		// Start in background
@@ -174,7 +174,7 @@ func TestJWKSCache(t *testing.T) {
 		cache := NewJWKSCache("https://localhost/jwks.json", log)
 		cache.SetHTTPClient(client)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
 		defer cancel()
 
 		// Start in background
@@ -194,7 +194,7 @@ func TestJWKSCache(t *testing.T) {
 	})
 
 	t.Run("start and init times out", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+		ctx, cancel := context.WithTimeout(t.Context(), 1500*time.Millisecond)
 		defer cancel()
 
 		// Create a custom HTTP client with a RoundTripper that doesn't require starting a TCP listener
@@ -223,7 +223,7 @@ func TestJWKSCache(t *testing.T) {
 		}()
 
 		// Wait for initialization
-		err := cache.WaitForCacheReady(context.Background())
+		err := cache.WaitForCacheReady(t.Context())
 		require.Error(t, err)
 		require.ErrorContains(t, err, "failed to fetch JWKS")
 		require.ErrorIs(t, err, context.DeadlineExceeded)

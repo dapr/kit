@@ -14,7 +14,6 @@ limitations under the License.
 package logger
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -78,7 +77,7 @@ func TestToLogLevel(t *testing.T) {
 
 func TestNewContext(t *testing.T) {
 	t.Run("input nil logger", func(t *testing.T) {
-		ctx := NewContext(context.Background(), nil)
+		ctx := NewContext(t.Context(), nil)
 		assert.NotNil(t, ctx, "ctx is not nil")
 
 		logger := FromContextOrDefault(ctx)
@@ -91,7 +90,7 @@ func TestNewContext(t *testing.T) {
 		logger := NewLogger(testLoggerName)
 		assert.NotNil(t, logger)
 
-		ctx := NewContext(context.Background(), logger)
+		ctx := NewContext(t.Context(), logger)
 		assert.NotNil(t, ctx, "ctx is not nil")
 		logger2 := FromContextOrDefault(ctx)
 		assert.NotNil(t, logger2)

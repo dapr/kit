@@ -15,7 +15,6 @@ package v1
 
 import (
 	"encoding/hex"
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -120,7 +119,7 @@ func TestFileKey(t *testing.T) {
 		// Validate that headerMessage returns the right message, and that there's a newline at the end
 		const manifest = `{"foo":"bar"}`
 		const expect = SchemeName + "\n" + manifest + "\n"
-		fmt.Println(hex.EncodeToString([]byte(expect)))
+		t.Log(hex.EncodeToString([]byte(expect)))
 
 		got := fileKey{}.headerMessage([]byte(manifest))
 		require.Equal(t, expect, string(got))

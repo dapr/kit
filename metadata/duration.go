@@ -29,7 +29,7 @@ type Duration struct {
 	time.Duration
 }
 
-func (d Duration) MarshalJSON() ([]byte, error) {
+func (d *Duration) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d.String())
 }
 
@@ -114,7 +114,7 @@ func toTimeDurationHookFunc() mapstructure.DecodeHookFunc {
 // This methods supports days, hours, minutes, and seconds. It assumes all durations are in UTC time and are not impacted by DST (so all days are 24-hours long).
 // This method does not support fractions of seconds, and durations are truncated to seconds.
 // See https://en.wikipedia.org/wiki/ISO_8601#Durations for referece.
-func (d Duration) ToISOString() string {
+func (d *Duration) ToISOString() string {
 	// Truncate to seconds, removing fractional seconds
 	trunc := d.Truncate(time.Second)
 

@@ -109,7 +109,7 @@ func Test_Run(t *testing.T) {
 		pki := test.GenPKI(t, test.PKIOptions{
 			LeafID: spiffeid.RequireFromString("spiffe://example.com/foo/bar"),
 		})
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		s := New(Options{
 			Log: logger.NewLogger("test"),
 			RequestSVIDFn: func(context.Context, []byte) (*SVIDResponse, error) {
@@ -151,7 +151,7 @@ func Test_Run(t *testing.T) {
 			},
 		})
 
-		require.Error(t, s.Run(context.Background()))
+		require.Error(t, s.Run(t.Context()))
 	})
 
 	t.Run("should renew certificate when it has expired", func(t *testing.T) {
@@ -173,7 +173,7 @@ func Test_Run(t *testing.T) {
 		clock := clocktesting.NewFakeClock(now)
 		s.clock = clock
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
 		go func() {
 			select {
@@ -224,7 +224,7 @@ func Test_Run(t *testing.T) {
 		clock := clocktesting.NewFakeClock(now)
 		s.clock = clock
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
 		go func() {
 			select {

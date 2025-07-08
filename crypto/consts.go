@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:nosnakecase,stylecheck,revive
+//nolint:nosnakecase,stylecheck
 package crypto
 
 import (

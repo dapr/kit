@@ -39,7 +39,7 @@ func TestFile_Run(t *testing.T) {
 		require.True(t, ok)
 		f.initFileWatchInterval = time.Millisecond
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
 		go func() {
 			errCh <- f.Run(ctx)
@@ -82,7 +82,7 @@ func TestFile_Run(t *testing.T) {
 		require.True(t, ok)
 		f.initFileWatchInterval = time.Millisecond
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
 		go func() {
 			errCh <- f.Run(ctx)
@@ -112,7 +112,7 @@ func TestFile_Run(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- f.Run(context.Background())
+			errCh <- f.Run(t.Context())
 		}()
 
 		select {
@@ -137,7 +137,7 @@ func TestFile_Run(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- f.Run(context.Background())
+			errCh <- f.Run(t.Context())
 		}()
 
 		select {
@@ -164,7 +164,7 @@ func TestFile_Run(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- f.Run(context.Background())
+			errCh <- f.Run(t.Context())
 		}()
 
 		select {
@@ -190,7 +190,7 @@ func TestFile_Run(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- f.Run(context.Background())
+			errCh <- f.Run(t.Context())
 		}()
 
 		select {
@@ -199,7 +199,7 @@ func TestFile_Run(t *testing.T) {
 			assert.Fail(t, "expected to be ready in time")
 		}
 
-		b, err := f.CurrentTrustAnchors(context.Background())
+		b, err := f.CurrentTrustAnchors(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, pki.RootCertPEM, b)
 	})
@@ -221,7 +221,7 @@ func TestFile_Run(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- f.Run(context.Background())
+			errCh <- f.Run(t.Context())
 		}()
 
 		select {
@@ -230,7 +230,7 @@ func TestFile_Run(t *testing.T) {
 			assert.Fail(t, "expected to be ready in time")
 		}
 
-		b, err := f.CurrentTrustAnchors(context.Background())
+		b, err := f.CurrentTrustAnchors(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, root, b)
 	})
@@ -252,7 +252,7 @@ func TestFile_Run(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- f.Run(context.Background())
+			errCh <- f.Run(t.Context())
 		}()
 
 		select {
@@ -261,7 +261,7 @@ func TestFile_Run(t *testing.T) {
 			assert.Fail(t, "expected to be ready in time")
 		}
 
-		b, err := f.CurrentTrustAnchors(context.Background())
+		b, err := f.CurrentTrustAnchors(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, roots, b)
 	})
@@ -284,7 +284,7 @@ func TestFile_Run(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- f.Run(context.Background())
+			errCh <- f.Run(t.Context())
 		}()
 
 		select {
@@ -319,7 +319,7 @@ func TestFile_GetX509BundleForTrustDomain(t *testing.T) {
 		require.True(t, ok)
 
 		errCh := make(chan error)
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		go func() {
 			errCh <- ta.Run(ctx)
 		}()
@@ -368,14 +368,14 @@ func TestFile_Watch(t *testing.T) {
 		f.initFileWatchInterval = time.Millisecond
 
 		errCh := make(chan error)
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		go func() {
 			errCh <- f.Run(ctx)
 		}()
 
 		watchDone := make(chan struct{})
 		go func() {
-			ta.Watch(context.Background(), make(chan []byte))
+			ta.Watch(t.Context(), make(chan []byte))
 			close(watchDone)
 		}()
 
@@ -409,13 +409,13 @@ func TestFile_Watch(t *testing.T) {
 		f.initFileWatchInterval = time.Millisecond
 
 		errCh := make(chan error)
-		ctx1, cancel1 := context.WithCancel(context.Background())
+		ctx1, cancel1 := context.WithCancel(t.Context())
 		go func() {
 			errCh <- f.Run(ctx1)
 		}()
 
 		watchDone := make(chan struct{})
-		ctx2, cancel2 := context.WithCancel(context.Background())
+		ctx2, cancel2 := context.WithCancel(t.Context())
 		go func() {
 			ta.Watch(ctx2, make(chan []byte))
 			close(watchDone)
@@ -456,7 +456,7 @@ func TestFile_Watch(t *testing.T) {
 		f.fsWatcherInterval = time.Millisecond
 
 		errCh := make(chan error)
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		go func() {
 			errCh <- f.Run(ctx)
 		}()
@@ -470,11 +470,11 @@ func TestFile_Watch(t *testing.T) {
 		watchDone1, watchDone2 := make(chan struct{}), make(chan struct{})
 		tCh1, tCh2 := make(chan []byte), make(chan []byte)
 		go func() {
-			ta.Watch(context.Background(), tCh1)
+			ta.Watch(t.Context(), tCh1)
 			close(watchDone1)
 		}()
 		go func() {
-			ta.Watch(context.Background(), tCh2)
+			ta.Watch(t.Context(), tCh2)
 			close(watchDone2)
 		}()
 
@@ -538,7 +538,7 @@ func TestFile_CurrentTrustAnchors(t *testing.T) {
 		f.initFileWatchInterval = time.Millisecond
 		f.fsWatcherInterval = time.Millisecond
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
 		go func() {
 			errCh <- f.Run(ctx)
@@ -549,7 +549,7 @@ func TestFile_CurrentTrustAnchors(t *testing.T) {
 		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
 		time.Sleep(time.Millisecond * 10) // adding a small delay to ensure the file watcher has time to pick up the change
 		assert.EventuallyWithT(t, func(c *assert.CollectT) {
-			pem, err := ta.CurrentTrustAnchors(context.Background())
+			pem, err := ta.CurrentTrustAnchors(t.Context())
 			require.NoError(t, err)
 			assert.Equal(c, roots, pem)
 		}, time.Second, time.Millisecond)
@@ -559,7 +559,7 @@ func TestFile_CurrentTrustAnchors(t *testing.T) {
 		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
 		time.Sleep(time.Millisecond * 10) // adding a small delay to ensure the file watcher has time to pick up the change
 		assert.EventuallyWithT(t, func(c *assert.CollectT) {
-			pem, err := ta.CurrentTrustAnchors(context.Background())
+			pem, err := ta.CurrentTrustAnchors(t.Context())
 			require.NoError(t, err)
 			assert.Equal(c, roots, pem)
 		}, time.Second, time.Millisecond)

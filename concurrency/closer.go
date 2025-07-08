@@ -26,9 +26,7 @@ import (
 	"github.com/dapr/kit/logger"
 )
 
-var (
-	ErrManagerAlreadyClosed = errors.New("runner manager already closed")
-)
+var ErrManagerAlreadyClosed = errors.New("runner manager already closed")
 
 // RunnerCloserManager is a RunnerManager that also implements Closing of the
 // added closers once the main runners are done.

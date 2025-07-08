@@ -48,14 +48,14 @@ func Wrap(block cipher.Block, cek []byte) ([]byte, error) {
 		copy(r[i], cek[i*8:])
 	}
 
-	for j := 0; j <= 5; j++ {
+	for j := range 6 {
 		for i := 1; i <= n; i++ {
 			b := arrConcat(a, r[i-1])
 			block.Encrypt(b, b)
 
 			t := (n * j) + i
 			tBytes := make([]byte, 8)
-			binary.BigEndian.PutUint64(tBytes, uint64(t))
+			binary.BigEndian.PutUint64(tBytes, uint64(t)) // #nosec G115
 
 			copy(a, arrXor(b[:len(b)/2], tBytes))
 			copy(r[i-1], b[len(b)/2:])
@@ -92,7 +92,7 @@ func Unwrap(block cipher.Block, cipherText []byte) ([]byte, error) {
 		for i := n; i >= 1; i-- {
 			t := (n * j) + i
 			tBytes := make([]byte, 8)
-			binary.BigEndian.PutUint64(tBytes, uint64(t))
+			binary.BigEndian.PutUint64(tBytes, uint64(t)) // #nosec G115
 
 			b := arrConcat(arrXor(a, tBytes), r[i-1])
 			block.Decrypt(b, b)

@@ -14,7 +14,6 @@ You can check the original license at:
 		https://github.com/robfig/cron/blob/master/LICENSE
 */
 
-//nolint:dupword
 package cron
 
 import (
@@ -35,7 +34,7 @@ import (
 // for it to run.  This amount is just slightly larger than 1 second to
 // compensate for a few milliseconds of runtime.
 //
-//nolint:revive
+
 const OneSecond = 1*time.Second + 50*time.Millisecond
 
 type syncWriter struct {
@@ -783,7 +782,7 @@ func TestMockClock(t *testing.T) {
 	})
 	cron.Start()
 	defer cron.Stop()
-	for i := 0; i <= 10; i++ {
+	for range 11 {
 		assert.Eventually(t, clk.HasWaiters, OneSecond, 10*time.Millisecond)
 		clk.Step(1 * time.Second)
 	}

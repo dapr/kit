@@ -1,4 +1,3 @@
-//nolint
 /*
 This package is a fork of "github.com/robfig/cron/v3" that implements cron spec parser and job runner with support for mocking the time.
 
@@ -36,7 +35,9 @@ them in their own goroutines.
 # Time mocking
 
 import (
+
 	clocktesting "k8s.io/utils/clock/testing"
+
 )
 
 clk := clocktesting.NewFakeClock(time.Now())

@@ -155,12 +155,12 @@ func (p PKI) ClientGRPCCtx(t *testing.T) context.Context {
 		server.Serve(lis)
 	}()
 	//nolint:staticcheck
-	conn, err := grpc.DialContext(context.Background(), lis.Addr().String(),
+	conn, err := grpc.DialContext(t.Context(), lis.Addr().String(),
 		grpc.WithTransportCredentials(grpccredentials.MTLSClientCredentials(clientSVID, clientSVID, tlsconfig.AuthorizeAny())),
 	)
 	require.NoError(t, err)
 
-	_, err = helloworld.NewGreeterClient(conn).SayHello(context.Background(), new(helloworld.HelloRequest))
+	_, err = helloworld.NewGreeterClient(conn).SayHello(t.Context(), new(helloworld.HelloRequest))
 	require.NoError(t, err)
 
 	lis.Close()

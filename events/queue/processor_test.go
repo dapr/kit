@@ -271,7 +271,7 @@ func TestProcessor(t *testing.T) {
 		)
 		now := clock.Now()
 		wg := sync.WaitGroup{}
-		for i := 0; i < count; i++ {
+		for i := range count {
 			wg.Add(1)
 			go func(i int) {
 				defer wg.Done()
@@ -312,7 +312,7 @@ func TestProcessor(t *testing.T) {
 		close(doneCh)
 
 		// Ensure all items are true
-		for i := 0; i < count; i++ {
+		for i := range count {
 			assert.Truef(t, collected[i], "item %d not received", i)
 		}
 	})
@@ -402,7 +402,7 @@ func TestClose(t *testing.T) {
 	default:
 	}
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		select {
 		case err := <-closeCh:
 			require.NoError(t, err)

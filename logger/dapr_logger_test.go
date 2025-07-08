@@ -25,7 +25,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/maps"
 )
 
 const fakeLoggerName = "fakeLogger"
@@ -286,7 +285,7 @@ func TestWithTypeFields(t *testing.T) {
 	testLogger.Info("testLogger with log LogType")
 
 	b, _ = buf.ReadBytes('\n')
-	maps.Clear(o)
+	clear(o)
 	require.NoError(t, json.Unmarshal(b, &o))
 
 	assert.Equalf(t, LogTypeLog, o[logFieldType], "testLogger must be %s type", LogTypeLog)
@@ -309,12 +308,12 @@ func TestWithFields(t *testing.T) {
 		}).Info("🙃")
 
 		b, _ := buf.ReadBytes('\n')
-		maps.Clear(o)
+		clear(o)
 		require.NoError(t, json.Unmarshal(b, &o))
 
 		assert.Equal(t, "🙃", o["msg"])
 		assert.Equal(t, "world", o["hello"])
-		assert.Equal(t, float64(42), o["answer"])
+		assert.InDelta(t, float64(42), o["answer"], 000.1)
 
 		// Test with other fields
 		testLogger.WithFields(map[string]any{
@@ -322,7 +321,7 @@ func TestWithFields(t *testing.T) {
 		}).Info("🐶")
 
 		b, _ = buf.ReadBytes('\n')
-		maps.Clear(o)
+		clear(o)
 		require.NoError(t, json.Unmarshal(b, &o))
 
 		assert.Equal(t, "🐶", o["msg"])
@@ -336,7 +335,7 @@ func TestWithFields(t *testing.T) {
 		testLogger.Info("🤔")
 
 		b, _ = buf.ReadBytes('\n')
-		maps.Clear(o)
+		clear(o)
 		require.NoError(t, json.Unmarshal(b, &o))
 
 		assert.Equal(t, "🤔", o["msg"])

@@ -20,6 +20,8 @@ import (
 )
 
 // Algorithm used to wrap the file key.
+//
+//nolint:recvcheck
 type KeyAlgorithm string
 
 const (

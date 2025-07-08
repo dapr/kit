@@ -34,11 +34,11 @@ var (
 
 func TestScheme(t *testing.T) {
 	// Fake wrapKeyFn and unwrapKeyFn, which just return the plaintext key
-	//nolint:stylecheck,revive
+	//nolint:stylecheck
 	var wrapKeyFn WrapKeyFn = func(plaintextKey []byte, algorithm, keyName string, nonce []byte) (wrappedKey []byte, tag []byte, err error) {
 		return plaintextKey, nil, nil
 	}
-	//nolint:stylecheck,revive
+	//nolint:stylecheck
 	var unwrapKeyFn UnwrapKeyFn = func(wrappedKey []byte, algorithm, keyName string, nonce, tag []byte) (plaintextKey []byte, err error) {
 		return wrappedKey, nil
 	}
@@ -91,7 +91,7 @@ func TestScheme(t *testing.T) {
 				// Second, check that the JSON manifest is present and valid
 				start := idx + 1
 				idx = bytes.IndexByte(encData[start:], '\n')
-				require.Greater(t, idx, 0)
+				require.Positive(t, idx)
 				var manifest Manifest
 				err = json.Unmarshal(encData[start:(start+idx)], &manifest)
 				require.NoError(t, err)
@@ -106,7 +106,7 @@ func TestScheme(t *testing.T) {
 				// We are not validating the MAC here as the decryption code will do it; we'll just check it's present and 44-byte long (when encoded as base64)
 				start += idx + 1
 				idx = bytes.IndexByte(encData[start:], '\n')
-				require.Greater(t, idx, 0)
+				require.Positive(t, idx)
 				require.Len(t, encData[start:(start+idx)], 44)
 
 				// Decrypt the encrypted data

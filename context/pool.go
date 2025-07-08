@@ -52,6 +52,9 @@ func NewPool(ctx ...context.Context) *Pool {
 	go func() {
 		defer cancel()
 		defer p.lock.RUnlock()
+		//nolint:intrange
+		// for loops are evaluated on every loop while range are evaluated over a snapshot of the slice as it
+		// existed when the loop started
 		for i := 0; i < len(p.pool); i++ {
 			ch := p.pool[i]
 			p.lock.RUnlock()

@@ -52,7 +52,7 @@ func TestFromStatic(t *testing.T) {
 		pki := test.GenPKI(t, test.PKIOptions{})
 		ta, err := From(Options{Anchors: pki.RootCertPEM})
 		require.NoError(t, err)
-		taPEM, err := ta.CurrentTrustAnchors(context.Background())
+		taPEM, err := ta.CurrentTrustAnchors(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, pki.RootCertPEM, taPEM)
 	})
@@ -63,7 +63,7 @@ func TestFromStatic(t *testing.T) {
 		root := append(pki.RootCertPEM, []byte("garbage data")...)
 		ta, err := From(Options{Anchors: root})
 		require.NoError(t, err)
-		taPEM, err := ta.CurrentTrustAnchors(context.Background())
+		taPEM, err := ta.CurrentTrustAnchors(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, root, taPEM)
 	})
@@ -74,7 +74,7 @@ func TestFromStatic(t *testing.T) {
 		roots := append(pki1.RootCertPEM, pki2.RootCertPEM...)
 		ta, err := From(Options{Anchors: roots})
 		require.NoError(t, err)
-		taPEM, err := ta.CurrentTrustAnchors(context.Background())
+		taPEM, err := ta.CurrentTrustAnchors(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, roots, taPEM)
 	})
@@ -118,7 +118,7 @@ func TestStatic_Run(t *testing.T) {
 		s, ok := ta.(*static)
 		require.True(t, ok)
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
 		go func() {
 			errCh <- s.Run(ctx)
@@ -157,7 +157,7 @@ func TestStatic_Watch(t *testing.T) {
 		ta, err := From(Options{Anchors: pki.RootCertPEM})
 		require.NoError(t, err)
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		doneCh := make(chan struct{})
 
 		go func() {
@@ -179,7 +179,7 @@ func TestStatic_Watch(t *testing.T) {
 		ta, err := From(Options{Anchors: pki.RootCertPEM})
 		require.NoError(t, err)
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		doneCh := make(chan struct{})
 		errCh := make(chan error)
 
@@ -188,7 +188,7 @@ func TestStatic_Watch(t *testing.T) {
 		}()
 
 		go func() {
-			ta.Watch(context.Background(), nil)
+			ta.Watch(t.Context(), nil)
 			close(doneCh)
 		}()
 

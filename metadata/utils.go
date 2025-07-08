@@ -126,7 +126,7 @@ func resolveAliases(md map[string]string, t reflect.Type) error {
 
 func resolveAliasesInType(md map[string]string, keys map[string]string, t reflect.Type) {
 	// Iterate through all the properties of the type to see if anyone has the "mapstructurealiases" property
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		currentField := t.Field(i)
 
 		// Ignored fields that are not exported or that don't have a "mapstructure" tag

@@ -214,9 +214,9 @@ func (aead *aesCBCAEAD) Open(dst, nonce, ciphertext, additionalData []byte) ([]b
 }
 
 // Computes the HMAC tag as per specs.
-func (aead aesCBCAEAD) hmacTag(h hash.Hash, additionalData, nonce, ciphertext []byte, l int) []byte {
+func (aead *aesCBCAEAD) hmacTag(h hash.Hash, additionalData, nonce, ciphertext []byte, l int) []byte {
 	al := make([]byte, 8)
-	binary.BigEndian.PutUint64(al, uint64(len(additionalData)<<3)) // In bits
+	binary.BigEndian.PutUint64(al, uint64(len(additionalData)<<3)) // #nosec G115 // In bits
 
 	h.Write(additionalData)
 	h.Write(nonce)

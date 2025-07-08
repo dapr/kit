@@ -24,7 +24,7 @@ const (
 	CodePrefixStateStore         = "DAPR_STATE_"
 	CodePrefixPubSub             = "DAPR_PUBSUB_"
 	CodePrefixBindings           = "DAPR_BINDING_"
-	CodePrefixSecretStore        = "DAPR_SECRET_"
+	CodePrefixSecretStore        = "DAPR_SECRET_" // #nosec G101
 	CodePrefixConfigurationStore = "DAPR_CONFIGURATION_"
 	CodePrefixLock               = "DAPR_LOCK_"
 	CodePrefixNameResolution     = "DAPR_NAME_RESOLUTION_"
