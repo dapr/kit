@@ -131,4 +131,24 @@ func Test_Pool(t *testing.T) {
 			t.Error("expected context pool to be cancelled")
 		}
 	})
+
+	t.Run("wait for added context to be closed", func(t *testing.T) {
+		t.Parallel()
+
+		ctx1, cancel1 := context.WithCancel(t.Context())
+		pool := NewPool(ctx1)
+
+		ctx2, cancel2 := context.WithCancel(t.Context())
+		pool.Add(ctx2)
+
+		assert.Equal(t, 2, pool.Size())
+		cancel1()
+
+		select {
+		case <-pool.Done():
+			t.Error("expected context pool to not be cancelled")
+		case <-time.After(10 * time.Millisecond):
+		}
+		cancel2()
+	})
 }
