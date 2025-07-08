@@ -795,6 +795,7 @@ func TestMillisecond(t *testing.T) {
 	counter1ms := atomic.Int64{}
 	counter15ms := atomic.Int64{}
 	counter100ms := atomic.Int64{}
+
 	cron.AddFunc("@every 1ms", func() {
 		counter1ms.Add(1)
 	})
@@ -811,9 +812,36 @@ func TestMillisecond(t *testing.T) {
 		assert.Eventually(t, clk.HasWaiters, OneSecond, 1*time.Millisecond)
 		clk.Step(1 * time.Millisecond)
 	}
-	assert.Equal(t, int64(999), counter1ms.Load())
+	ctx := cron.Stop()
+	<-ctx.Done()
+
+	assert.Equal(t, int64(1000), counter1ms.Load())
 	assert.Equal(t, int64(66), counter15ms.Load())
-	assert.Equal(t, int64(9), counter100ms.Load())
+	assert.Equal(t, int64(10), counter100ms.Load())
+}
+
+func TestNanoseconds(t *testing.T) {
+	clk := clocktesting.NewFakeClock(time.Now())
+	cron := New(WithClock(clk))
+
+	counter100ns := atomic.Int64{}
+	cron.AddFunc("@every 100ns", func() {
+		counter100ns.Add(1)
+	})
+
+	cron.Start()
+	defer cron.Stop()
+
+	for range 500 {
+		assert.Eventually(t, clk.HasWaiters, OneSecond, 1*time.Millisecond)
+		clk.Step(5 * time.Nanosecond)
+	}
+	ctx := cron.Stop()
+	<-ctx.Done()
+
+	// 500 * 5 ns = 2500 ns
+	// 2500 every 100ns = 25
+	assert.Equal(t, int64(25), counter100ns.Load())
 }
 
 func TestMultiThreadedStartAndStop(*testing.T) {

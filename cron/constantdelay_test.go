@@ -28,11 +28,12 @@ func TestConstantDelayNext(t *testing.T) {
 		expected string
 	}{
 		// Simple cases
-		{"Mon Jul 9 14:45 2012", 15*time.Minute + 50*time.Nanosecond, "Mon Jul 9 15:00 2012"},
+		{"Mon Jul 9 14:45 2012", 15*time.Minute + 50*time.Nanosecond, "Mon Jul 9 15:00:00.00000005 2012"},
 		{"Mon Jul 9 14:59 2012", 15 * time.Minute, "Mon Jul 9 15:14 2012"},
 		{"Mon Jul 9 14:59:59 2012", 15 * time.Minute, "Mon Jul 9 15:14:59 2012"},
 		{"Mon Jul 9 14:45:00 2012", 15 * time.Millisecond, "Mon Jul 9 14:45:00.015 2012"},
 		{"Mon Jul 9 14:45:00.015 2012", 15 * time.Millisecond, "Mon Jul 9 14:45:00.030 2012"},
+		{"Mon Jul 9 14:45:00.000000050 2012", 15 * time.Nanosecond, "Mon Jul 9 14:45:00.000000065 2012"},
 
 		// Wrap around hours
 		{"Mon Jul 9 15:45 2012", 35 * time.Minute, "Mon Jul 9 16:20 2012"},
@@ -48,12 +49,6 @@ func TestConstantDelayNext(t *testing.T) {
 
 		// Wrap around minute, hour, day, month, and year
 		{"Mon Dec 31 23:59:45 2012", 15 * time.Second, "Tue Jan 1 00:00:00 2013"},
-
-		// Round to nearest second on the delay
-		{"Mon Jul 9 14:45 2012", 15*time.Minute + 50*time.Nanosecond, "Mon Jul 9 15:00 2012"},
-
-		// Round to nearest millisecond for both.
-		{"Mon Jul 9 14:45:00.005 2012", 15*time.Minute + 50*time.Nanosecond, "Mon Jul 9 15:00:00.005 2012"},
 	}
 
 	for _, c := range tests {
