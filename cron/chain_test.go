@@ -170,7 +170,7 @@ func TestChainDelayIfStillRunning(t *testing.T) {
 		assert.EventuallyWithT(t, func(c *assert.CollectT) {
 			started, done = j.Started(), j.Done()
 			if started != 2 || done != 2 {
-				c.Errorf("expected both jobs done, got %v %v", started, done) //nolint:testifylint
+				c.Errorf("expected both jobs done, got %v %v", started, done)
 			}
 		}, 100*time.Millisecond, 10*time.Millisecond)
 	})
@@ -230,7 +230,7 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 		var j countJob
 		j.delay = 10 * time.Millisecond
 		wrappedJob := NewChain(SkipIfStillRunning(DiscardLogger)).Then(&j)
-		for i := 0; i < 11; i++ {
+		for range 11 {
 			go wrappedJob.Run()
 		}
 		assert.Eventually(t, j.clock.HasWaiters, 50*time.Millisecond, 10*time.Millisecond)
@@ -248,7 +248,7 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 		chain := NewChain(SkipIfStillRunning(DiscardLogger))
 		wrappedJob1 := chain.Then(&j1)
 		wrappedJob2 := chain.Then(&j2)
-		for i := 0; i < 11; i++ {
+		for range 11 {
 			go wrappedJob1.Run()
 			go wrappedJob2.Run()
 		}

@@ -86,7 +86,7 @@ func (r *RunnerManager) Run(ctx context.Context) error {
 
 	// Collect all errors
 	errObjs := make([]error, 0)
-	for i := 0; i < len(r.runners); i++ {
+	for range len(r.runners) {
 		err := <-errCh
 		if err != nil {
 			errObjs = append(errObjs, err)

@@ -34,7 +34,7 @@ func Test_OuterCancel(t *testing.T) {
 
 		l := NewOuterCancel(terr, time.Second)
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		t.Cleanup(cancel)
 
 		go l.Run(ctx)
@@ -71,7 +71,7 @@ func Test_OuterCancel(t *testing.T) {
 
 		l := NewOuterCancel(terr, time.Second)
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		t.Cleanup(cancel)
 
 		go l.Run(ctx)
@@ -97,7 +97,7 @@ func Test_OuterCancel(t *testing.T) {
 
 		l := NewOuterCancel(terr, time.Second)
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		t.Cleanup(cancel)
 
 		go l.Run(ctx)
@@ -127,7 +127,7 @@ func Test_OuterCancel(t *testing.T) {
 
 		l := NewOuterCancel(terr, time.Second)
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 
 		go l.Run(ctx)
@@ -138,7 +138,7 @@ func Test_OuterCancel(t *testing.T) {
 			assert.Fail(t, "expected close")
 		}
 
-		_, _, err := l.RLock(context.Background())
+		_, _, err := l.RLock(t.Context())
 		require.Error(t, err)
 	})
 
@@ -147,7 +147,7 @@ func Test_OuterCancel(t *testing.T) {
 
 		l := NewOuterCancel(terr, time.Second)
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 
 		l.Run(ctx)
@@ -162,7 +162,7 @@ func Test_OuterCancel(t *testing.T) {
 		t.Parallel()
 
 		l := NewOuterCancel(terr, time.Second)
-
+		//nolint:usetesting
 		ctx, cancel := context.WithCancel(context.Background())
 		t.Cleanup(cancel)
 
@@ -197,7 +197,7 @@ func Test_OuterCancel(t *testing.T) {
 
 		l := NewOuterCancel(terr, time.Second)
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		t.Cleanup(cancel)
 
 		go l.Run(ctx)

@@ -37,7 +37,7 @@ func (m *mockJWTSource) FetchJWTSVID(context.Context, jwtsvid.Params) (*jwtsvid.
 
 func TestWithX509FromX509(t *testing.T) {
 	source := &mockX509Source{}
-	ctx := WithX509(context.Background(), source)
+	ctx := WithX509(t.Context(), source)
 
 	retrieved, ok := X509From(ctx)
 	assert.True(t, ok, "Failed to retrieve X509 source from context")
@@ -46,7 +46,7 @@ func TestWithX509FromX509(t *testing.T) {
 
 func TestWithJWTFromJWT(t *testing.T) {
 	source := &mockJWTSource{}
-	ctx := WithJWT(context.Background(), source)
+	ctx := WithJWT(t.Context(), source)
 
 	retrieved, ok := JWTFrom(ctx)
 	assert.True(t, ok, "Failed to retrieve JWT source from context")
@@ -55,7 +55,7 @@ func TestWithJWTFromJWT(t *testing.T) {
 
 func TestWithFrom(t *testing.T) {
 	x509Source := &mockX509Source{}
-	ctx := WithX509(context.Background(), x509Source)
+	ctx := WithX509(t.Context(), x509Source)
 
 	// Should be able to retrieve using the legacy From function
 	retrieved, ok := From(ctx)

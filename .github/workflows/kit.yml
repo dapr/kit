@@ -54,9 +54,6 @@ jobs:
         with:
           version: ${{ env.GOLANGCI_LINT_VER }}
           skip-cache: true
-          # TODO: @joshvanl remove once all new linter errors have been
-          # addressed.
-          only-new-issues: true
       - name: Run make go.mod check-diff
         if: matrix.target_arch != 'arm'
         run: make go.mod check-diff

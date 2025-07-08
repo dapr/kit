@@ -36,7 +36,7 @@ func DecodePEMCertificatesChain(crtb []byte) ([]*x509.Certificate, error) {
 		return nil, err
 	}
 
-	for i := 0; i < len(certs)-1; i++ {
+	for i := range len(certs) - 1 {
 		if certs[i].CheckSignatureFrom(certs[i+1]) != nil {
 			return nil, errors.New("certificate chain is not valid")
 		}

@@ -61,7 +61,7 @@ func TestFetchJWTSVID(t *testing.T) {
 		}
 		close(s.spiffe.readyCh) // Mark as ready
 
-		svid, err := s.FetchJWTSVID(context.Background(), jwtsvid.Params{
+		svid, err := s.FetchJWTSVID(t.Context(), jwtsvid.Params{
 			Audience: "",
 		})
 
@@ -79,7 +79,7 @@ func TestFetchJWTSVID(t *testing.T) {
 		}
 		close(s.spiffe.readyCh) // Mark as ready
 
-		svid, err := s.FetchJWTSVID(context.Background(), jwtsvid.Params{
+		svid, err := s.FetchJWTSVID(t.Context(), jwtsvid.Params{
 			Audience: "test-audience",
 		})
 
@@ -101,7 +101,7 @@ func TestFetchJWTSVID(t *testing.T) {
 		}
 		close(s.spiffe.readyCh) // Mark as ready
 
-		svid, err := s.FetchJWTSVID(context.Background(), jwtsvid.Params{
+		svid, err := s.FetchJWTSVID(t.Context(), jwtsvid.Params{
 			Audience: "requested-audience",
 		})
 
@@ -127,7 +127,7 @@ func TestFetchJWTSVID(t *testing.T) {
 		}
 		close(s.spiffe.readyCh) // Mark as ready
 
-		svid, err := s.FetchJWTSVID(context.Background(), jwtsvid.Params{
+		svid, err := s.FetchJWTSVID(t.Context(), jwtsvid.Params{
 			Audience: "test-audience",
 		})
 
@@ -149,7 +149,7 @@ func TestFetchJWTSVID(t *testing.T) {
 		}
 
 		// Start goroutine to fetch SVID
-		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
 		defer cancel()
 
 		resultCh := make(chan struct {

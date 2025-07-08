@@ -38,7 +38,7 @@ func (m mockCloser) Close() error {
 
 func Test_RunnerClosterManager(t *testing.T) {
 	t.Run("runner with no tasks or closers should return nil", func(t *testing.T) {
-		require.NoError(t, NewRunnerCloserManager(log, nil).Run(context.Background()))
+		require.NoError(t, NewRunnerCloserManager(log, nil).Run(t.Context()))
 	})
 
 	t.Run("runner with a task that completes should return nil", func(t *testing.T) {
@@ -46,7 +46,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 		require.NoError(t, NewRunnerCloserManager(log, nil, func(context.Context) error {
 			i.Add(1)
 			return nil
-		}).Run(context.Background()))
+		}).Run(t.Context()))
 		assert.Equal(t, int32(1), i.Load())
 	})
 
@@ -60,7 +60,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 			i.Add(1)
 			return nil
 		}))
-		require.NoError(t, mngr.Run(context.Background()))
+		require.NoError(t, mngr.Run(t.Context()))
 		assert.Equal(t, int32(2), i.Load())
 	})
 
@@ -98,7 +98,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 			}),
 		))
 
-		require.NoError(t, mngr.Run(context.Background()))
+		require.NoError(t, mngr.Run(t.Context()))
 		assert.Equal(t, int32(7), i.Load())
 	})
 
@@ -125,7 +125,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 			},
 		))
 
-		require.EqualError(t, mngr.Run(context.Background()), "error")
+		require.EqualError(t, mngr.Run(t.Context()), "error")
 		assert.Equal(t, int32(4), i.Load())
 	})
 
@@ -152,7 +152,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 			},
 		))
 
-		require.EqualError(t, mngr.Run(context.Background()), "error")
+		require.EqualError(t, mngr.Run(t.Context()), "error")
 		assert.Equal(t, int32(4), i.Load())
 	})
 
@@ -187,7 +187,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 			}),
 		))
 
-		err := mngr.Run(context.Background())
+		err := mngr.Run(t.Context())
 		require.Error(t, err)
 		require.ErrorContains(t, err, "error\nerror\nerror\nclosererror\nclosererror\nclosererror") //nolint:dupword
 		assert.Equal(t, int32(6), i.Load())
@@ -224,7 +224,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 			}),
 		))
 
-		err := mngr.Run(context.Background())
+		err := mngr.Run(t.Context())
 		require.Error(t, err)
 		assert.ElementsMatch(t,
 			[]string{"error1", "error2", "error3", "closererror1", "closererror2", "closererror3"},
@@ -265,7 +265,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 			},
 		))
 
-		require.NoError(t, mngr.Run(context.Background()))
+		require.NoError(t, mngr.Run(t.Context()))
 		assert.Equal(t, int32(5), i.Load())
 	})
 
@@ -325,7 +325,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 			},
 		))
 
-		require.NoError(t, mngr.Run(context.Background()))
+		require.NoError(t, mngr.Run(t.Context()))
 		assert.Equal(t, int32(6), i.Load())
 	})
 
@@ -377,7 +377,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 			},
 		))
 
-		err := mngr.Run(context.Background())
+		err := mngr.Run(t.Context())
 		require.Error(t, err)
 		assert.ElementsMatch(t,
 			[]string{"error1", "error2", "error3", "closererror1", "closererror2"},
@@ -392,9 +392,9 @@ func Test_RunnerClosterManager(t *testing.T) {
 			i.Add(1)
 			return nil
 		})
-		require.NoError(t, m.Run(context.Background()))
+		require.NoError(t, m.Run(t.Context()))
 		assert.Equal(t, int32(1), i.Load())
-		require.EqualError(t, m.Run(context.Background()), "runner manager already started")
+		require.EqualError(t, m.Run(t.Context()), "runner manager already started")
 		assert.Equal(t, int32(1), i.Load())
 	})
 
@@ -410,11 +410,11 @@ func Test_RunnerClosterManager(t *testing.T) {
 			return nil
 		}))
 
-		require.NoError(t, m.Run(context.Background()))
+		require.NoError(t, m.Run(t.Context()))
 		assert.Equal(t, int32(2), i.Load())
 		require.NoError(t, m.Close())
 		require.NoError(t, m.Close())
-		require.EqualError(t, m.Run(context.Background()), "runner manager already started")
+		require.EqualError(t, m.Run(t.Context()), "runner manager already started")
 		assert.Equal(t, int32(2), i.Load())
 	})
 
@@ -424,7 +424,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 			i.Add(1)
 			return nil
 		})
-		require.NoError(t, m.Run(context.Background()))
+		require.NoError(t, m.Run(t.Context()))
 		assert.Equal(t, int32(1), i.Load())
 		err := m.Add(func(context.Context) error {
 			i.Add(1)
@@ -441,7 +441,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 			i.Add(1)
 			return nil
 		})
-		require.NoError(t, m.Run(context.Background()))
+		require.NoError(t, m.Run(t.Context()))
 		assert.Equal(t, int32(1), i.Load())
 		require.NoError(t, m.Close())
 		err := m.AddCloser(func(context.Context) error {
@@ -486,7 +486,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- mngr.Run(context.Background())
+			errCh <- mngr.Run(t.Context())
 		}()
 
 		select {
@@ -515,7 +515,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 		clock := clocktesting.NewFakeClock(time.Now())
 		mngr.clock = clock
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		t.Cleanup(cancel)
 
 		fatalCalled := make(chan struct{})
@@ -537,7 +537,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 			}
 		})
 		go func() {
-			errCh <- mngr.Run(context.Background())
+			errCh <- mngr.Run(t.Context())
 		}()
 
 		assert.Eventually(t, func() bool {
@@ -571,7 +571,7 @@ func TestClose(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- mngr.Run(context.Background())
+			errCh <- mngr.Run(t.Context())
 		}()
 
 		select {
@@ -629,7 +629,7 @@ func TestClose(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- mngr.Run(context.Background())
+			errCh <- mngr.Run(t.Context())
 		}()
 
 		select {
@@ -714,7 +714,7 @@ func TestClose(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- mngr.Run(context.Background())
+			errCh <- mngr.Run(t.Context())
 		}()
 
 		select {
@@ -776,7 +776,7 @@ func TestClose(t *testing.T) {
 		assert.Len(t, mngr.closers, 1)
 
 		returnClose := make(chan struct{})
-		for n := 0; n < 4; n++ {
+		for range 4 {
 			require.NoError(t, mngr.AddCloser(func() {
 				i.Add(1)
 				<-returnClose
@@ -787,7 +787,7 @@ func TestClose(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- mngr.Run(context.Background())
+			errCh <- mngr.Run(t.Context())
 		}()
 
 		select {
@@ -850,7 +850,7 @@ func TestClose(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- mngr.Run(context.Background())
+			errCh <- mngr.Run(t.Context())
 		}()
 
 		var err error
@@ -879,7 +879,7 @@ func TestClose(t *testing.T) {
 
 		require.NoError(t, mngr.Close())
 		require.NoError(t, mngr.Close())
-		assert.Equal(t, mngr.Run(context.Background()), errors.New("runner manager already started"))
+		assert.Equal(t, mngr.Run(t.Context()), errors.New("runner manager already started"))
 	})
 }
 
@@ -918,7 +918,7 @@ func TestAddCloser(t *testing.T) {
 			return nil
 		})
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
 		go func() {
 			errCh <- mngr.Run(ctx)
@@ -931,7 +931,7 @@ func TestAddCloser(t *testing.T) {
 	t.Run("should error if closing", func(t *testing.T) {
 		mngr := NewRunnerCloserManager(log, nil)
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		closerCh := make(chan struct{})
 		require.NoError(t, mngr.AddCloser(func() {
 			cancel()
@@ -940,7 +940,7 @@ func TestAddCloser(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- mngr.Run(context.Background())
+			errCh <- mngr.Run(t.Context())
 		}()
 
 		select {
@@ -973,7 +973,7 @@ func TestAddCloser(t *testing.T) {
 
 	t.Run("should error if manager already returned", func(t *testing.T) {
 		mngr := NewRunnerCloserManager(log, nil)
-		require.NoError(t, mngr.Run(context.Background()))
+		require.NoError(t, mngr.Run(t.Context()))
 		assert.Equal(t, mngr.AddCloser(nil), errors.New("runner manager already closed"))
 	})
 }
@@ -999,7 +999,7 @@ func TestWaitUntilShutdown(t *testing.T) {
 		<-returnClose
 	}))
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 
 	errCh := make(chan error)
 	go func() {

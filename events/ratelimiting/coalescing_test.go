@@ -39,7 +39,7 @@ func TestCoalescing(t *testing.T) {
 		ch := make(chan struct{})
 		errCh := make(chan error)
 		go func() {
-			errCh <- c.Run(context.Background(), ch)
+			errCh <- c.Run(t.Context(), ch)
 		}()
 
 		t.Cleanup(func() {
@@ -78,7 +78,7 @@ func TestCoalescing(t *testing.T) {
 		c, err := NewCoalescing(OptionsCoalescing{})
 		require.NoError(t, err)
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
 		go func() {
 			errCh <- c.Run(ctx, make(chan struct{}))
@@ -100,7 +100,7 @@ func TestCoalescing(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- c.Run(context.Background(), make(chan struct{}))
+			errCh <- c.Run(t.Context(), make(chan struct{}))
 		}()
 
 		c.Close()
@@ -119,7 +119,7 @@ func TestCoalescing(t *testing.T) {
 
 		errCh := make(chan error)
 		go func() {
-			errCh <- c.Run(context.Background(), make(chan struct{}))
+			errCh <- c.Run(t.Context(), make(chan struct{}))
 		}()
 
 		c.Close()
@@ -132,7 +132,7 @@ func TestCoalescing(t *testing.T) {
 		}
 
 		go func() {
-			errCh <- c.Run(context.Background(), make(chan struct{}))
+			errCh <- c.Run(t.Context(), make(chan struct{}))
 		}()
 
 		select {
@@ -277,7 +277,7 @@ func TestCoalescing(t *testing.T) {
 		c.Add()
 		assertNoChannel(t, ch)
 
-		for i := 0; i < 4; i++ {
+		for range 4 {
 			assert.Eventually(t, clock.HasWaiters, time.Second, time.Millisecond)
 			clock.Step(time.Second * 4)
 			c.Add()
@@ -345,7 +345,7 @@ func TestCoalescing(t *testing.T) {
 		assertChannel(t, ch)
 
 		assert.Eventually(t, c.hasTimer.Load, time.Second, time.Millisecond)
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			c.Add()
 		}
 		assert.Eventually(t, clock.HasWaiters, time.Second, time.Millisecond)

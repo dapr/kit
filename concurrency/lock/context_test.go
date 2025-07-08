@@ -29,14 +29,14 @@ func Test_Context(t *testing.T) {
 	}{
 		"Successful Lock": {
 			action: func(l *Context) error {
-				return l.Lock(context.Background())
+				return l.Lock(t.Context())
 			},
 			expectError: false,
 		},
 		"Lock with Context Timeout": {
 			action: func(l *Context) error {
-				l.Lock(context.Background())
-				ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*50)
+				l.Lock(t.Context())
+				ctx, cancel := context.WithTimeout(t.Context(), time.Millisecond*50)
 				defer cancel()
 				return l.Lock(ctx)
 			},
@@ -44,14 +44,14 @@ func Test_Context(t *testing.T) {
 		},
 		"Successful RLock": {
 			action: func(l *Context) error {
-				return l.RLock(context.Background())
+				return l.RLock(t.Context())
 			},
 			expectError: false,
 		},
 		"RLock with Context Timeout": {
 			action: func(l *Context) error {
-				l.Lock(context.Background())
-				ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*50)
+				l.Lock(t.Context())
+				ctx, cancel := context.WithTimeout(t.Context(), time.Millisecond*50)
 				defer cancel()
 				return l.RLock(ctx)
 			},

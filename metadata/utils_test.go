@@ -14,13 +14,13 @@ limitations under the License.
 package metadata
 
 import (
+	"maps"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/maps"
 )
 
 func TestMetadataDecode(t *testing.T) {

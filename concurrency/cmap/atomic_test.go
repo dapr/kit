@@ -57,13 +57,13 @@ func TestAtomicInt32_New_Get_Delete(t *testing.T) {
 		for _, key := range keys {
 			go func(k string) {
 				defer wg.Done()
-				for i := 0; i < iterations; i++ {
+				for range iterations {
 					m.GetOrCreate(k, 0).Add(1)
 				}
 			}(key)
 			go func(k string) {
 				defer wg.Done()
-				for i := 0; i < iterations; i++ {
+				for range iterations {
 					m.GetOrCreate(k, 0).Add(-1)
 				}
 			}(key)

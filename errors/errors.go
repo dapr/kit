@@ -63,7 +63,7 @@ type Error struct {
 
 // ErrorBuilder is used to build the error
 type ErrorBuilder struct {
-	err Error
+	err *Error
 }
 
 // errorJSON is used to build the error for the HTTP Methods json output
@@ -106,12 +106,12 @@ func (e *Error) Category() string {
 }
 
 // Error implements the error interface.
-func (e Error) Error() string {
+func (e *Error) Error() string {
 	return e.String()
 }
 
 // String returns the string representation.
-func (e Error) String() string {
+func (e *Error) String() string {
 	return fmt.Sprintf(errStringFormat, e.grpcCode.String(), e.message)
 }
 
@@ -140,9 +140,9 @@ func FromError(err error) (*Error, bool) {
 		return nil, false
 	}
 
-	var kitErr Error
+	var kitErr *Error
 	if errors.As(err, &kitErr) {
-		return &kitErr, true
+		return kitErr, true
 	}
 
 	return nil, false
@@ -151,7 +151,7 @@ func FromError(err error) (*Error, bool) {
 /*** GRPC Methods ***/
 
 // GRPCStatus returns the gRPC status.Status object.
-func (e Error) GRPCStatus() *status.Status {
+func (e *Error) GRPCStatus() *status.Status {
 	stat := status.New(e.grpcCode, e.message)
 
 	// convert details from proto.Msg -> protoiface.MsgV1
@@ -178,7 +178,7 @@ func (e Error) GRPCStatus() *status.Status {
 /*** HTTP Methods ***/
 
 // JSONErrorValue implements the errorResponseValue interface.
-func (e Error) JSONErrorValue() []byte {
+func (e *Error) JSONErrorValue() []byte {
 	grpcStatus := e.GRPCStatus().Proto()
 
 	// Make httpCode human readable
@@ -200,7 +200,7 @@ func (e Error) JSONErrorValue() []byte {
 	if len(details) > 0 {
 		errJSON.Details = make([]any, len(details))
 		for i, detail := range details {
-			detailMap, errorCode := convertErrorDetails(detail, e)
+			detailMap, errorCode := convertErrorDetails(detail, *e)
 			errJSON.Details[i] = detailMap
 
 			// If there is an errorCode, update the overall ErrorCode
@@ -357,7 +357,7 @@ ErrorBuilder
 // NewBuilder create a new ErrorBuilder using the supplied required error fields
 func NewBuilder(grpcCode grpcCodes.Code, httpCode int, message string, tag string, category string) *ErrorBuilder {
 	return &ErrorBuilder{
-		err: Error{
+		err: &Error{
 			details:  make([]proto.Message, 0),
 			grpcCode: grpcCode,
 			httpCode: httpCode,

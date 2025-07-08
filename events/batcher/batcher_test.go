@@ -14,7 +14,6 @@ limitations under the License.
 package batcher
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -44,7 +43,7 @@ func TestSubscribe(t *testing.T) {
 
 	b := New[string, struct{}](Options{Interval: time.Millisecond * 10})
 	ch := make(chan struct{})
-	b.Subscribe(context.Background(), ch)
+	b.Subscribe(t.Context(), ch)
 	assert.Len(t, b.eventChs, 1)
 }
 
@@ -59,8 +58,8 @@ func TestBatch(t *testing.T) {
 	ch1 := make(chan struct{})
 	ch2 := make(chan struct{})
 	ch3 := make(chan struct{})
-	b.Subscribe(context.Background(), ch1, ch2)
-	b.Subscribe(context.Background(), ch3)
+	b.Subscribe(t.Context(), ch1, ch2)
+	b.Subscribe(t.Context(), ch3)
 
 	b.Batch("key1", struct{}{})
 	b.Batch("key1", struct{}{})
@@ -95,7 +94,7 @@ func TestBatch(t *testing.T) {
 
 	fakeClock.Step(time.Millisecond * 5)
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		for _, ch := range []chan struct{}{ch1, ch2, ch3} {
 			select {
 			case <-ch:
@@ -115,10 +114,10 @@ func TestBatch(t *testing.T) {
 		ch1 := make(chan int, 10)
 		ch2 := make(chan int, 10)
 		ch3 := make(chan int, 10)
-		b.Subscribe(context.Background(), ch1, ch2)
-		b.Subscribe(context.Background(), ch3)
+		b.Subscribe(t.Context(), ch1, ch2)
+		b.Subscribe(t.Context(), ch3)
 
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			b.Batch(i, i)
 			b.Batch(i, i+1)
 			b.Batch(i, i+2)
@@ -126,7 +125,7 @@ func TestBatch(t *testing.T) {
 		}
 
 		for _, ch := range []chan int{ch1} {
-			for i := 0; i < 10; i++ {
+			for i := range 10 {
 				select {
 				case v := <-ch:
 					assert.Equal(t, i+2, v)
@@ -143,7 +142,7 @@ func TestClose(t *testing.T) {
 
 	b := New[string, struct{}](Options{Interval: time.Millisecond * 10})
 	ch := make(chan struct{})
-	b.Subscribe(context.Background(), ch)
+	b.Subscribe(t.Context(), ch)
 	assert.Len(t, b.eventChs, 1)
 	b.Batch("key1", struct{}{})
 	b.Close()
@@ -156,6 +155,6 @@ func TestSubscribeAfterClose(t *testing.T) {
 	b := New[string, struct{}](Options{Interval: time.Millisecond * 10})
 	b.Close()
 	ch := make(chan struct{})
-	b.Subscribe(context.Background(), ch)
+	b.Subscribe(t.Context(), ch)
 	assert.Empty(t, b.eventChs)
 }

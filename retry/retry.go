@@ -55,9 +55,9 @@ type Config struct {
 }
 
 // String implements fmt.Stringer and is used for debugging.
-func (c Config) String() string {
+func (c *Config) String() string {
 	return fmt.Sprintf(
-		"policy='%s' duration='%v' initialInterval='%v' randomizationFactor='%f' multiplier='%f' maxInterval='%v' maxElapsedTime='%v' maxRetries='%d'",
+		"policy='%v' duration='%v' initialInterval='%v' randomizationFactor='%f' multiplier='%f' maxInterval='%v' maxElapsedTime='%v' maxRetries='%d'",
 		c.Policy, c.Duration, c.InitialInterval, c.RandomizationFactor, c.Multiplier, c.MaxInterval, c.MaxElapsedTime, c.MaxRetries,
 	)
 }
@@ -204,8 +204,8 @@ func (p *PolicyType) DecodeString(value string) error {
 }
 
 // String implements fmt.Stringer and is used for debugging.
-func (p PolicyType) String() string {
-	switch p {
+func (p *PolicyType) String() string {
+	switch *p {
 	case PolicyConstant:
 		return "constant"
 	case PolicyExponential:

@@ -32,7 +32,7 @@ func TestByteSlicePool(t *testing.T) {
 	assert.Equal(t, &bs, &bs2)
 	assert.Equal(t, minCap, cap(bs2))
 
-	for i := 0; i < minCap; i++ {
+	for range minCap {
 		bs2 = append(bs2, 0)
 	}
 

@@ -27,7 +27,7 @@ import (
 
 func Test_RunnerManager(t *testing.T) {
 	t.Run("runner with no tasks should return nil", func(t *testing.T) {
-		require.NoError(t, NewRunnerManager().Run(context.Background()))
+		require.NoError(t, NewRunnerManager().Run(t.Context()))
 	})
 
 	t.Run("runner with a task that completes should return nil", func(t *testing.T) {
@@ -35,7 +35,7 @@ func Test_RunnerManager(t *testing.T) {
 		require.NoError(t, NewRunnerManager(func(ctx context.Context) error {
 			atomic.AddInt32(&i, 1)
 			return nil
-		}).Run(context.Background()))
+		}).Run(t.Context()))
 		assert.Equal(t, int32(1), i)
 	})
 
@@ -54,7 +54,7 @@ func Test_RunnerManager(t *testing.T) {
 				atomic.AddInt32(&i, 1)
 				return nil
 			},
-		).Run(context.Background()))
+		).Run(t.Context()))
 		assert.Equal(t, int32(3), i)
 	})
 
@@ -73,7 +73,7 @@ func Test_RunnerManager(t *testing.T) {
 				atomic.AddInt32(&i, 1)
 				return nil
 			},
-		).Run(context.Background()), "error")
+		).Run(t.Context()), "error")
 		assert.Equal(t, int32(3), i)
 	})
 
@@ -92,7 +92,7 @@ func Test_RunnerManager(t *testing.T) {
 				atomic.AddInt32(&i, 1)
 				return errors.New("error")
 			},
-		).Run(context.Background())
+		).Run(t.Context())
 		require.Error(t, err)
 		require.ErrorContains(t, err, "error\nerror\nerror") //nolint:dupword
 		assert.Equal(t, int32(3), i)
@@ -113,7 +113,7 @@ func Test_RunnerManager(t *testing.T) {
 				atomic.AddInt32(&i, 1)
 				return errors.New("error3")
 			},
-		).Run(context.Background())
+		).Run(t.Context())
 		require.Error(t, err)
 		assert.ElementsMatch(t, []string{"error1", "error2", "error3"}, strings.Split(err.Error(), "\n"))
 		assert.Equal(t, int32(3), i)
@@ -139,7 +139,7 @@ func Test_RunnerManager(t *testing.T) {
 				return nil
 			},
 		))
-		require.NoError(t, mngr.Run(context.Background()))
+		require.NoError(t, mngr.Run(t.Context()))
 		assert.Equal(t, int32(3), i)
 	})
 
@@ -168,7 +168,7 @@ func Test_RunnerManager(t *testing.T) {
 				}
 				return nil
 			},
-		).Run(context.Background()))
+		).Run(t.Context()))
 		assert.Equal(t, int32(3), i)
 	})
 
@@ -197,7 +197,7 @@ func Test_RunnerManager(t *testing.T) {
 				atomic.AddInt32(&i, 1)
 				return errors.New("error3")
 			},
-		).Run(context.Background())
+		).Run(t.Context())
 		require.Error(t, err)
 		assert.ElementsMatch(t, []string{"error1", "error2", "error3"}, strings.Split(err.Error(), "\n"))
 		assert.Equal(t, int32(3), i)
@@ -209,9 +209,9 @@ func Test_RunnerManager(t *testing.T) {
 			atomic.AddInt32(&i, 1)
 			return nil
 		})
-		require.NoError(t, m.Run(context.Background()))
+		require.NoError(t, m.Run(t.Context()))
 		assert.Equal(t, int32(1), i)
-		require.EqualError(t, m.Run(context.Background()), "runner manager already started")
+		require.EqualError(t, m.Run(t.Context()), "runner manager already started")
 		assert.Equal(t, int32(1), i)
 	})
 
@@ -221,7 +221,7 @@ func Test_RunnerManager(t *testing.T) {
 			atomic.AddInt32(&i, 1)
 			return nil
 		})
-		require.NoError(t, m.Run(context.Background()))
+		require.NoError(t, m.Run(t.Context()))
 		assert.Equal(t, int32(1), i)
 		err := m.Add(func(ctx context.Context) error {
 			atomic.AddInt32(&i, 1)

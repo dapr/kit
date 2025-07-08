@@ -81,7 +81,7 @@ func decodeString(f reflect.Type, t reflect.Type, data any) (any, error) {
 	if t.Implements(typeStringDecoder) {
 		result = reflect.New(t.Elem()).Interface()
 		decoder = result.(StringDecoder)
-	} else if reflect.PtrTo(t).Implements(typeStringDecoder) {
+	} else if reflect.PointerTo(t).Implements(typeStringDecoder) {
 		result = reflect.New(t).Interface()
 		decoder = result.(StringDecoder)
 	}

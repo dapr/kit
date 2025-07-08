@@ -43,7 +43,7 @@ func TestFSWatcher(t *testing.T) {
 		}
 
 		errCh := make(chan error)
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		eventsCh := make(chan struct{})
 		go func() {
 			errCh <- f.Run(ctx, eventsCh)
@@ -84,7 +84,7 @@ func TestFSWatcher(t *testing.T) {
 	t.Run("running Run twice should error", func(t *testing.T) {
 		fs, err := New(Options{})
 		require.NoError(t, err)
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 		require.NoError(t, fs.Run(ctx, make(chan struct{})))
 		require.Error(t, fs.Run(ctx, make(chan struct{})))
@@ -101,7 +101,7 @@ func TestFSWatcher(t *testing.T) {
 
 	t.Run("should fire event when event occurs on target file", func(t *testing.T) {
 		fp := filepath.Join(t.TempDir(), "test.txt")
-		require.NoError(t, os.WriteFile(fp, []byte{}, 0o644))
+		require.NoError(t, os.WriteFile(fp, []byte{}, 0o600))
 		eventsCh := runWatcher(t, Options{
 			Targets:  []string{fp},
 			Interval: ptr.Of(time.Duration(1)),
@@ -112,7 +112,7 @@ func TestFSWatcher(t *testing.T) {
 			// If running in windows, wait for notify to be ready.
 			time.Sleep(time.Second)
 		}
-		require.NoError(t, os.WriteFile(fp, []byte{}, 0o644))
+		require.NoError(t, os.WriteFile(fp, []byte{}, 0o600))
 
 		select {
 		case <-eventsCh:
@@ -124,16 +124,16 @@ func TestFSWatcher(t *testing.T) {
 	t.Run("should fire 2 events when event occurs on 2 file target", func(t *testing.T) {
 		fp1 := filepath.Join(t.TempDir(), "test.txt")
 		fp2 := filepath.Join(t.TempDir(), "test.txt")
-		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o644))
-		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o644))
+		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
+		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
 		eventsCh := runWatcher(t, Options{
 			Targets:  []string{fp1, fp2},
 			Interval: ptr.Of(time.Duration(1)),
 		}, nil)
 		assert.Empty(t, eventsCh)
-		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o644))
-		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o644))
-		for i := 0; i < 2; i++ {
+		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
+		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
+		for range 2 {
 			select {
 			case <-eventsCh:
 			case <-time.After(time.Second):
@@ -146,8 +146,8 @@ func TestFSWatcher(t *testing.T) {
 		dir := t.TempDir()
 		fp1 := filepath.Join(dir, "test1.txt")
 		fp2 := filepath.Join(dir, "test2.txt")
-		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o644))
-		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o644))
+		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
+		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
 		eventsCh := runWatcher(t, Options{
 			Targets:  []string{fp1, fp2},
 			Interval: ptr.Of(time.Duration(1)),
@@ -157,9 +157,9 @@ func TestFSWatcher(t *testing.T) {
 			time.Sleep(time.Second)
 		}
 		assert.Empty(t, eventsCh)
-		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o644))
-		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o644))
-		for i := 0; i < 2; i++ {
+		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
+		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
+		for range 2 {
 			select {
 			case <-eventsCh:
 			case <-time.After(time.Second):
@@ -178,9 +178,9 @@ func TestFSWatcher(t *testing.T) {
 			Interval: ptr.Of(time.Duration(1)),
 		}, nil)
 		assert.Empty(t, eventsCh)
-		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o644))
-		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o644))
-		for i := 0; i < 2; i++ {
+		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
+		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
+		for range 2 {
 			select {
 			case <-eventsCh:
 			case <-time.After(time.Second):
@@ -207,9 +207,9 @@ func TestFSWatcher(t *testing.T) {
 			time.Sleep(time.Second)
 		}
 
-		for i := 0; i < 10; i++ {
-			require.NoError(t, os.WriteFile(fp1, []byte{}, 0o644))
-			require.NoError(t, os.WriteFile(fp2, []byte{}, 0o644))
+		for range 10 {
+			require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
+			require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
 		}
 
 		assert.Eventually(t, clock.HasWaiters, time.Second, time.Millisecond*10)
@@ -222,9 +222,9 @@ func TestFSWatcher(t *testing.T) {
 
 		clock.Step(time.Millisecond * 250)
 
-		for i := 0; i < 10; i++ {
-			require.NoError(t, os.WriteFile(fp1, []byte{}, 0o644))
-			require.NoError(t, os.WriteFile(fp2, []byte{}, 0o644))
+		for range 10 {
+			require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
+			require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
 		}
 
 		select {
@@ -236,7 +236,7 @@ func TestFSWatcher(t *testing.T) {
 		assert.Eventually(t, clock.HasWaiters, time.Second, time.Millisecond*10)
 		clock.Step(time.Millisecond * 500)
 
-		for i := 0; i < 2; i++ {
+		for range 2 {
 			select {
 			case <-eventsCh:
 			case <-time.After(time.Second):

@@ -37,7 +37,7 @@ func Test_Pool(t *testing.T) {
 
 	t.Run("a cancelled context given to pool, should have pool cancelled", func(t *testing.T) {
 		t.Parallel()
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 		pool := NewPool(ctx)
 		select {
@@ -49,10 +49,10 @@ func Test_Pool(t *testing.T) {
 
 	t.Run("a cancelled context given to pool, given a new context, should still have pool cancelled", func(t *testing.T) {
 		t.Parallel()
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 		pool := NewPool(ctx)
-		pool.Add(context.Background())
+		pool.Add(t.Context())
 		select {
 		case <-pool.Done():
 		case <-time.After(time.Second):
@@ -65,13 +65,13 @@ func Test_Pool(t *testing.T) {
 		var ctx [50]context.Context
 		var cancel [50]context.CancelFunc
 
-		ctx[0], cancel[0] = context.WithCancel(context.Background())
-		pool := NewPool(ctx[0])
+		ctxPool := make([]context.Context, 0, 50)
 
-		for i := 1; i < 50; i++ {
-			ctx[i], cancel[i] = context.WithCancel(context.Background())
-			pool.Add(ctx[i])
+		for i := range 50 {
+			ctx[i], cancel[i] = context.WithCancel(t.Context())
+			ctxPool = append(ctxPool, ctx[i])
 		}
+		pool := NewPool(ctxPool...)
 
 		//nolint:gosec
 		r := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -80,7 +80,7 @@ func Test_Pool(t *testing.T) {
 			cancel[i], cancel[j] = cancel[j], cancel[i]
 		})
 
-		for i := 0; i < 50; i++ {
+		for i := range 50 {
 			select {
 			case <-pool.Done():
 				t.Error("expected context to not be cancelled")
@@ -99,8 +99,8 @@ func Test_Pool(t *testing.T) {
 	t.Run("pool size will not increase if the given contexts have been cancelled", func(t *testing.T) {
 		t.Parallel()
 
-		ctx1, cancel1 := context.WithCancel(context.Background())
-		ctx2, cancel2 := context.WithCancel(context.Background())
+		ctx1, cancel1 := context.WithCancel(t.Context())
+		ctx2, cancel2 := context.WithCancel(t.Context())
 		pool := NewPool(ctx1, ctx2)
 		assert.Equal(t, 2, pool.Size())
 
@@ -111,19 +111,19 @@ func Test_Pool(t *testing.T) {
 		case <-time.After(time.Second):
 			t.Error("expected context pool to be cancelled")
 		}
-		pool.Add(context.Background())
+		pool.Add(t.Context())
 		assert.Equal(t, 2, pool.Size())
 	})
 
 	t.Run("pool size will not increase if the pool has been closed", func(t *testing.T) {
 		t.Parallel()
 
-		ctx1 := context.Background()
-		ctx2 := context.Background()
+		ctx1 := t.Context()
+		ctx2 := t.Context()
 		pool := NewPool(ctx1, ctx2)
 		assert.Equal(t, 2, pool.Size())
 		pool.Cancel()
-		pool.Add(context.Background())
+		pool.Add(t.Context())
 		assert.Equal(t, 0, pool.Size())
 		select {
 		case <-pool.Done():

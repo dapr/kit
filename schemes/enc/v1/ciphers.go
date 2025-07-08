@@ -20,6 +20,8 @@ import (
 )
 
 // Cipher used to encrypt the file.
+//
+//nolint:recvcheck
 type Cipher string
 
 const (

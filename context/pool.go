@@ -52,7 +52,10 @@ func NewPool(ctx ...context.Context) *Pool {
 	go func() {
 		defer cancel()
 		defer p.lock.RUnlock()
-		for i := 0; i < len(p.pool); i++ {
+		for i := range len(p.pool) {
+			if p.pool == nil {
+				return
+			}
 			ch := p.pool[i]
 			p.lock.RUnlock()
 			select {

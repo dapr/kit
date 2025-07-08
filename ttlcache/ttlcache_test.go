@@ -42,7 +42,7 @@ func TestCache(t *testing.T) {
 	cache.Set("key4", "val4", 5)
 
 	// Retrieve values
-	for i := 0; i < 16; i++ {
+	for i := range 16 {
 		v, ok := cache.Get("key1")
 		if i < 2 {
 			require.True(t, ok)

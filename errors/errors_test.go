@@ -50,7 +50,7 @@ func TestError_HTTPStatusCode(t *testing.T) {
 		WithErrorInfo("fake", map[string]string{"fake": "test"}).
 		Build()
 
-	err, ok := kitErr.(Error)
+	err, ok := kitErr.(*Error)
 	require.True(t, ok, httpStatusCode, err.HTTPStatusCode())
 }
 
@@ -66,7 +66,7 @@ func TestError_GrpcStatusCode(t *testing.T) {
 		WithErrorInfo("fake", map[string]string{"fake": "test"}).
 		Build()
 
-	err, ok := kitErr.(Error)
+	err, ok := kitErr.(*Error)
 	require.True(t, ok, grpcStatusCode, err.GrpcStatusCode())
 }
 
@@ -171,7 +171,7 @@ func TestError_Error(t *testing.T) {
 				t.Errorf("got = %v, want %v", got, tt.want)
 			}
 
-			err, ok := kitErr.(Error)
+			err, ok := kitErr.(*Error)
 			require.True(t, ok, err.Is(kitErr))
 		})
 	}
@@ -186,7 +186,7 @@ func TestErrorBuilder_WithErrorInfo(t *testing.T) {
 		Metadata: metadata,
 	}
 
-	expected := Error{
+	expected := &Error{
 		grpcCode: grpcCodes.ResourceExhausted,
 		httpCode: http.StatusTeapot,
 		message:  "fake_message",
@@ -240,7 +240,7 @@ func TestErrorBuilder_WithDetails(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   Error
+		want   *Error
 	}{
 		{
 			name: "Has_Multiple_Details",
@@ -263,7 +263,7 @@ func TestErrorBuilder_WithDetails(t *testing.T) {
 					Description: "test_description",
 				},
 			}},
-			want: Error{
+			want: &Error{
 				grpcCode: grpcCodes.ResourceExhausted,
 				httpCode: http.StatusTeapot,
 				message:  "fake_message",
@@ -802,7 +802,7 @@ func TestErrorBuilder_Build(t *testing.T) {
 			"some_category",
 		).WithErrorInfo("fake", map[string]string{"fake": "test"}).Build()
 
-		builtErr, ok := built.(Error)
+		builtErr, ok := built.(*Error)
 		require.True(t, ok)
 
 		containsErrorInfo := false
@@ -828,7 +828,7 @@ func TestErrorBuilder_Build(t *testing.T) {
 			"some_category",
 		).WithErrorInfo("SOME_ERROR", map[string]string{"fake": "test"}).Build()
 
-		builtErr, ok := built.(Error)
+		builtErr, ok := built.(*Error)
 		require.True(t, ok)
 
 		containsErrorInfo := false
@@ -990,7 +990,7 @@ func TestFromError(t *testing.T) {
 		t.Errorf("Expected result to be nil and ok to be false, got result: %v, ok: %t", result, ok)
 	}
 
-	kitErr := Error{
+	kitErr := &Error{
 		grpcCode: grpcCodes.ResourceExhausted,
 		httpCode: http.StatusTeapot,
 		message:  "fake_message",
@@ -999,8 +999,8 @@ func TestFromError(t *testing.T) {
 	}
 
 	result, ok = FromError(kitErr)
-	if !ok || !reflect.DeepEqual(result, &kitErr) {
-		t.Errorf("Expected result to be %#v and ok to be true, got result: %#v, ok: %t", &kitErr, result, ok)
+	if !ok || !reflect.DeepEqual(result, kitErr) {
+		t.Errorf("Expected result to be %#v and ok to be true, got result: %#v, ok: %t", kitErr, result, ok)
 	}
 
 	var nonKitError error
@@ -1011,7 +1011,7 @@ func TestFromError(t *testing.T) {
 
 	wrapped := fmt.Errorf("wrapped: %w", kitErr)
 	result, ok = FromError(wrapped)
-	if !ok || !reflect.DeepEqual(result, &kitErr) {
-		t.Errorf("Expected result to be %#v and ok to be true, got result: %#v, ok: %t", &kitErr, result, ok)
+	if !ok || !reflect.DeepEqual(result, kitErr) {
+		t.Errorf("Expected result to be %#v and ok to be true, got result: %#v, ok: %t", kitErr, result, ok)
 	}
 }

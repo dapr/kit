@@ -47,7 +47,7 @@ func TestNewMutex_Add_Delete(t *testing.T) {
 		wg.Add(numGoroutines)
 
 		// Concurrently lock and unlock for each key
-		for i := 0; i < numGoroutines; i++ {
+		for range numGoroutines {
 			go func() {
 				defer wg.Done()
 				mm.Lock("key1")
@@ -75,7 +75,7 @@ func TestNewMutex_Add_Delete(t *testing.T) {
 		wg.Add(numGoroutines * 2)
 
 		// Concurrently RLock and RUnlock for each key
-		for i := 0; i < numGoroutines; i++ {
+		for range numGoroutines {
 			go func() {
 				defer wg.Done()
 				mm.RLock("key1")
@@ -87,7 +87,7 @@ func TestNewMutex_Add_Delete(t *testing.T) {
 			assert.Equal(ct, int64(10), counter.Load())
 		}, 5*time.Second, 10*time.Millisecond)
 
-		for i := 0; i < numGoroutines; i++ {
+		for range numGoroutines {
 			go func() {
 				defer wg.Done()
 				mm.RUnlock("key1")

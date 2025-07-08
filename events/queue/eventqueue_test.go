@@ -59,7 +59,7 @@ func ExampleProcessor() {
 	// Using Dequeue allows removing an item from the queue
 	processor.Dequeue("item4")
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		fmt.Println(<-executed)
 	}
 	// Output:
