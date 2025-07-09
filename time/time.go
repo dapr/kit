@@ -214,9 +214,6 @@ func ParseTime(from string, offset *time.Time) (time.Time, error) {
 	if t, err := time.Parse(time.RFC3339Nano, from); err == nil {
 		return t, nil
 	}
-	if t, err := time.Parse(time.RFC3339, from); err == nil {
-		return t, nil
-	}
 
 	return time.Time{}, errors.New("unsupported time/duration format: " + from)
 }
