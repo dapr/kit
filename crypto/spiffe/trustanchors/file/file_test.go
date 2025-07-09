@@ -544,6 +544,7 @@ func TestFile_CurrentTrustAnchors(t *testing.T) {
 			errCh <- f.Run(ctx)
 		}()
 
+		time.Sleep(time.Millisecond * 10) // adding a small delay to ensure f.Run has finished and running
 		//nolint:gocritic
 		roots := append(pki1.RootCertPEM, pki2.RootCertPEM...)
 		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
