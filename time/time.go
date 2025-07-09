@@ -192,6 +192,7 @@ func ParseDuration(from string) (int, int, int, time.Duration, int, error) {
 // - ISO8601 duration format
 // - time.Duration string format
 // - RFC3339 datetime format
+// - RFC3339nano datetime format
 // For duration formats, an offset is added.
 func ParseTime(from string, offset *time.Time) (time.Time, error) {
 	var start time.Time
@@ -210,8 +211,12 @@ func ParseTime(from string, offset *time.Time) (time.Time, error) {
 	if dur, err = time.ParseDuration(from); err == nil {
 		return start.Add(dur), nil
 	}
+	if t, err := time.Parse(time.RFC3339Nano, from); err == nil {
+		return t, nil
+	}
 	if t, err := time.Parse(time.RFC3339, from); err == nil {
 		return t, nil
 	}
+
 	return time.Time{}, errors.New("unsupported time/duration format: " + from)
 }
