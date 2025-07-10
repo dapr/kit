@@ -372,6 +372,7 @@ func TestFile_Watch(t *testing.T) {
 		go func() {
 			errCh <- f.Run(ctx)
 		}()
+		time.Sleep(time.Millisecond * 10) // adding a small delay to ensure f.Run has finished and running
 
 		watchDone := make(chan struct{})
 		go func() {
@@ -413,6 +414,7 @@ func TestFile_Watch(t *testing.T) {
 		go func() {
 			errCh <- f.Run(ctx1)
 		}()
+		time.Sleep(time.Millisecond * 10) // adding a small delay to ensure f.Run has finished and running
 
 		watchDone := make(chan struct{})
 		ctx2, cancel2 := context.WithCancel(t.Context())
@@ -460,6 +462,7 @@ func TestFile_Watch(t *testing.T) {
 		go func() {
 			errCh <- f.Run(ctx)
 		}()
+		time.Sleep(time.Millisecond * 10) // adding a small delay to ensure f.Run has finished and running
 
 		select {
 		case <-f.readyCh:
