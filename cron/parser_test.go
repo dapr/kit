@@ -14,7 +14,6 @@ You can check the original license at:
 		https://github.com/robfig/cron/blob/master/LICENSE
 */
 
-//nolint
 package cron
 
 import (
@@ -167,6 +166,8 @@ func TestParseSchedule(t *testing.T) {
 		{standardParser, "CRON_TZ=UTC  5 * * * *", every5min(time.UTC)},
 		{secondParser, "CRON_TZ=Asia/Tokyo 0 5 * * * *", every5min(tokyo)},
 		{secondParser, "@every 5m", ConstantDelaySchedule{5 * time.Minute}},
+		{secondParser, "@every 5ms", ConstantDelaySchedule{5 * time.Millisecond}},
+		{secondParser, "@every 5ns", ConstantDelaySchedule{5 * time.Nanosecond}},
 		{secondParser, "@midnight", midnight(time.Local)},
 		{secondParser, "TZ=UTC  @midnight", midnight(time.UTC)},
 		{secondParser, "TZ=Asia/Tokyo @midnight", midnight(tokyo)},

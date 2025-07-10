@@ -212,6 +212,13 @@ func TestParseTime(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, time.Duration(0), expected.Sub(tm))
 	})
+	t.Run("parse RFC3339nano datetime", func(t *testing.T) {
+		dummy := time.Now().Add(1000 * time.Nanosecond)
+		expected := time.Now().Add(100 * time.Nanosecond)
+		tm, err := ParseTime(expected.Format(time.RFC3339Nano), &dummy)
+		require.NoError(t, err)
+		assert.Equal(t, time.Duration(0), expected.Sub(tm))
+	})
 	t.Run("parse empty string", func(t *testing.T) {
 		_, err := ParseTime("", nil)
 		require.ErrorContains(t, err, "unsupported time/duration format")
