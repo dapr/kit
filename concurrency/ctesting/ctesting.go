@@ -53,7 +53,7 @@ func Assert(t *testing.T, runners ...RunnerFn) {
 		}(runner)
 	}
 
-	for range len(runners) {
+	for range runners {
 		select {
 		case <-doneCh:
 		case <-t.Context().Done():
