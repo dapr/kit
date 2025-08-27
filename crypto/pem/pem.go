@@ -142,8 +142,6 @@ func EncodeX509(cert *x509.Certificate) ([]byte, error) {
 }
 
 // EncodeX509Chain will encode a list of *x509.Certificates into a PEM format chain.
-// Self-signed certificates are not included as per
-// https://datatracker.ietf.org/doc/html/rfc5246#section-7.4.2
 // Certificates are output in the order they're given; if the input is not ordered
 // as specified in RFC5246 section 7.4.2, the resulting chain might not be valid
 // for use in TLS.
@@ -155,11 +153,6 @@ func EncodeX509Chain(certs []*x509.Certificate) ([]byte, error) {
 	certPEM := bytes.NewBuffer([]byte{})
 	for _, cert := range certs {
 		if cert == nil {
-			continue
-		}
-
-		if cert.CheckSignatureFrom(cert) == nil {
-			// Don't include self-signed certificate
 			continue
 		}
 
