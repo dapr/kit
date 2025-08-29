@@ -27,7 +27,7 @@ type Options struct {
 	Target string
 }
 
-// Dir atomically writes files to a given directory.
+// Dir atomically (best-effort on Windows) writes files to a given directory.
 type Dir struct {
 	log logger.Logger
 
@@ -35,6 +35,9 @@ type Dir struct {
 	target    string
 	targetDir string
 
+	// prev holds a path we should delete on the *next* successful Write.
+	// On Unix: the previously active versioned dir.
+	// On Windows: the last backup directory (target renamed aside).
 	prev *string
 }
 
@@ -50,41 +53,45 @@ func New(opts Options) *Dir {
 func (d *Dir) Write(files map[string][]byte) error {
 	newDir := filepath.Join(d.base, fmt.Sprintf("%d-%s", time.Now().UTC().UnixNano(), d.targetDir))
 
+	// Ensure base exists
 	if err := os.MkdirAll(d.base, 0o700); err != nil {
 		return err
 	}
-
+	// Create the new versioned directory
 	if err := os.MkdirAll(newDir, 0o700); err != nil {
 		return err
 	}
 
+	// Write all files into the new versioned directory
 	for file, b := range files {
 		path := filepath.Join(newDir, file)
+		// Ensure parent directories exist for nested files
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			return err
+		}
 		if err := os.WriteFile(path, b, 0o600); err != nil {
 			return err
 		}
 		d.log.Infof("Written file %s", file)
 	}
 
-	if err := os.Symlink(newDir, d.target+".new"); err != nil {
-		return err
-	}
-
-	d.log.Infof("Syslink %s to %s.new", newDir, d.target)
-
-	if err := os.Rename(d.target+".new", d.target); err != nil {
+	// Platform-specific switch into place. It returns what we should delete on the NEXT run.
+	nextPrev, err := d.switchTo(newDir)
+	if err != nil {
 		return err
 	}
 
 	d.log.Infof("Atomic write to %s", d.target)
 
+	// Best-effort cleanup from the *previous* run
 	if d.prev != nil {
 		if err := os.RemoveAll(*d.prev); err != nil {
 			return err
 		}
 	}
 
-	d.prev = &newDir
+	// Set what to delete on the *next* run.
+	d.prev = nextPrev
 
 	return nil
 }
