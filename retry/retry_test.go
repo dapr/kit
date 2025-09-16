@@ -30,31 +30,31 @@ var errRetry = errors.New("Testing")
 
 func TestDecode(t *testing.T) {
 	tests := map[string]struct {
-		config    interface{}
+		config    any
 		overrides func(config *retry.Config)
 		err       string
 	}{
 		"invalid policy type": {
-			config: map[string]interface{}{
+			config: map[string]any{
 				"backOffPolicy": "invalid",
 			},
 			overrides: nil,
 			err:       "1 error(s) decoding:\n\n* error decoding 'policy': invalid PolicyType \"invalid\": unexpected back off policy type: invalid",
 		},
 		"default": {
-			config:    map[string]interface{}{},
+			config:    map[string]any{},
 			overrides: nil,
 			err:       "",
 		},
 		"constant default": {
-			config: map[string]interface{}{
+			config: map[string]any{
 				"backOffPolicy": "constant",
 			},
 			overrides: nil,
 			err:       "",
 		},
 		"constant with duraction": {
-			config: map[string]interface{}{
+			config: map[string]any{
 				"backOffPolicy":   "constant",
 				"backOffDuration": "10s",
 			},
@@ -64,7 +64,7 @@ func TestDecode(t *testing.T) {
 			err: "",
 		},
 		"exponential default": {
-			config: map[string]interface{}{
+			config: map[string]any{
 				"backOffPolicy": "exponential",
 			},
 			overrides: func(config *retry.Config) {
@@ -73,7 +73,7 @@ func TestDecode(t *testing.T) {
 			err: "",
 		},
 		"exponential with string settings": {
-			config: map[string]interface{}{
+			config: map[string]any{
 				"backOffPolicy":              "exponential",
 				"backOffInitialInterval":     "1000", // 1s
 				"backOffRandomizationFactor": "1.0",
@@ -92,7 +92,7 @@ func TestDecode(t *testing.T) {
 			err: "",
 		},
 		"exponential with typed settings": {
-			config: map[string]interface{}{
+			config: map[string]any{
 				"backOffPolicy":              "exponential",
 				"backOffInitialInterval":     "1000ms", // 1s
 				"backOffRandomizationFactor": 1.0,
@@ -269,7 +269,7 @@ func TestRetryNotifyRecoverCancel(t *testing.T) {
 
 func TestCheckEmptyConfig(t *testing.T) {
 	var config retry.Config
-	err := retry.DecodeConfig(&config, map[string]interface{}{})
+	err := retry.DecodeConfig(&config, map[string]any{})
 	require.NoError(t, err)
 	defaultConfig := retry.DefaultConfig()
 	assert.Equal(t, config, defaultConfig)

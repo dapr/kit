@@ -673,7 +673,7 @@ func TestError_JSONErrorValue(t *testing.T) {
 			got := kitErr.err.JSONErrorValue()
 
 			// Use map[string]interface{} to handle order diff in the slices
-			var gotMap, wantMap map[string]interface{}
+			var gotMap, wantMap map[string]any
 			_ = json.Unmarshal(got, &gotMap)
 			_ = json.Unmarshal(test.want, &wantMap)
 

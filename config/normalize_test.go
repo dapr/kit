@@ -24,67 +24,67 @@ import (
 
 func TestNormalize(t *testing.T) {
 	tests := map[string]struct {
-		input    interface{}
-		expected interface{}
+		input    any
+		expected any
 		err      string
 	}{
 		"simple": {input: "test", expected: "test"},
 		"map of string to interface{}": {
-			input: map[string]interface{}{
+			input: map[string]any{
 				"test": "1234",
-				"nested": map[string]interface{}{
+				"nested": map[string]any{
 					"value": "5678",
 				},
-			}, expected: map[string]interface{}{
+			}, expected: map[string]any{
 				"test": "1234",
-				"nested": map[string]interface{}{
+				"nested": map[string]any{
 					"value": "5678",
 				},
 			},
 		},
 		"map of string to interface{} with error": {
-			input: map[string]interface{}{
+			input: map[string]any{
 				"test": "1234",
-				"nested": map[interface{}]interface{}{
+				"nested": map[any]any{
 					5678: "5678",
 				},
 			}, err: "error parsing config field: 5678",
 		},
 		"map of interface{} to interface{}": {
-			input: map[string]interface{}{
+			input: map[string]any{
 				"test": "1234",
-				"nested": map[interface{}]interface{}{
+				"nested": map[any]any{
 					"value": "5678",
 				},
-			}, expected: map[string]interface{}{
+			}, expected: map[string]any{
 				"test": "1234",
-				"nested": map[string]interface{}{
+				"nested": map[string]any{
 					"value": "5678",
 				},
 			},
 		},
 		"map of interface{} to interface{} with error": {
-			input: map[interface{}]interface{}{
+			input: map[any]any{
 				"test": "1234",
-				"nested": map[interface{}]interface{}{
+				"nested": map[any]any{
 					5678: "5678",
 				},
 			}, err: "error parsing config field: 5678",
 		},
 		"slice of interface{}": {
-			input: []interface{}{
-				map[interface{}]interface{}{
+			input: []any{
+				map[any]any{
 					"value": "5678",
 				},
-			}, expected: []interface{}{
-				map[string]interface{}{
+			}, expected: []any{
+				map[string]any{
 					"value": "5678",
 				},
 			},
 		},
 		"slice of interface{} with error": {
-			input: []interface{}{
-				map[interface{}]interface{}{
+			input: []any{
+				map[any]any{
 					1234: "1234",
 				},
 			}, err: "error parsing config field: 1234",

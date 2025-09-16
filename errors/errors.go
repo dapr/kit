@@ -218,14 +218,14 @@ func (e *Error) JSONErrorValue() []byte {
 	return errBytes
 }
 
-func convertErrorDetails(detail any, e Error) (map[string]interface{}, string) {
+func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 	// cast to interface to be able to do type switch
 	// over all possible error_details defined
 	// https://github.com/googleapis/go-genproto/blob/main/googleapis/rpc/errdetails/error_details.pb.go
 	switch typedDetail := detail.(type) {
 	case *errdetails.ErrorInfo:
 		desc := typedDetail.ProtoReflect().Descriptor()
-		detailMap := map[string]interface{}{
+		detailMap := map[string]any{
 			"@type":    typeGoogleAPI + desc.FullName(),
 			"reason":   typedDetail.GetReason(),
 			"domain":   typedDetail.GetDomain(),
@@ -239,14 +239,14 @@ func convertErrorDetails(detail any, e Error) (map[string]interface{}, string) {
 		return detailMap, errorCode
 	case *errdetails.RetryInfo:
 		desc := typedDetail.ProtoReflect().Descriptor()
-		detailMap := map[string]interface{}{
+		detailMap := map[string]any{
 			"@type":       typeGoogleAPI + desc.FullName(),
 			"retry_delay": typedDetail.GetRetryDelay(),
 		}
 		return detailMap, ""
 	case *errdetails.DebugInfo:
 		desc := typedDetail.ProtoReflect().Descriptor()
-		detailMap := map[string]interface{}{
+		detailMap := map[string]any{
 			"@type":         typeGoogleAPI + desc.FullName(),
 			"stack_entries": typedDetail.GetStackEntries(),
 			"detail":        typedDetail.GetDetail(),
@@ -254,28 +254,28 @@ func convertErrorDetails(detail any, e Error) (map[string]interface{}, string) {
 		return detailMap, ""
 	case *errdetails.QuotaFailure:
 		desc := typedDetail.ProtoReflect().Descriptor()
-		detailMap := map[string]interface{}{
+		detailMap := map[string]any{
 			"@type":      typeGoogleAPI + desc.FullName(),
 			"violations": typedDetail.GetViolations(),
 		}
 		return detailMap, ""
 	case *errdetails.PreconditionFailure:
 		desc := typedDetail.ProtoReflect().Descriptor()
-		detailMap := map[string]interface{}{
+		detailMap := map[string]any{
 			"@type":      typeGoogleAPI + desc.FullName(),
 			"violations": typedDetail.GetViolations(),
 		}
 		return detailMap, ""
 	case *errdetails.BadRequest:
 		desc := typedDetail.ProtoReflect().Descriptor()
-		detailMap := map[string]interface{}{
+		detailMap := map[string]any{
 			"@type":            typeGoogleAPI + desc.FullName(),
 			"field_violations": typedDetail.GetFieldViolations(),
 		}
 		return detailMap, ""
 	case *errdetails.RequestInfo:
 		desc := typedDetail.ProtoReflect().Descriptor()
-		detailMap := map[string]interface{}{
+		detailMap := map[string]any{
 			"@type":        typeGoogleAPI + desc.FullName(),
 			"request_id":   typedDetail.GetRequestId(),
 			"serving_data": typedDetail.GetServingData(),
@@ -283,7 +283,7 @@ func convertErrorDetails(detail any, e Error) (map[string]interface{}, string) {
 		return detailMap, ""
 	case *errdetails.ResourceInfo:
 		desc := typedDetail.ProtoReflect().Descriptor()
-		detailMap := map[string]interface{}{
+		detailMap := map[string]any{
 			"@type":         typeGoogleAPI + desc.FullName(),
 			"resource_type": typedDetail.GetResourceType(),
 			"resource_name": typedDetail.GetResourceName(),
@@ -293,14 +293,14 @@ func convertErrorDetails(detail any, e Error) (map[string]interface{}, string) {
 		return detailMap, ""
 	case *errdetails.Help:
 		desc := typedDetail.ProtoReflect().Descriptor()
-		detailMap := map[string]interface{}{
+		detailMap := map[string]any{
 			"@type": typeGoogleAPI + desc.FullName(),
 			"links": typedDetail.GetLinks(),
 		}
 		return detailMap, ""
 	case *errdetails.LocalizedMessage:
 		desc := typedDetail.ProtoReflect().Descriptor()
-		detailMap := map[string]interface{}{
+		detailMap := map[string]any{
 			"@type":   typeGoogleAPI + desc.FullName(),
 			"locale":  typedDetail.GetLocale(),
 			"message": typedDetail.GetMessage(),
@@ -308,7 +308,7 @@ func convertErrorDetails(detail any, e Error) (map[string]interface{}, string) {
 		return detailMap, ""
 	case *errdetails.QuotaFailure_Violation:
 		desc := typedDetail.ProtoReflect().Descriptor()
-		detailMap := map[string]interface{}{
+		detailMap := map[string]any{
 			"@type":       typeGoogleAPI + desc.FullName(),
 			"subject":     typedDetail.GetSubject(),
 			"description": typedDetail.GetDescription(),
@@ -316,7 +316,7 @@ func convertErrorDetails(detail any, e Error) (map[string]interface{}, string) {
 		return detailMap, ""
 	case *errdetails.PreconditionFailure_Violation:
 		desc := typedDetail.ProtoReflect().Descriptor()
-		detailMap := map[string]interface{}{
+		detailMap := map[string]any{
 			"@type":       typeGoogleAPI + desc.FullName(),
 			"subject":     typedDetail.GetSubject(),
 			"description": typedDetail.GetDescription(),
@@ -325,7 +325,7 @@ func convertErrorDetails(detail any, e Error) (map[string]interface{}, string) {
 		return detailMap, ""
 	case *errdetails.BadRequest_FieldViolation:
 		desc := typedDetail.ProtoReflect().Descriptor()
-		detailMap := map[string]interface{}{
+		detailMap := map[string]any{
 			"@type":       typeGoogleAPI + desc.FullName(),
 			"field":       typedDetail.GetField(),
 			"description": typedDetail.GetDescription(),
@@ -333,7 +333,7 @@ func convertErrorDetails(detail any, e Error) (map[string]interface{}, string) {
 		return detailMap, ""
 	case *errdetails.Help_Link:
 		desc := typedDetail.ProtoReflect().Descriptor()
-		detailMap := map[string]interface{}{
+		detailMap := map[string]any{
 			"@type":       typeGoogleAPI + desc.FullName(),
 			"description": typedDetail.GetDescription(),
 			"url":         typedDetail.GetUrl(),
@@ -342,7 +342,7 @@ func convertErrorDetails(detail any, e Error) (map[string]interface{}, string) {
 	default:
 		log.Debugf("Failed to convert error details due to incorrect type. \nSee types here: https://github.com/googleapis/googleapis/blob/master/google/rpc/error_details.proto. \nDetail: %s", detail)
 		// Handle unknown detail types
-		unknownDetail := map[string]interface{}{
+		unknownDetail := map[string]any{
 			"unknownDetailType": fmt.Sprintf("%T", typedDetail),
 			"unknownDetails":    fmt.Sprintf("%#v", typedDetail),
 		}

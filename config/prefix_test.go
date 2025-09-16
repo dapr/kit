@@ -25,8 +25,8 @@ import (
 func TestPrefixedBy(t *testing.T) {
 	tests := map[string]struct {
 		prefix   string
-		input    interface{}
-		expected interface{}
+		input    any
+		expected any
 		err      string
 	}{
 		"map of string to string": {
@@ -44,13 +44,13 @@ func TestPrefixedBy(t *testing.T) {
 		},
 		"map of string to interface{}": {
 			prefix: "test",
-			input: map[string]interface{}{
+			input: map[string]any{
 				"":        "",
 				"ignore":  "don't include me",
 				"testOne": "include me",
 				"testTwo": "and me",
 			},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				"one": "include me",
 				"two": "and me",
 			},

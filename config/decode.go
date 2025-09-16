@@ -44,7 +44,7 @@ type StringDecoder interface {
 //
 // Most of the heavy lifting is handled by the mapstructure library. A custom decoder is used to handle
 // decoding string values to the supported primitives.
-func Decode(input interface{}, output interface{}) error {
+func Decode(input any, output any) error {
 	decoder, err := mapstructure.NewDecoder(
 		&mapstructure.DecoderConfig{ //nolint: exhaustruct
 			Result:     output,

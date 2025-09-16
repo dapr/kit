@@ -18,7 +18,7 @@ import (
 	"unicode"
 )
 
-func PrefixedBy(input interface{}, prefix string) (interface{}, error) {
+func PrefixedBy(input any, prefix string) (any, error) {
 	normalized, err := Normalize(input)
 	if err != nil {
 		// The only error that can come from normalize is if
@@ -28,8 +28,8 @@ func PrefixedBy(input interface{}, prefix string) (interface{}, error) {
 	}
 	input = normalized
 
-	if inputMap, ok := input.(map[string]interface{}); ok {
-		converted := make(map[string]interface{}, len(inputMap))
+	if inputMap, ok := input.(map[string]any); ok {
+		converted := make(map[string]any, len(inputMap))
 		for k, v := range inputMap {
 			if strings.HasPrefix(k, prefix) {
 				key := uncapitalize(strings.TrimPrefix(k, prefix))

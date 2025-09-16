@@ -92,8 +92,8 @@ func (u *Decoded) DecodeString(text string) error {
 
 func TestDecode(t *testing.T) {
 	timeVal := getTimeVal()
-	tests := map[string]interface{}{
-		"primitive values": map[string]interface{}{
+	tests := map[string]any{
+		"primitive values": map[string]any{
 			"int":         -9999,
 			"intPtr":      ptr.Of(-9999),
 			"int64":       -1234,
@@ -128,16 +128,16 @@ func TestDecode(t *testing.T) {
 			"stringPtr":   ptr.Of("1234"),
 			"decoded":     "unlimited",
 			"decodedPtr":  "unlimited",
-			"nested": map[string]interface{}{
+			"nested": map[string]any{
 				"integer": 1234,
 				"string":  5678,
 			},
-			"nestedPtr": map[string]interface{}{
+			"nestedPtr": map[string]any{
 				"integer": 1234,
 				"string":  5678,
 			},
 		},
-		"string values": map[string]interface{}{
+		"string values": map[string]any{
 			"int":         "-9999",
 			"intPtr":      "-9999",
 			"int64":       "-1234",
@@ -196,7 +196,7 @@ func TestDecode(t *testing.T) {
 
 func TestDecodeErrors(t *testing.T) {
 	var actual testConfig
-	err := config.Decode(map[string]interface{}{
+	err := config.Decode(map[string]any{
 		"int":         "-badval",
 		"intPtr":      "-badval",
 		"int64":       "-badval",

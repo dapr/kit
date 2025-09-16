@@ -21,11 +21,11 @@ import (
 // for JSON and usage in component initialization.
 //
 //nolint:cyclop
-func Normalize(i interface{}) (interface{}, error) {
+func Normalize(i any) (any, error) {
 	var err error
 	switch x := i.(type) {
-	case map[interface{}]interface{}:
-		m2 := map[string]interface{}{}
+	case map[any]any:
+		m2 := map[string]any{}
 		for k, v := range x {
 			if strKey, ok := k.(string); ok {
 				if m2[strKey], err = Normalize(v); err != nil {
@@ -37,8 +37,8 @@ func Normalize(i interface{}) (interface{}, error) {
 		}
 
 		return m2, nil
-	case map[string]interface{}:
-		m2 := map[string]interface{}{}
+	case map[string]any:
+		m2 := map[string]any{}
 		for k, v := range x {
 			if m2[k], err = Normalize(v); err != nil {
 				return nil, err
@@ -46,7 +46,7 @@ func Normalize(i interface{}) (interface{}, error) {
 		}
 
 		return m2, nil
-	case []interface{}:
+	case []any:
 		for i, v := range x {
 			if x[i], err = Normalize(v); err != nil {
 				return nil, err
