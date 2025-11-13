@@ -25,7 +25,6 @@ type queueSegment[T any] struct {
 // getSegment gets a queueSegment from the pool or allocates a new one.
 // It always initializes a fresh channel of the configured size.
 func (l *loop[T]) getSegment() *queueSegment[T] {
-	// Ensure segPool.New is initialized.
 	if l.segPool.New == nil {
 		l.segPool.New = func() any {
 			return new(queueSegment[T])

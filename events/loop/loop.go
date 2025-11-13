@@ -30,11 +30,9 @@ type Interface[T any] interface {
 }
 
 type loop[T any] struct {
-	// linked list of channel segments
 	head *queueSegment[T]
 	tail *queueSegment[T]
 
-	// capacity of each segment channel
 	segSize uint64
 
 	handler Handler[T]
@@ -87,7 +85,6 @@ func (l *loop[T]) Enqueue(req T) {
 		return
 	}
 
-	// Ensure we have at least one segment.
 	if l.tail == nil {
 		seg := l.getSegment()
 		l.head = seg
@@ -99,8 +96,8 @@ func (l *loop[T]) Enqueue(req T) {
 	case l.tail.ch <- req:
 		return
 	default:
-		// Tail is full: create a new segment, link it, close the old tail,
-		// and send into the new tail.
+		// Tail is full: create a new segment, link it, close the old tail, and
+		// send into the new tail.
 		newSeg := l.getSegment()
 		l.tail.next = newSeg
 		close(l.tail.ch)

@@ -65,15 +65,18 @@ func TestLoop_EnqueueAndRunOrder_Unbounded(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
+	errCh := make(chan error, 1)
+	t.Cleanup(func() {
+		require.NoError(t, <-errCh)
+	})
 	go func() {
 		defer wg.Done()
-		err := l.Run(ctx)
-		require.NoError(t, err, "Run should finish without error")
+		errCh <- l.Run(ctx)
 	}()
 
 	// Enqueue more items than a single segment to force multiple channels.
 	const n = 25
-	for i := 0; i < n; i++ {
+	for i := range n {
 		l.Enqueue(i)
 	}
 
@@ -87,7 +90,7 @@ func TestLoop_EnqueueAndRunOrder_Unbounded(t *testing.T) {
 	require.Len(t, got, n+1, "handler should see all enqueued items plus final close item")
 
 	// First n values should be 0..n-1 in order.
-	for i := 0; i < n; i++ {
+	for i := range n {
 		assert.Equal(t, i, got[i], "item at index %d out of order", i)
 	}
 
@@ -104,10 +107,13 @@ func TestLoop_CloseTwiceIsSafe(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
+	errCh := make(chan error, 1)
+	t.Cleanup(func() {
+		require.NoError(t, <-errCh)
+	})
 	go func() {
 		defer wg.Done()
-		err := l.Run(ctx)
-		require.NoError(t, err)
+		errCh <- l.Run(ctx)
 	}()
 
 	l.Enqueue(1)
@@ -144,10 +150,13 @@ func TestLoop_Reset(t *testing.T) {
 
 	var wg1 sync.WaitGroup
 	wg1.Add(1)
+	errCh := make(chan error, 1)
+	t.Cleanup(func() {
+		require.NoError(t, <-errCh)
+	})
 	go func() {
 		defer wg1.Done()
-		err := l.Run(ctx)
-		require.NoError(t, err)
+		errCh <- l.Run(ctx)
 	}()
 
 	l.Enqueue(1)
@@ -164,10 +173,13 @@ func TestLoop_Reset(t *testing.T) {
 
 	var wg2 sync.WaitGroup
 	wg2.Add(1)
+	errCh2 := make(chan error, 1)
+	t.Cleanup(func() {
+		require.NoError(t, <-errCh2)
+	})
 	go func() {
 		defer wg2.Done()
-		err := l.Run(ctx)
-		require.NoError(t, err)
+		errCh2 <- l.Run(ctx)
 	}()
 
 	l.Enqueue(10)
@@ -187,10 +199,13 @@ func TestLoop_EnqueueAfterCloseIsDropped(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
+	errCh := make(chan error, 1)
+	t.Cleanup(func() {
+		require.NoError(t, <-errCh)
+	})
 	go func() {
 		defer wg.Done()
-		err := l.Run(ctx)
-		require.NoError(t, err)
+		errCh <- l.Run(ctx)
 	}()
 
 	l.Enqueue(1)
