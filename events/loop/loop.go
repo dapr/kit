@@ -30,6 +30,7 @@ type Interface[T any] interface {
 }
 
 type loop[T any] struct {
+	name    string
 	queue   chan T
 	handler Handler[T]
 
@@ -38,8 +39,26 @@ type loop[T any] struct {
 	lock    sync.RWMutex
 }
 
-func New[T any](h Handler[T], size uint64) Interface[T] {
+type options struct {
+	name string
+}
+
+type Option func(*options)
+
+func WithName(name string) Option {
+	return func(o *options) {
+		o.name = name
+	}
+}
+
+func New[T any](h Handler[T], size uint64, setters ...Option) Interface[T] {
+	var opts options
+	for _, setter := range setters {
+		setter(&opts)
+	}
+
 	return &loop[T]{
+		name:    opts.name,
 		queue:   make(chan T, size),
 		handler: h,
 		closeCh: make(chan struct{}),
@@ -76,6 +95,11 @@ func (l *loop[T]) Enqueue(req T) {
 	select {
 	case l.queue <- req:
 	case <-l.closeCh:
+		// ?? point of adding the name is to quicky surface which loop is blocked
+		// default:
+		// 	fmt.Printf("loop '%s' queue is full (size: %d), blocking\n",
+		// 		l.name, len(l.queue))
+		// 	l.queue <- req
 	}
 }
 
