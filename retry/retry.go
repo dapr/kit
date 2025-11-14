@@ -86,7 +86,7 @@ func DefaultConfigWithNoRetry() Config {
 }
 
 // DecodeConfig decodes a Go struct into a `Config`.
-func DecodeConfig(c *Config, input interface{}) error {
+func DecodeConfig(c *Config, input any) error {
 	// Use the deefault config if `c` is empty/zero value.
 	var emptyConfig Config
 	if *c == emptyConfig {
@@ -97,7 +97,7 @@ func DecodeConfig(c *Config, input interface{}) error {
 }
 
 // DecodeConfigWithPrefix decodes a Go struct into a `Config`.
-func DecodeConfigWithPrefix(c *Config, input interface{}, prefix string) error {
+func DecodeConfigWithPrefix(c *Config, input any, prefix string) error {
 	input, err := config.PrefixedBy(input, prefix)
 	if err != nil {
 		return err

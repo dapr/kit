@@ -148,7 +148,7 @@ func TestJSONLoggerFields(t *testing.T) {
 			tt.fn(testLogger, tt.message)
 
 			b, _ := buf.ReadBytes('\n')
-			var o map[string]interface{}
+			var o map[string]any
 			require.NoError(t, json.Unmarshal(b, &o))
 
 			// assert
@@ -276,7 +276,7 @@ func TestWithTypeFields(t *testing.T) {
 	loggerWithRequestType.Info("call user app")
 
 	b, _ := buf.ReadBytes('\n')
-	var o map[string]interface{}
+	var o map[string]any
 	require.NoError(t, json.Unmarshal(b, &o))
 
 	assert.Equalf(t, LogTypeRequest, o[logFieldType], "new logger must be %s type", LogTypeRequest)
@@ -299,7 +299,7 @@ func TestWithFields(t *testing.T) {
 		testLogger.SetAppID("dapr_app")
 		testLogger.SetOutputLevel(InfoLevel)
 
-		var o map[string]interface{}
+		var o map[string]any
 
 		// Test adding fields
 		testLogger.WithFields(map[string]any{

@@ -47,31 +47,31 @@ func (n *nopLogger) WithFields(_ map[string]any) Logger {
 }
 
 // Info logs a message at level Info.
-func (n *nopLogger) Info(_ ...interface{}) {}
+func (n *nopLogger) Info(_ ...any) {}
 
 // Infof logs a message at level Info.
-func (n *nopLogger) Infof(_ string, _ ...interface{}) {}
+func (n *nopLogger) Infof(_ string, _ ...any) {}
 
 // Debug logs a message at level Debug.
-func (n *nopLogger) Debug(_ ...interface{}) {}
+func (n *nopLogger) Debug(_ ...any) {}
 
 // Debugf logs a message at level Debug.
-func (n *nopLogger) Debugf(_ string, _ ...interface{}) {}
+func (n *nopLogger) Debugf(_ string, _ ...any) {}
 
 // Warn logs a message at level Warn.
-func (n *nopLogger) Warn(_ ...interface{}) {}
+func (n *nopLogger) Warn(_ ...any) {}
 
 // Warnf logs a message at level Warn.
-func (n *nopLogger) Warnf(_ string, _ ...interface{}) {}
+func (n *nopLogger) Warnf(_ string, _ ...any) {}
 
 // Error logs a message at level Error.
-func (n *nopLogger) Error(_ ...interface{}) {}
+func (n *nopLogger) Error(_ ...any) {}
 
 // Errorf logs a message at level Error.
-func (n *nopLogger) Errorf(_ string, _ ...interface{}) {}
+func (n *nopLogger) Errorf(_ string, _ ...any) {}
 
 // Fatal logs a message at level Fatal then the process will exit with status set to 1.
-func (n *nopLogger) Fatal(_ ...interface{}) {}
+func (n *nopLogger) Fatal(_ ...any) {}
 
 // Fatalf logs a message at level Fatal then the process will exit with status set to 1.
-func (n *nopLogger) Fatalf(_ string, _ ...interface{}) {}
+func (n *nopLogger) Fatalf(_ string, _ ...any) {}

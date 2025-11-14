@@ -92,25 +92,25 @@ type Logger interface { //nolint: interfacebloat
 	WithFields(fields map[string]any) Logger
 
 	// Info logs a message at level Info.
-	Info(args ...interface{})
+	Info(args ...any)
 	// Infof logs a message at level Info.
-	Infof(format string, args ...interface{})
+	Infof(format string, args ...any)
 	// Debug logs a message at level Debug.
-	Debug(args ...interface{})
+	Debug(args ...any)
 	// Debugf logs a message at level Debug.
-	Debugf(format string, args ...interface{})
+	Debugf(format string, args ...any)
 	// Warn logs a message at level Warn.
-	Warn(args ...interface{})
+	Warn(args ...any)
 	// Warnf logs a message at level Warn.
-	Warnf(format string, args ...interface{})
+	Warnf(format string, args ...any)
 	// Error logs a message at level Error.
-	Error(args ...interface{})
+	Error(args ...any)
 	// Errorf logs a message at level Error.
-	Errorf(format string, args ...interface{})
+	Errorf(format string, args ...any)
 	// Fatal logs a message at level Fatal then the process will exit with status set to 1.
-	Fatal(args ...interface{})
+	Fatal(args ...any)
 	// Fatalf logs a message at level Fatal then the process will exit with status set to 1.
-	Fatalf(format string, args ...interface{})
+	Fatalf(format string, args ...any)
 }
 
 // toLogLevel converts to LogLevel.

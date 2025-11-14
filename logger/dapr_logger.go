@@ -126,51 +126,51 @@ func (l *daprLogger) WithFields(fields map[string]any) Logger {
 }
 
 // Info logs a message at level Info.
-func (l *daprLogger) Info(args ...interface{}) {
+func (l *daprLogger) Info(args ...any) {
 	l.logger.Log(logrus.InfoLevel, args...)
 }
 
 // Infof logs a message at level Info.
-func (l *daprLogger) Infof(format string, args ...interface{}) {
+func (l *daprLogger) Infof(format string, args ...any) {
 	l.logger.Logf(logrus.InfoLevel, format, args...)
 }
 
 // Debug logs a message at level Debug.
-func (l *daprLogger) Debug(args ...interface{}) {
+func (l *daprLogger) Debug(args ...any) {
 	l.logger.Log(logrus.DebugLevel, args...)
 }
 
 // Debugf logs a message at level Debug.
-func (l *daprLogger) Debugf(format string, args ...interface{}) {
+func (l *daprLogger) Debugf(format string, args ...any) {
 	l.logger.Logf(logrus.DebugLevel, format, args...)
 }
 
 // Warn logs a message at level Warn.
-func (l *daprLogger) Warn(args ...interface{}) {
+func (l *daprLogger) Warn(args ...any) {
 	l.logger.Log(logrus.WarnLevel, args...)
 }
 
 // Warnf logs a message at level Warn.
-func (l *daprLogger) Warnf(format string, args ...interface{}) {
+func (l *daprLogger) Warnf(format string, args ...any) {
 	l.logger.Logf(logrus.WarnLevel, format, args...)
 }
 
 // Error logs a message at level Error.
-func (l *daprLogger) Error(args ...interface{}) {
+func (l *daprLogger) Error(args ...any) {
 	l.logger.Log(logrus.ErrorLevel, args...)
 }
 
 // Errorf logs a message at level Error.
-func (l *daprLogger) Errorf(format string, args ...interface{}) {
+func (l *daprLogger) Errorf(format string, args ...any) {
 	l.logger.Logf(logrus.ErrorLevel, format, args...)
 }
 
 // Fatal logs a message at level Fatal then the process will exit with status set to 1.
-func (l *daprLogger) Fatal(args ...interface{}) {
+func (l *daprLogger) Fatal(args ...any) {
 	l.logger.Fatal(args...)
 }
 
 // Fatalf logs a message at level Fatal then the process will exit with status set to 1.
-func (l *daprLogger) Fatalf(format string, args ...interface{}) {
+func (l *daprLogger) Fatalf(format string, args ...any) {
 	l.logger.Fatalf(format, args...)
 }
