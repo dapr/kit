@@ -40,7 +40,7 @@ type loop[T any] struct {
 	closed  bool
 	closeCh chan struct{}
 
-	lock sync.RWMutex
+	lock sync.Mutex
 
 	segPool sync.Pool
 }
