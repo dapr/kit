@@ -30,20 +30,24 @@ type Interface[T any] interface {
 }
 
 type loop[T any] struct {
-	queue   chan T
+	head *queueSegment[T]
+	tail *queueSegment[T]
+
+	segSize uint64
+
 	handler Handler[T]
 
 	closed  bool
 	closeCh chan struct{}
-	lock    sync.RWMutex
+
+	lock sync.Mutex
+
+	segPool sync.Pool
 }
 
 func New[T any](h Handler[T], size uint64) Interface[T] {
-	return &loop[T]{
-		queue:   make(chan T, size),
-		handler: h,
-		closeCh: make(chan struct{}),
-	}
+	l := new(loop[T])
+	return l.Reset(h, size)
 }
 
 func Empty[T any]() Interface[T] {
@@ -53,41 +57,88 @@ func Empty[T any]() Interface[T] {
 func (l *loop[T]) Run(ctx context.Context) error {
 	defer close(l.closeCh)
 
-	for {
-		req, ok := <-l.queue
-		if !ok {
-			return nil
+	current := l.head
+	for current != nil {
+		// Drain this segment in order. The channel will be closed either:
+		//   - when we "roll over" to a new segment, or
+		//   - when Close() is called for the final segment.
+		for req := range current.ch {
+			if err := l.handler.Handle(ctx, req); err != nil {
+				return err
+			}
 		}
 
-		if err := l.handler.Handle(ctx, req); err != nil {
-			return err
-		}
+		// Move to the next segment, and return this one to the pool.
+		next := current.next
+		l.putSegment(current)
+		current = next
 	}
+
+	return nil
 }
 
 func (l *loop[T]) Enqueue(req T) {
-	l.lock.RLock()
-	defer l.lock.RUnlock()
+	l.lock.Lock()
+	defer l.lock.Unlock()
 
 	if l.closed {
 		return
 	}
 
+	if l.tail == nil {
+		seg := l.getSegment()
+		l.head = seg
+		l.tail = seg
+	}
+
+	// First try to send to the current tail segment without blocking.
 	select {
-	case l.queue <- req:
-	case <-l.closeCh:
+	case l.tail.ch <- req:
+		return
+	default:
+		// Tail is full: create a new segment, link it, close the old tail, and
+		// send into the new tail.
+		newSeg := l.getSegment()
+		l.tail.next = newSeg
+		close(l.tail.ch)
+		l.tail = newSeg
+		l.tail.ch <- req
 	}
 }
 
 func (l *loop[T]) Close(req T) {
 	l.lock.Lock()
-	l.closed = true
-	select {
-	case l.queue <- req:
-	case <-l.closeCh:
+	if l.closed {
+		// Already closed; just unlock and wait for Run to finish.
+		l.lock.Unlock()
+		<-l.closeCh
+		return
 	}
-	close(l.queue)
+	l.closed = true
+
+	// Ensure at least one segment exists.
+	if l.tail == nil {
+		seg := l.getSegment()
+		l.head = seg
+		l.tail = seg
+	}
+
+	// Enqueue the final request; if the tail is full, roll over as in Enqueue.
+	select {
+	case l.tail.ch <- req:
+	default:
+		newSeg := l.getSegment()
+		l.tail.next = newSeg
+		close(l.tail.ch)
+		l.tail = newSeg
+		l.tail.ch <- req
+	}
+
+	// No more items will be enqueued; close the tail to signal completion.
+	close(l.tail.ch)
 	l.lock.Unlock()
+
+	// Wait for Run to finish draining everything.
 	<-l.closeCh
 }
 
@@ -102,10 +153,16 @@ func (l *loop[T]) Reset(h Handler[T], size uint64) Interface[T] {
 	l.closed = false
 	l.closeCh = make(chan struct{})
 	l.handler = h
+	l.segSize = size
 
-	// TODO: @joshvanl: use a ring buffer so that we don't need to reallocate and
-	// improve performance.
-	l.queue = make(chan T, size)
+	// Initialize pool for this instantiation of T.
+	l.segPool.New = func() any {
+		return new(queueSegment[T])
+	}
+
+	seg := l.getSegment()
+	l.head = seg
+	l.tail = seg
 
 	return l
 }
