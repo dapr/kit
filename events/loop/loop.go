@@ -16,6 +16,7 @@ package loop
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 )
 
 type Handler[T any] interface {
@@ -26,32 +27,21 @@ type Interface[T any] interface {
 	Run(ctx context.Context) error
 	Enqueue(t T)
 	Close(t T)
-	Reset(h Handler[T], size uint64) Interface[T]
 }
 
 type loop[T any] struct {
+	factory *Factory[T]
+
 	head *queueSegment[T]
 	tail *queueSegment[T]
 
-	segSize uint64
-
 	handler Handler[T]
 
-	closed  bool
+	closed atomic.Bool
+
 	closeCh chan struct{}
 
-	lock sync.Mutex
-
-	segPool sync.Pool
-}
-
-func New[T any](h Handler[T], size uint64) Interface[T] {
-	l := new(loop[T])
-	return l.Reset(h, size)
-}
-
-func Empty[T any]() Interface[T] {
-	return new(loop[T])
+	lock sync.RWMutex
 }
 
 func (l *loop[T]) Run(ctx context.Context) error {
@@ -78,23 +68,37 @@ func (l *loop[T]) Run(ctx context.Context) error {
 }
 
 func (l *loop[T]) Enqueue(req T) {
-	l.lock.Lock()
-	defer l.lock.Unlock()
+	l.lock.RLock()
 
-	if l.closed {
+	if l.closed.Load() {
+		l.lock.RUnlock()
 		return
-	}
-
-	if l.tail == nil {
-		seg := l.getSegment()
-		l.head = seg
-		l.tail = seg
 	}
 
 	// First try to send to the current tail segment without blocking.
 	select {
 	case l.tail.ch <- req:
+		l.lock.RUnlock()
 		return
+	default:
+		l.lock.RUnlock()
+	}
+
+	// Tail is full; need to acquire write lock to roll over. If no longer full
+	// (lost race, another goroutine rolled over first), don't expand.
+
+	l.lock.Lock()
+	defer l.lock.Unlock()
+
+	if l.closed.Load() {
+		// Closed while we were waiting for the lock.
+		return
+	}
+
+	// Try again to send to the tail; if successful, another goroutine must
+	// have rolled over for us.
+	select {
+	case l.tail.ch <- req:
 	default:
 		// Tail is full: create a new segment, link it, close the old tail, and
 		// send into the new tail.
@@ -108,20 +112,13 @@ func (l *loop[T]) Enqueue(req T) {
 
 func (l *loop[T]) Close(req T) {
 	l.lock.Lock()
-	if l.closed {
+	if l.closed.Load() {
 		// Already closed; just unlock and wait for Run to finish.
 		l.lock.Unlock()
 		<-l.closeCh
 		return
 	}
-	l.closed = true
-
-	// Ensure at least one segment exists.
-	if l.tail == nil {
-		seg := l.getSegment()
-		l.head = seg
-		l.tail = seg
-	}
+	l.closed.Store(true)
 
 	// Enqueue the final request; if the tail is full, roll over as in Enqueue.
 	select {
@@ -140,29 +137,4 @@ func (l *loop[T]) Close(req T) {
 
 	// Wait for Run to finish draining everything.
 	<-l.closeCh
-}
-
-func (l *loop[T]) Reset(h Handler[T], size uint64) Interface[T] {
-	if l == nil {
-		return New[T](h, size)
-	}
-
-	l.lock.Lock()
-	defer l.lock.Unlock()
-
-	l.closed = false
-	l.closeCh = make(chan struct{})
-	l.handler = h
-	l.segSize = size
-
-	// Initialize pool for this instantiation of T.
-	l.segPool.New = func() any {
-		return new(queueSegment[T])
-	}
-
-	seg := l.getSegment()
-	l.head = seg
-	l.tail = seg
-
-	return l
 }
