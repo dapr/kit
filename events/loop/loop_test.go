@@ -61,7 +61,8 @@ func TestLoop_EnqueueAndRunOrder_Unbounded(t *testing.T) {
 	h := &testHandler[int]{}
 	const segmentSize = 4
 
-	l := New[int](h, segmentSize)
+	f := New[int](segmentSize)
+	l := f.NewLoop(h)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -103,7 +104,8 @@ func TestLoop_CloseTwiceIsSafe(t *testing.T) {
 	defer cancel()
 
 	h := &testHandler[int]{}
-	l := New[int](h, 2)
+	f := New[int](2)
+	l := f.NewLoop(h)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -146,7 +148,8 @@ func TestLoop_Reset(t *testing.T) {
 	defer cancel()
 
 	h1 := &testHandler[int]{}
-	l := New[int](h1, 2)
+	f := New[int](2)
+	l := f.NewLoop(h1)
 
 	var wg1 sync.WaitGroup
 	wg1.Add(1)
@@ -167,7 +170,8 @@ func TestLoop_Reset(t *testing.T) {
 
 	// Reset to a new handler and buffer size.
 	h2 := &testHandler[int]{}
-	l = l.Reset(h2, 8)
+	f = New[int](8)
+	l = f.NewLoop(h2)
 
 	require.NotNil(t, l)
 
@@ -195,7 +199,8 @@ func TestLoop_EnqueueAfterCloseIsDropped(t *testing.T) {
 	defer cancel()
 
 	h := &testHandler[int]{}
-	l := New[int](h, 2)
+	f := New[int](2)
+	l := f.NewLoop(h)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
