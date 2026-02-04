@@ -72,9 +72,9 @@ func TestFetchJWTSVID(t *testing.T) {
 	t.Run("should return error when no JWT SVID available", func(t *testing.T) {
 		s := &svidSource{
 			spiffe: &SPIFFE{
-				readyCh:        make(chan struct{}),
-				lock:           sync.RWMutex{},
-				currentJWTSVID: nil,
+				readyCh:            make(chan struct{}),
+				lock:               sync.RWMutex{},
+				currentBaseJWTSVID: nil,
 			},
 		}
 		close(s.spiffe.readyCh) // Mark as ready
@@ -94,9 +94,39 @@ func TestFetchJWTSVID(t *testing.T) {
 
 		s := &svidSource{
 			spiffe: &SPIFFE{
-				readyCh:        make(chan struct{}),
-				lock:           sync.RWMutex{},
-				currentJWTSVID: mockJWTSVID,
+				readyCh:            make(chan struct{}),
+				lock:               sync.RWMutex{},
+				currentBaseJWTSVID: mockJWTSVID,
+			},
+		}
+		close(s.spiffe.readyCh) // Mark as ready
+
+		svid, err := s.FetchJWTSVID(t.Context(), jwtsvid.Params{
+			Audience: "requested-audience",
+		})
+
+		require.Nil(t, svid)
+		require.Error(t, err)
+
+		// Verify the specific error type and contents
+		audienceErr, ok := err.(*audienceMismatchError)
+		require.True(t, ok, "Expected audienceMismatchError")
+		require.Equal(t, "JWT SVID has different audiences than requested: expected requested-audience, got actual-audience", audienceErr.Error())
+	})
+
+	t.Run("PER: should return error when audience doesn't match", func(t *testing.T) {
+		// Create a mock SVID with a specific audience
+		mockJWTSVID, err := createMockJWTSVID([]string{"actual-audience"})
+		require.NoError(t, err)
+
+		s := &svidSource{
+			spiffe: &SPIFFE{
+				readyCh:            make(chan struct{}),
+				lock:               sync.RWMutex{},
+				currentBaseJWTSVID: mockJWTSVID,
+				currentPerAudJWTSVID: map[string]*jwtsvid.SVID{
+					"actual-audience": mockJWTSVID,
+				},
 			},
 		}
 		close(s.spiffe.readyCh) // Mark as ready
@@ -120,9 +150,9 @@ func TestFetchJWTSVID(t *testing.T) {
 
 		s := &svidSource{
 			spiffe: &SPIFFE{
-				readyCh:        make(chan struct{}),
-				lock:           sync.RWMutex{},
-				currentJWTSVID: mockJWTSVID,
+				readyCh:            make(chan struct{}),
+				lock:               sync.RWMutex{},
+				currentBaseJWTSVID: mockJWTSVID,
 			},
 		}
 		close(s.spiffe.readyCh) // Mark as ready
@@ -135,6 +165,35 @@ func TestFetchJWTSVID(t *testing.T) {
 		require.Equal(t, mockJWTSVID, svid)
 	})
 
+	t.Run("PER: should return JWT SVID when audience matches", func(t *testing.T) {
+		mockJWTSVID1, err := createMockJWTSVID([]string{"test-audience", "extra-audience"})
+		require.NoError(t, err)
+		mockJWTSVID2, err := createMockJWTSVID([]string{"test-audience"})
+		require.NoError(t, err)
+		mockJWTSVID3, err := createMockJWTSVID([]string{"extra-audience"})
+		require.NoError(t, err)
+
+		s := &svidSource{
+			spiffe: &SPIFFE{
+				readyCh:            make(chan struct{}),
+				lock:               sync.RWMutex{},
+				currentBaseJWTSVID: mockJWTSVID1,
+				currentPerAudJWTSVID: map[string]*jwtsvid.SVID{
+					"test-audience":  mockJWTSVID2,
+					"extra-audience": mockJWTSVID3,
+				},
+			},
+		}
+		close(s.spiffe.readyCh) // Mark as ready
+
+		svid, err := s.FetchJWTSVID(t.Context(), jwtsvid.Params{
+			Audience: "test-audience",
+		})
+
+		require.NoError(t, err)
+		require.Equal(t, mockJWTSVID2, svid)
+	})
+
 	t.Run("should wait for readyCh before checking SVID", func(t *testing.T) {
 		mockJWTSVID, err := createMockJWTSVID([]string{"test-audience"})
 		require.NoError(t, err)
@@ -142,9 +201,9 @@ func TestFetchJWTSVID(t *testing.T) {
 		readyCh := make(chan struct{})
 		s := &svidSource{
 			spiffe: &SPIFFE{
-				readyCh:        readyCh,
-				lock:           sync.RWMutex{},
-				currentJWTSVID: mockJWTSVID,
+				readyCh:            readyCh,
+				lock:               sync.RWMutex{},
+				currentBaseJWTSVID: mockJWTSVID,
 			},
 		}
 
