@@ -204,6 +204,7 @@ func (s *SPIFFE) runRotation(ctx context.Context) {
 			s.lock.Lock()
 			s.currentX509SVID = identity.X509SVID
 			s.currentBaseJWTSVID = identity.JWTSVID
+			s.currentPerAudJWTSVID = identity.PerAudienceJWTSVID
 			cert = identity.X509SVID.Certificates[0]
 			jwtSVID = identity.JWTSVID
 			s.lock.Unlock()
