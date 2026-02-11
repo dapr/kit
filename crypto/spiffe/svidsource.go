@@ -78,17 +78,9 @@ func (s *svidSource) FetchJWTSVID(ctx context.Context, params jwtsvid.Params) (*
 	}
 
 	svid, ok := s.spiffe.currentPerAudJWTSVID[params.Audience]
-	if ok {
-		if !audiencesMatch(svid.Audience, []string{params.Audience}) {
-			return nil, &audienceMismatchError{
-				expected: []string{params.Audience},
-				actual:   svid.Audience,
-			}
-		}
-		return svid, nil
+	if !ok {
+		svid = s.spiffe.currentBaseJWTSVID
 	}
-
-	svid = s.spiffe.currentBaseJWTSVID
 	if svid == nil {
 		return nil, errNoJWTSVIDAvailable
 	}
