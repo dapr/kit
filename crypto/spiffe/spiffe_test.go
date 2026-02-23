@@ -17,6 +17,7 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -102,6 +103,30 @@ func Test_calculateRenewalTime(t *testing.T) {
 				"Renewal time does not match expected value")
 		})
 	}
+}
+
+func Test_fetchIdentity_perAudienceParseError_includesAudience(t *testing.T) {
+	pki := test.GenPKI(t, test.PKIOptions{
+		LeafID: spiffeid.RequireFromString("spiffe://example.com/foo/bar"),
+	})
+
+	badToken := ""
+
+	s := New(Options{
+		Log: logger.NewLogger("test"),
+		RequestSVIDFn: func(context.Context, []byte) (*SVIDResponse, error) {
+			return &SVIDResponse{
+				X509Certificates: []*x509.Certificate{pki.LeafCert},
+				PerAudienceJWT: map[string]string{
+					"bad-aud": badToken,
+				},
+			}, nil
+		},
+	})
+
+	_, err := s.fetchIdentity(t.Context())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), fmt.Sprintf("audience %q", "bad-aud"))
 }
 
 func Test_Run(t *testing.T) {

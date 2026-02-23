@@ -42,7 +42,7 @@ const (
 )
 
 // SVIDResponse represents the response from the SVID request function,
-// containing both X.509 certificates and a JWT token.
+// containing both X.509 certificates and JWT tokens (base and per-audience).
 type SVIDResponse struct {
 	X509Certificates []*x509.Certificate
 	JWT              *string
@@ -50,6 +50,7 @@ type SVIDResponse struct {
 }
 
 // Identity contains both X.509 and JWT SVIDs for a workload.
+// It may include a base JWT SVID as well as per-audience JWT SVIDs.
 type Identity struct {
 	X509SVID           *x509svid.SVID
 	JWTSVID            *jwtsvid.SVID
@@ -275,7 +276,7 @@ func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 	for aud, token := range svidResponse.PerAudienceJWT {
 		jwtSvid, err := jwtsvid.ParseInsecure(token, []string{aud})
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse JWT SVID: %w", err)
+			return nil, fmt.Errorf("failed to parse per-audience JWT SVID for audience %q: %w", aud, err)
 		}
 
 		if identity.PerAudienceJWTSVID == nil {
