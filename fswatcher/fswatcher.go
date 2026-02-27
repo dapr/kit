@@ -102,12 +102,8 @@ func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
 					l.Close(event{shutdown: true})
 					return f.w.Close()
 				case err, ok := <-f.w.Errors:
-					if !ok {
-						l.Close(event{shutdown: true})
-						return nil
-					}
-					if err == nil {
-						l.Close(event{shutdown: true})
+					defer l.Close(event{shutdown: true})
+					if !ok || err == nil {
 						return nil
 					}
 					l.Close(event{shutdown: true})
