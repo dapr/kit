@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Dapr Authors
+Copyright 2026 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -25,8 +25,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/dapr/kit/ptr"
 )
 
 func TestFSWatcher(t *testing.T) {
@@ -61,20 +59,6 @@ func TestFSWatcher(t *testing.T) {
 		runWatcher(t, Options{})
 	})
 
-	t.Run("creating fswatcher with 0 interval should not error", func(t *testing.T) {
-		_, err := New(Options{
-			Interval: ptr.Of(time.Duration(0)),
-		})
-		require.NoError(t, err)
-	})
-
-	t.Run("creating fswatcher with negative interval should error", func(t *testing.T) {
-		_, err := New(Options{
-			Interval: ptr.Of(time.Duration(-1)),
-		})
-		require.Error(t, err)
-	})
-
 	t.Run("running Run twice should error", func(t *testing.T) {
 		fs, err := New(Options{})
 		require.NoError(t, err)
@@ -97,8 +81,7 @@ func TestFSWatcher(t *testing.T) {
 		fp := filepath.Join(t.TempDir(), "test.txt")
 		require.NoError(t, os.WriteFile(fp, []byte{}, 0o600))
 		eventsCh := runWatcher(t, Options{
-			Targets:  []string{fp},
-			Interval: ptr.Of(time.Duration(1)),
+			Targets: []string{fp},
 		})
 		assert.Empty(t, eventsCh)
 
@@ -121,8 +104,7 @@ func TestFSWatcher(t *testing.T) {
 		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
 		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
 		eventsCh := runWatcher(t, Options{
-			Targets:  []string{fp1, fp2},
-			Interval: ptr.Of(time.Duration(1)),
+			Targets: []string{fp1, fp2},
 		})
 		assert.Empty(t, eventsCh)
 		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
@@ -143,8 +125,7 @@ func TestFSWatcher(t *testing.T) {
 		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
 		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
 		eventsCh := runWatcher(t, Options{
-			Targets:  []string{fp1, fp2},
-			Interval: ptr.Of(time.Duration(1)),
+			Targets: []string{fp1, fp2},
 		})
 		if runtime.GOOS == "windows" {
 			// If running in windows, wait for notify to be ready.
@@ -168,8 +149,7 @@ func TestFSWatcher(t *testing.T) {
 		fp1 := filepath.Join(dir1, "test1.txt")
 		fp2 := filepath.Join(dir2, "test2.txt")
 		eventsCh := runWatcher(t, Options{
-			Targets:  []string{dir1, dir2},
-			Interval: ptr.Of(time.Duration(1)),
+			Targets: []string{dir1, dir2},
 		})
 		assert.Empty(t, eventsCh)
 		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))

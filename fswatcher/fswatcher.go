@@ -20,10 +20,10 @@ import (
 	"errors"
 	"fmt"
 	"sync/atomic"
-	"time"
 
 	"github.com/fsnotify/fsnotify"
 
+	"github.com/dapr/kit/concurrency"
 	"github.com/dapr/kit/events/loop"
 )
 
@@ -31,32 +31,6 @@ import (
 type Options struct {
 	// Targets is a list of directories to watch for changes.
 	Targets []string
-
-	// Interval is the interval to wait before sending a notification after a file has changed.
-	// Deprecated: Interval is no longer used.
-	Interval *time.Duration
-}
-
-// event is a typed file system event processed by the loop.
-type event struct {
-	name     string
-	shutdown bool
-}
-
-// handler implements loop.Handler[event] and forwards events to eventCh.
-type handler struct {
-	eventCh chan<- struct{}
-}
-
-func (h *handler) Handle(ctx context.Context, e event) error {
-	if e.shutdown {
-		return nil
-	}
-	select {
-	case h.eventCh <- struct{}{}:
-	case <-ctx.Done():
-	}
-	return nil
 }
 
 // FSWatcher watches for changes to a directory on the filesystem and sends a notification to eventCh every time a file in the folder is changed.
@@ -79,10 +53,6 @@ func New(opts Options) (*FSWatcher, error) {
 		}
 	}
 
-	if opts.Interval != nil && *opts.Interval < 0 {
-		return nil, errors.New("interval must be positive")
-	}
-
 	return &FSWatcher{w: w}, nil
 }
 
@@ -94,18 +64,20 @@ func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
 	factory := loop.New[event](64)
 	l := factory.NewLoop(&handler{eventCh: eventCh})
 
-	go l.Run(ctx)
-
-	for {
-		select {
-		case <-ctx.Done():
-			l.Close(event{shutdown: true})
-			return f.w.Close()
-		case err := <-f.w.Errors:
-			l.Close(event{shutdown: true})
-			return errors.Join(fmt.Errorf("watcher error: %w", err), f.w.Close())
-		case fsEvent := <-f.w.Events:
-			l.Enqueue(event{name: fsEvent.Name})
-		}
-	}
+	return concurrency.NewRunnerManager(
+		l.Run,
+		func(ctx context.Context) error {
+			for {
+				select {
+				case <-ctx.Done():
+					l.Close(event{shutdown: true})
+					return f.w.Close()
+				case err := <-f.w.Errors:
+					l.Close(event{shutdown: true})
+					return errors.Join(fmt.Errorf("watcher error: %w", err), f.w.Close())
+				case fsEvent := <-f.w.Events:
+					l.Enqueue(event{name: fsEvent.Name})
+				}
+			}
+		}).Run(ctx)
 }
