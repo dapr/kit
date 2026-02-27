@@ -162,4 +162,47 @@ func TestFSWatcher(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("should debounce burst of writes on same file", func(t *testing.T) {
+		dir := t.TempDir()
+		fp := filepath.Join(dir, "debounce.txt")
+
+		// Create the file before starting the watcher so the initial creation
+		// does not interfere with the debounce behavior we want to test.
+		require.NoError(t, os.WriteFile(fp, []byte("initial"), 0o600))
+
+		eventsCh := runWatcher(t, Options{
+			Targets: []string{fp},
+		})
+
+		if runtime.GOOS == "windows" {
+			// If running on Windows, wait for notify to be ready, to avoid races.
+			time.Sleep(time.Second)
+		}
+
+		assert.Empty(t, eventsCh)
+
+		// Perform a burst of writes on the same file; debounce logic should
+		// coalesce these into a single notification.
+		for i := 0; i < 5; i++ {
+			require.NoError(t, os.WriteFile(fp, []byte("data"), 0o600))
+		}
+
+		// Expect exactly one event corresponding to the burst.
+		select {
+		case <-eventsCh:
+			// First event received as expected.
+		case <-time.After(time.Second):
+			assert.Fail(t, "timeout waiting for debounced event")
+		}
+
+		// Ensure no additional events arrive for this burst within a window
+		// long enough to cover the debounce interval.
+		select {
+		case <-eventsCh:
+			assert.Fail(t, "received more than one event for debounced burst of writes")
+		case <-time.After(500 * time.Millisecond):
+			// No extra events, as expected.
+		}
+	})
 }
