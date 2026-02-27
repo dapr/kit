@@ -184,7 +184,7 @@ func TestFSWatcher(t *testing.T) {
 
 		// Perform a burst of writes on the same file; debounce logic should
 		// coalesce these into a single notification.
-		for i := 0; i < 5; i++ {
+		for range 5 {
 			require.NoError(t, os.WriteFile(fp, []byte("data"), 0o600))
 		}
 
