@@ -88,7 +88,29 @@ func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
 						l.Close(event{shutdown: true})
 						return nil
 					}
-					l.Enqueue(event{name: fsEvent.Name})
+					// Drain all immediately available events from the channel and
+					// deduplicate them by file name. This coalesces the burst of OS-level
+					// events that a single file write typically generates (e.g. WRITE +
+					// CHMOD on Linux) into one notification per unique file.
+					names := map[string]struct{}{fsEvent.Name: {}}
+					for draining := true; draining; {
+						select {
+						case more, ok := <-f.w.Events:
+							if !ok {
+								for name := range names {
+									l.Enqueue(event{name: name})
+								}
+								l.Close(event{shutdown: true})
+								return nil
+							}
+							names[more.Name] = struct{}{}
+						default:
+							draining = false
+						}
+					}
+					for name := range names {
+						l.Enqueue(event{name: name})
+					}
 				}
 			}
 		}).Run(ctx)
