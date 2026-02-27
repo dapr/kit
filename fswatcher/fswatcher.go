@@ -19,7 +19,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 
@@ -64,6 +66,33 @@ func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
 	factory := loop.New[event](64)
 	l := factory.NewLoop(&handler{eventCh: eventCh})
 
+	// debounce holds a per-file timer that fires after a short idle window.
+	// A single logical write (open+O_TRUNC → write → close) generates several
+	// OS-level inotify events in quick succession; coalescing them into one
+	// notification ensures consumers never see a transiently-empty file and
+	// never receive spurious duplicate signals.
+	const debounceInterval = 5 * time.Millisecond
+	var (
+		debounceMu sync.Mutex
+		debounce   = make(map[string]*time.Timer)
+	)
+	enqueueDebounced := func(name string) {
+		debounceMu.Lock()
+		defer debounceMu.Unlock()
+		if t, ok := debounce[name]; ok {
+			t.Stop()
+		}
+		debounce[name] = time.AfterFunc(debounceInterval, func() {
+			// Lock only long enough to remove the entry, then release
+			// before calling l.Enqueue so we never hold debounceMu
+			// across an external call.
+			debounceMu.Lock()
+			delete(debounce, name)
+			debounceMu.Unlock()
+			l.Enqueue(event{name: name})
+		})
+	}
+
 	return concurrency.NewRunnerManager(
 		l.Run,
 		func(ctx context.Context) error {
@@ -88,29 +117,7 @@ func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
 						l.Close(event{shutdown: true})
 						return nil
 					}
-					// Drain all immediately available events from the channel and
-					// deduplicate them by file name. This coalesces the burst of OS-level
-					// events that a single file write typically generates (e.g. WRITE +
-					// CHMOD on Linux) into one notification per unique file.
-					names := map[string]struct{}{fsEvent.Name: {}}
-					for draining := true; draining; {
-						select {
-						case more, ok := <-f.w.Events:
-							if !ok {
-								for name := range names {
-									l.Enqueue(event{name: name})
-								}
-								l.Close(event{shutdown: true})
-								return nil
-							}
-							names[more.Name] = struct{}{}
-						default:
-							draining = false
-						}
-					}
-					for name := range names {
-						l.Enqueue(event{name: name})
-					}
+					enqueueDebounced(fsEvent.Name)
 				}
 			}
 		}).Run(ctx)
