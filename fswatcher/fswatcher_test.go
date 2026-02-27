@@ -25,22 +25,16 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	clocktesting "k8s.io/utils/clock/testing"
 
-	"github.com/dapr/kit/events/batcher"
 	"github.com/dapr/kit/ptr"
 )
 
 func TestFSWatcher(t *testing.T) {
-	runWatcher := func(t *testing.T, opts Options, bacher *batcher.Batcher[string, struct{}]) <-chan struct{} {
+	runWatcher := func(t *testing.T, opts Options) <-chan struct{} {
 		t.Helper()
 
 		f, err := New(opts)
 		require.NoError(t, err)
-
-		if bacher != nil {
-			f.WithBatcher(bacher)
-		}
 
 		errCh := make(chan error)
 		ctx, cancel := context.WithCancel(t.Context())
@@ -64,7 +58,7 @@ func TestFSWatcher(t *testing.T) {
 	}
 
 	t.Run("creating fswatcher with no directory should not error", func(t *testing.T) {
-		runWatcher(t, Options{}, nil)
+		runWatcher(t, Options{})
 	})
 
 	t.Run("creating fswatcher with 0 interval should not error", func(t *testing.T) {
@@ -105,7 +99,7 @@ func TestFSWatcher(t *testing.T) {
 		eventsCh := runWatcher(t, Options{
 			Targets:  []string{fp},
 			Interval: ptr.Of(time.Duration(1)),
-		}, nil)
+		})
 		assert.Empty(t, eventsCh)
 
 		if runtime.GOOS == "windows" {
@@ -129,7 +123,7 @@ func TestFSWatcher(t *testing.T) {
 		eventsCh := runWatcher(t, Options{
 			Targets:  []string{fp1, fp2},
 			Interval: ptr.Of(time.Duration(1)),
-		}, nil)
+		})
 		assert.Empty(t, eventsCh)
 		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
 		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
@@ -151,7 +145,7 @@ func TestFSWatcher(t *testing.T) {
 		eventsCh := runWatcher(t, Options{
 			Targets:  []string{fp1, fp2},
 			Interval: ptr.Of(time.Duration(1)),
-		}, nil)
+		})
 		if runtime.GOOS == "windows" {
 			// If running in windows, wait for notify to be ready.
 			time.Sleep(time.Second)
@@ -176,7 +170,7 @@ func TestFSWatcher(t *testing.T) {
 		eventsCh := runWatcher(t, Options{
 			Targets:  []string{dir1, dir2},
 			Interval: ptr.Of(time.Duration(1)),
-		}, nil)
+		})
 		assert.Empty(t, eventsCh)
 		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
 		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
@@ -186,63 +180,6 @@ func TestFSWatcher(t *testing.T) {
 			case <-time.After(time.Second):
 				assert.Fail(t, "timeout waiting for event")
 			}
-		}
-	})
-
-	t.Run("should batch events of the same file for multiple events", func(t *testing.T) {
-		clock := clocktesting.NewFakeClock(time.Time{})
-		batcher := batcher.New[string, struct{}](batcher.Options{
-			Interval: time.Millisecond * 500,
-			Clock:    clock,
-		})
-		dir1 := t.TempDir()
-		dir2 := t.TempDir()
-		fp1 := filepath.Join(dir1, "test1.txt")
-		fp2 := filepath.Join(dir2, "test2.txt")
-		eventsCh := runWatcher(t, Options{Targets: []string{dir1, dir2}}, batcher)
-		assert.Empty(t, eventsCh)
-
-		if runtime.GOOS == "windows" {
-			// If running in windows, wait for notify to be ready.
-			time.Sleep(time.Second)
-		}
-
-		for range 10 {
-			require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
-			require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
-		}
-
-		assert.Eventually(t, clock.HasWaiters, time.Second, time.Millisecond*10)
-
-		select {
-		case <-eventsCh:
-			assert.Fail(t, "unexpected event")
-		case <-time.After(time.Millisecond * 10):
-		}
-
-		clock.Step(time.Millisecond * 250)
-
-		for range 10 {
-			require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
-			require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
-		}
-
-		select {
-		case <-eventsCh:
-			assert.Fail(t, "unexpected event")
-		case <-time.After(time.Millisecond * 10):
-		}
-
-		assert.Eventually(t, clock.HasWaiters, time.Second, time.Millisecond*10)
-		clock.Step(time.Millisecond * 500)
-
-		for range 2 {
-			select {
-			case <-eventsCh:
-			case <-time.After(time.Second):
-				assert.Fail(t, "timeout waiting for event")
-			}
-			clock.Step(1)
 		}
 	})
 }

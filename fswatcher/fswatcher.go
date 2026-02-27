@@ -24,7 +24,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 
-	"github.com/dapr/kit/events/batcher"
+	"github.com/dapr/kit/events/loop"
 )
 
 // Options are the options for the FSWatcher.
@@ -33,18 +33,38 @@ type Options struct {
 	Targets []string
 
 	// Interval is the interval to wait before sending a notification after a file has changed.
-	// Default to 500ms.
+	// Deprecated: Interval is no longer used.
 	Interval *time.Duration
+}
+
+// event is a typed file system event processed by the loop.
+type event struct {
+	name     string
+	shutdown bool
+}
+
+// handler implements loop.Handler[event] and forwards events to eventCh.
+type handler struct {
+	eventCh chan<- struct{}
+}
+
+func (h *handler) Handle(ctx context.Context, e event) error {
+	if e.shutdown {
+		return nil
+	}
+	select {
+	case h.eventCh <- struct{}{}:
+	case <-ctx.Done():
+	}
+	return nil
 }
 
 // FSWatcher watches for changes to a directory on the filesystem and sends a notification to eventCh every time a file in the folder is changed.
 // Although it's possible to watch for individual files, that's not recommended; watch for the file's parent folder instead.
 // That is because, like in Kubernetes which uses system links on mounted volumes, the file may be deleted and recreated with a different inode.
-// Note that changes are batched for 0.5 seconds before notifications are sent as events on a single file often come in batches.
 type FSWatcher struct {
 	w       *fsnotify.Watcher
 	running atomic.Bool
-	batcher *batcher.Batcher[string, struct{}]
 }
 
 func New(opts Options) (*FSWatcher, error) {
@@ -59,40 +79,33 @@ func New(opts Options) (*FSWatcher, error) {
 		}
 	}
 
-	interval := time.Millisecond * 500
-	if opts.Interval != nil {
-		interval = *opts.Interval
-	}
-	if interval < 0 {
+	if opts.Interval != nil && *opts.Interval < 0 {
 		return nil, errors.New("interval must be positive")
 	}
 
-	return &FSWatcher{
-		w: w,
-		// Often the case, writes to files are not atomic and involve multiple file system events.
-		// We want to hold off on sending events until we are sure that the file has been written to completion. We do this by waiting for a period of time after the last event has been received for a file name.
-		batcher: batcher.New[string, struct{}](batcher.Options{
-			Interval: interval,
-		}),
-	}, nil
+	return &FSWatcher{w: w}, nil
 }
 
 func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
 	if !f.running.CompareAndSwap(false, true) {
 		return errors.New("watcher already running")
 	}
-	defer f.batcher.Close()
 
-	f.batcher.Subscribe(ctx, eventCh)
+	factory := loop.New[event](64)
+	l := factory.NewLoop(&handler{eventCh: eventCh})
+
+	go l.Run(ctx)
 
 	for {
 		select {
 		case <-ctx.Done():
+			l.Close(event{shutdown: true})
 			return f.w.Close()
 		case err := <-f.w.Errors:
+			l.Close(event{shutdown: true})
 			return errors.Join(fmt.Errorf("watcher error: %w", err), f.w.Close())
-		case event := <-f.w.Events:
-			f.batcher.Batch(event.Name, struct{}{})
+		case fsEvent := <-f.w.Events:
+			l.Enqueue(event{name: fsEvent.Name})
 		}
 	}
 }
