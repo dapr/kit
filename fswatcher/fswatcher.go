@@ -82,15 +82,25 @@ func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
 		if t, ok := debounce[name]; ok {
 			t.Stop()
 		}
-		debounce[name] = time.AfterFunc(debounceInterval, func() {
-			// Lock only long enough to remove the entry, then release
-			// before calling l.Enqueue so we never hold debounceMu
-			// across an external call.
+		var timer *time.Timer
+		timer = time.AfterFunc(debounceInterval, func() {
+			// Lock only long enough to confirm this timer is still the
+			// current one for this name and remove the entry, then
+			// release before calling l.Enqueue so we never hold
+			// debounceMu across an external call.
 			debounceMu.Lock()
+			current := debounce[name]
+			if current != timer {
+				// This callback is for a stale timer; a newer one has
+				// been installed for this name, so do nothing.
+				debounceMu.Unlock()
+				return
+			}
 			delete(debounce, name)
 			debounceMu.Unlock()
 			l.Enqueue(event{name: name})
 		})
+		debounce[name] = timer
 	}
 
 	return concurrency.NewRunnerManager(
