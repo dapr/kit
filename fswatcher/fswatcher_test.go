@@ -180,7 +180,13 @@ func TestFSWatcher(t *testing.T) {
 			time.Sleep(time.Second)
 		}
 
-		assert.Empty(t, eventsCh)
+		// Verify that no events have been emitted before the write burst.
+		select {
+		case <-eventsCh:
+			assert.Fail(t, "unexpected event received before write burst")
+		default:
+			// No event yet, as expected.
+		}
 
 		// Perform a burst of writes on the same file; debounce logic should
 		// coalesce these into a single notification.
