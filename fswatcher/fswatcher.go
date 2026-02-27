@@ -72,10 +72,22 @@ func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
 				case <-ctx.Done():
 					l.Close(event{shutdown: true})
 					return f.w.Close()
-				case err := <-f.w.Errors:
+				case err, ok := <-f.w.Errors:
+					if !ok {
+						l.Close(event{shutdown: true})
+						return nil
+					}
+					if err == nil {
+						l.Close(event{shutdown: true})
+						return nil
+					}
 					l.Close(event{shutdown: true})
 					return errors.Join(fmt.Errorf("watcher error: %w", err), f.w.Close())
-				case fsEvent := <-f.w.Events:
+				case fsEvent, ok := <-f.w.Events:
+					if !ok {
+						l.Close(event{shutdown: true})
+						return nil
+					}
 					l.Enqueue(event{name: fsEvent.Name})
 				}
 			}
