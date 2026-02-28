@@ -26,16 +26,18 @@ import (
 
 var shutdownSignals = []os.Signal{os.Interrupt, syscall.SIGTERM}
 
-// ContextWithHUP returns a context which will be canceled when the SIGHUP
-// signal is caught. The returned context will also be canceled when the parent
-// context is canceled.
-func ContextWithHUP(ctx context.Context) <-chan context.Context {
+// OnHUP returns a channel that yields a new context each time a SIGHUP signal
+// is received. Each context is canceled when the next SIGHUP arrives or when
+// the parent context is canceled. The channel is closed when the parent context
+// is canceled.
+func OnHUP(ctx context.Context) <-chan context.Context {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGHUP)
 
 	ctxhupCh := make(chan context.Context, 1)
 
 	go func() {
+		defer close(ctxhupCh)
 		for {
 			ctxhup, cancel := context.WithCancelCause(ctx)
 			ctxhupCh <- ctxhup
@@ -45,6 +47,7 @@ func ContextWithHUP(ctx context.Context) <-chan context.Context {
 				log.Infof(`Received signal '%s'; restarting`, sig)
 				cancel(errors.New("received SIGHUP"))
 			case <-ctx.Done():
+				cancel(ctx.Err())
 				signal.Stop(sigCh)
 				return
 			}

@@ -76,16 +76,32 @@ func TestContext(t *testing.T) {
 	})
 }
 
-func TestContextWithHUP(t *testing.T) {
+func TestOnHUP(t *testing.T) {
 	signal.Reset()
 
 	t.Run("SIGHUP should cancel context", func(t *testing.T) {
 		defer signal.Reset()
 
-		ctx := <-ContextWithHUP(t.Context())
+		ctx := <-OnHUP(t.Context())
 		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGHUP))
 		select {
 		case <-ctx.Done():
+		case <-time.After(1 * time.Second):
+			t.Error("context should be cancelled in time")
+		}
+	})
+
+	t.Run("context cause should contain SIGHUP information", func(t *testing.T) {
+		defer signal.Reset()
+
+		ctx := <-OnHUP(t.Context())
+		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGHUP))
+		select {
+		case <-ctx.Done():
+			cause := context.Cause(ctx)
+			require.Error(t, cause)
+			assert.Contains(t, cause.Error(), "SIGHUP",
+				"cause should contain SIGHUP, got: %s", cause.Error())
 		case <-time.After(1 * time.Second):
 			t.Error("context should be cancelled in time")
 		}
@@ -95,7 +111,7 @@ func TestContextWithHUP(t *testing.T) {
 		defer signal.Reset()
 
 		parent, cancel := context.WithCancel(t.Context())
-		ctx := <-ContextWithHUP(parent)
+		ctx := <-OnHUP(parent)
 
 		cancel()
 
@@ -106,11 +122,53 @@ func TestContextWithHUP(t *testing.T) {
 		}
 	})
 
-	t.Run("multiple HUP contexts can be created", func(t *testing.T) {
+	t.Run("multiple SIGHUP signals yield new contexts", func(t *testing.T) {
 		defer signal.Reset()
 
-		ctx1 := <-ContextWithHUP(t.Context())
-		ctx2 := <-ContextWithHUP(t.Context())
+		hupCh := OnHUP(t.Context())
+
+		// Get first context
+		ctx1 := <-hupCh
+
+		// Send first SIGHUP - should cancel ctx1 and produce ctx2
+		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGHUP))
+
+		select {
+		case <-ctx1.Done():
+		case <-time.After(1 * time.Second):
+			t.Fatal("ctx1 should be cancelled in time")
+		}
+
+		// Get second context (produced after first SIGHUP)
+		var ctx2 context.Context
+		select {
+		case ctx2 = <-hupCh:
+		case <-time.After(1 * time.Second):
+			t.Fatal("should receive new context after SIGHUP")
+		}
+
+		// Verify ctx2 is not yet cancelled
+		select {
+		case <-ctx2.Done():
+			t.Fatal("ctx2 should not be cancelled yet")
+		default:
+		}
+
+		// Send second SIGHUP - should cancel ctx2
+		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGHUP))
+
+		select {
+		case <-ctx2.Done():
+		case <-time.After(1 * time.Second):
+			t.Error("ctx2 should be cancelled in time")
+		}
+	})
+
+	t.Run("multiple OnHUP channels receive same signal", func(t *testing.T) {
+		defer signal.Reset()
+
+		ctx1 := <-OnHUP(t.Context())
+		ctx2 := <-OnHUP(t.Context())
 
 		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGHUP))
 
