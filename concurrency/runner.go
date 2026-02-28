@@ -60,38 +60,47 @@ func (r *RunnerManager) Run(ctx context.Context) error {
 		return ErrManagerAlreadyStarted
 	}
 
+	if len(r.runners) == 0 {
+		return nil
+	}
+
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
 
-	errCh := make(chan error)
+	// Use a buffered channel to prevent goroutines from blocking if they all
+	// finish around the same time.
+	errCh := make(chan error, len(r.runners))
 	for _, runner := range r.runners {
 		go func(runner Runner) {
-			// Ignore context cancelled errors since errors from a runner manager
-			// will likely determine the exit code of the program.
-			// Context cancelled errors are also not really useful to the user in
-			// this situation.
-			rErr := runner(ctx)
-			if rErr != nil && !errors.Is(rErr, context.Canceled) {
-				errCh <- rErr
-				// Since the task returned, we need to cancel all other tasks.
-				// This is a noop if the parent context is already cancelled, or another
-				// task returned before this one.
-				cancel(rErr)
+			err := runner(ctx)
+			if err != nil && !errors.Is(err, context.Canceled) {
+				// Task returned a real error. Send it to the channel and
+				// cancel other runners with the error as the cause.
+				errCh <- err
+				cancel(err)
 				return
 			}
-			errCh <- nil
+
+			// If the runner completed without an error, or was canceled, we
+			// still need to signal other runners to stop, per the manager's
+			// "first to finish" contract. We call cancel(nil) to do this.
+			// If another runner already called cancel with a non-nil error,
+			// this call is a no-op for setting the cancellation cause.
 			cancel(nil)
+
+			// Signal that this runner has finished.
+			errCh <- nil
 		}(runner)
 	}
 
-	// Collect all errors
-	errObjs := make([]error, 0)
-	for range len(r.runners) {
-		err := <-errCh
-		if err != nil {
-			errObjs = append(errObjs, err)
+	// Collect all errors. This loop also serves as a wait group, ensuring all
+	// runners have finished before the function returns.
+	errs := make([]error, 0, len(r.runners))
+	for i := 0; i < len(r.runners); i++ {
+		if err := <-errCh; err != nil {
+			errs = append(errs, err)
 		}
 	}
 
-	return errors.Join(errObjs...)
+	return errors.Join(errs...)
 }
