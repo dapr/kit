@@ -14,7 +14,14 @@ limitations under the License.
 package signals
 
 import (
+	"context"
 	"os"
 )
 
 var shutdownSignals = []os.Signal{os.Interrupt}
+
+// ContextWithHUP is a no-op on Windows as SIGHUP is not supported. It returns
+// the original context.
+func ContextWithHUP(ctx context.Context) context.Context {
+	return ctx
+}
