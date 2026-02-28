@@ -40,7 +40,17 @@ func OnHUP(ctx context.Context) <-chan context.Context {
 		defer close(ctxhupCh)
 		for {
 			ctxhup, cancel := context.WithCancelCause(ctx)
-			ctxhupCh <- ctxhup
+
+			// Ensure we don't block indefinitely on send if the consumer stops reading.
+			select {
+			case ctxhupCh <- ctxhup:
+				// Sent successfully; proceed to wait for signal or parent cancellation.
+			case <-ctx.Done():
+				// Parent context canceled before we could send; clean up and exit.
+				cancel(ctx.Err())
+				signal.Stop(sigCh)
+				return
+			}
 
 			select {
 			case sig := <-sigCh:
