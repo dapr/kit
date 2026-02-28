@@ -21,7 +21,7 @@ import (
 var shutdownSignals = []os.Signal{os.Interrupt}
 
 // OnHUP is a no-op on Windows as SIGHUP is not supported. It returns a channel
-// that yields a context derived from the parent, and closes when the parent
+// that yields the original parent context, and closes when the parent
 // context is canceled.
 func OnHUP(ctx context.Context) <-chan context.Context {
 	ctxCh := make(chan context.Context, 1)
