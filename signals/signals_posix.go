@@ -18,6 +18,7 @@ package signals
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/signal"
 	"syscall"
@@ -28,20 +29,27 @@ var shutdownSignals = []os.Signal{os.Interrupt, syscall.SIGTERM}
 // ContextWithHUP returns a context which will be canceled when the SIGHUP
 // signal is caught. The returned context will also be canceled when the parent
 // context is canceled.
-func ContextWithHUP(ctx context.Context) context.Context {
-	ctxhup, cancel := context.WithCancel(ctx)
+func ContextWithHUP(ctx context.Context) <-chan context.Context {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGHUP)
 
+	ctxhupCh := make(chan context.Context, 1)
+
 	go func() {
-		defer signal.Stop(sigCh)
-		select {
-		case sig := <-sigCh:
-			log.Infof(`Received signal '%s'; restarting`, sig)
-			cancel()
-		case <-ctx.Done():
+		for {
+			ctxhup, cancel := context.WithCancelCause(ctx)
+			ctxhupCh <- ctxhup
+
+			select {
+			case sig := <-sigCh:
+				log.Infof(`Received signal '%s'; restarting`, sig)
+				cancel(errors.New("received SIGHUP"))
+			case <-ctx.Done():
+				signal.Stop(sigCh)
+				return
+			}
 		}
 	}()
 
-	return ctxhup
+	return ctxhupCh
 }

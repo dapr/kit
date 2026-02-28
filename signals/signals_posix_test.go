@@ -82,7 +82,7 @@ func TestContextWithHUP(t *testing.T) {
 	t.Run("SIGHUP should cancel context", func(t *testing.T) {
 		defer signal.Reset()
 
-		ctx := ContextWithHUP(t.Context())
+		ctx := <-ContextWithHUP(t.Context())
 		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGHUP))
 		select {
 		case <-ctx.Done():
@@ -95,7 +95,7 @@ func TestContextWithHUP(t *testing.T) {
 		defer signal.Reset()
 
 		parent, cancel := context.WithCancel(t.Context())
-		ctx := ContextWithHUP(parent)
+		ctx := <-ContextWithHUP(parent)
 
 		cancel()
 
@@ -109,8 +109,8 @@ func TestContextWithHUP(t *testing.T) {
 	t.Run("multiple HUP contexts can be created", func(t *testing.T) {
 		defer signal.Reset()
 
-		ctx1 := ContextWithHUP(t.Context())
-		ctx2 := ContextWithHUP(t.Context())
+		ctx1 := <-ContextWithHUP(t.Context())
+		ctx2 := <-ContextWithHUP(t.Context())
 
 		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGHUP))
 
