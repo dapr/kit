@@ -96,7 +96,7 @@ func (r *RunnerManager) Run(ctx context.Context) error {
 	// Collect all errors. This loop also serves as a wait group, ensuring all
 	// runners have finished before the function returns.
 	errs := make([]error, 0, len(r.runners))
-	for i := 0; i < len(r.runners); i++ {
+	for range r.runners {
 		if err := <-errCh; err != nil {
 			errs = append(errs, err)
 		}
