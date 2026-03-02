@@ -73,23 +73,12 @@ func (r *RunnerManager) Run(ctx context.Context) error {
 	for _, runner := range r.runners {
 		go func(runner Runner) {
 			err := runner(ctx)
-			if err != nil && !errors.Is(err, context.Canceled) {
-				// Task returned a real error. Send it to the channel and
-				// cancel other runners with the error as the cause.
-				errCh <- err
-				cancel(err)
-				return
+			// If the context was canceled, we don't want to treat that as an error.
+			if errors.Is(err, context.Canceled) {
+				err = nil
 			}
-
-			// If the runner completed without an error, or was canceled, we
-			// still need to signal other runners to stop, per the manager's
-			// "first to finish" contract. We call cancel(nil) to do this.
-			// If another runner already called cancel with a non-nil error,
-			// this call is a no-op for setting the cancellation cause.
-			cancel(nil)
-
-			// Signal that this runner has finished.
-			errCh <- nil
+			errCh <- err
+			cancel(err)
 		}(runner)
 	}
 
