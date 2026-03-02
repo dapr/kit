@@ -77,7 +77,10 @@ func (s *svidSource) FetchJWTSVID(ctx context.Context, params jwtsvid.Params) (*
 	case <-s.spiffe.readyCh:
 	}
 
-	svid := s.spiffe.currentJWTSVID
+	svid, ok := s.spiffe.currentPerAudJWTSVID[params.Audience]
+	if !ok {
+		svid = s.spiffe.currentBaseJWTSVID
+	}
 	if svid == nil {
 		return nil, errNoJWTSVIDAvailable
 	}

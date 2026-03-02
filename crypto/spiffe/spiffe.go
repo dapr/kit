@@ -42,16 +42,19 @@ const (
 )
 
 // SVIDResponse represents the response from the SVID request function,
-// containing both X.509 certificates and a JWT token.
+// containing both X.509 certificates and JWT tokens (base and per-audience).
 type SVIDResponse struct {
 	X509Certificates []*x509.Certificate
 	JWT              *string
+	PerAudienceJWT   map[string]string
 }
 
 // Identity contains both X.509 and JWT SVIDs for a workload.
+// It may include a base JWT SVID as well as per-audience JWT SVIDs.
 type Identity struct {
-	X509SVID *x509svid.SVID
-	JWTSVID  *jwtsvid.SVID
+	X509SVID           *x509svid.SVID
+	JWTSVID            *jwtsvid.SVID
+	PerAudienceJWTSVID map[string]*jwtsvid.SVID
 }
 
 type (
@@ -77,8 +80,11 @@ type Options struct {
 // Used to manage workload SVIDs, and share read-only interfaces to consumers.
 type SPIFFE struct {
 	currentX509SVID *x509svid.SVID
-	currentJWTSVID  *jwtsvid.SVID
-	requestSVIDFn   RequestSVIDFn
+
+	currentBaseJWTSVID   *jwtsvid.SVID
+	currentPerAudJWTSVID map[string]*jwtsvid.SVID
+
+	requestSVIDFn RequestSVIDFn
 
 	dir          *dir.Dir
 	trustAnchors trustanchors.Interface
@@ -124,7 +130,8 @@ func (s *SPIFFE) Run(ctx context.Context) error {
 	}
 
 	s.currentX509SVID = initialIdentity.X509SVID
-	s.currentJWTSVID = initialIdentity.JWTSVID
+	s.currentBaseJWTSVID = initialIdentity.JWTSVID
+	s.currentPerAudJWTSVID = initialIdentity.PerAudienceJWTSVID
 	close(s.readyCh)
 	s.lock.Unlock()
 
@@ -169,7 +176,7 @@ func (s *SPIFFE) runRotation(ctx context.Context) {
 
 	s.lock.RLock()
 	cert := s.currentX509SVID.Certificates[0]
-	jwtSVID := s.currentJWTSVID
+	jwtSVID := s.currentBaseJWTSVID
 	s.lock.RUnlock()
 
 	renewTime := calculateRenewalTime(time.Now(), cert, jwtSVID)
@@ -197,7 +204,8 @@ func (s *SPIFFE) runRotation(ctx context.Context) {
 
 			s.lock.Lock()
 			s.currentX509SVID = identity.X509SVID
-			s.currentJWTSVID = identity.JWTSVID
+			s.currentBaseJWTSVID = identity.JWTSVID
+			s.currentPerAudJWTSVID = identity.PerAudienceJWTSVID
 			cert = identity.X509SVID.Certificates[0]
 			jwtSVID = identity.JWTSVID
 			s.lock.Unlock()
@@ -263,6 +271,19 @@ func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 
 		identity.JWTSVID = jwtSvid
 		s.log.Infof("Successfully received JWT SVID with expiry: %s", jwtSvid.Expiry.String())
+	}
+
+	for aud, token := range svidResponse.PerAudienceJWT {
+		jwtSvid, err := jwtsvid.ParseInsecure(token, []string{aud})
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse per-audience JWT SVID for audience %q: %w", aud, err)
+		}
+
+		if identity.PerAudienceJWTSVID == nil {
+			identity.PerAudienceJWTSVID = make(map[string]*jwtsvid.SVID)
+		}
+		identity.PerAudienceJWTSVID[aud] = jwtSvid
+		s.log.Infof("Successfully received per-audience JWT SVID for audience %s with expiry: %s", aud, jwtSvid.Expiry.String())
 	}
 
 	if s.dir != nil {
