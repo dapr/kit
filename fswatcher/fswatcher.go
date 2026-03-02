@@ -41,6 +41,9 @@ type Options struct {
 type FSWatcher struct {
 	w       *fsnotify.Watcher
 	running atomic.Bool
+
+	lock     sync.Mutex
+	debounce map[string]*time.Timer
 }
 
 func New(opts Options) (*FSWatcher, error) {
@@ -55,7 +58,10 @@ func New(opts Options) (*FSWatcher, error) {
 		}
 	}
 
-	return &FSWatcher{w: w}, nil
+	return &FSWatcher{
+		w:        w,
+		debounce: make(map[string]*time.Timer),
+	}, nil
 }
 
 func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
@@ -65,43 +71,6 @@ func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
 
 	factory := loop.New[event](64)
 	l := factory.NewLoop(&handler{eventCh: eventCh})
-
-	// debounce holds a per-file timer that fires after a short idle window.
-	// A single logical write (open+O_TRUNC → write → close) generates several
-	// OS-level inotify events in quick succession; coalescing them into one
-	// notification ensures consumers never see a transiently-empty file and
-	// never receive spurious duplicate signals.
-	const debounceInterval = 5 * time.Millisecond
-	var (
-		debounceMu sync.Mutex
-		debounce   = make(map[string]*time.Timer)
-	)
-	enqueueDebounced := func(name string) {
-		debounceMu.Lock()
-		defer debounceMu.Unlock()
-		if t, ok := debounce[name]; ok {
-			t.Stop()
-		}
-		var timer *time.Timer
-		timer = time.AfterFunc(debounceInterval, func() {
-			// Lock only long enough to confirm this timer is still the
-			// current one for this name and remove the entry, then
-			// release before calling l.Enqueue so we never hold
-			// debounceMu across an external call.
-			debounceMu.Lock()
-			current := debounce[name]
-			if current != timer {
-				// This callback is for a stale timer; a newer one has
-				// been installed for this name, so do nothing.
-				debounceMu.Unlock()
-				return
-			}
-			delete(debounce, name)
-			debounceMu.Unlock()
-			l.Enqueue(event{name: name})
-		})
-		debounce[name] = timer
-	}
 
 	return concurrency.NewRunnerManager(
 		l.Run,
@@ -119,7 +88,7 @@ func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
 					if !ok {
 						return nil
 					}
-					enqueueDebounced(fsEvent.Name)
+					f.enqueue(l, fsEvent.Name)
 				}
 			}
 		},
@@ -129,4 +98,40 @@ func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
 			return nil
 		},
 	).Run(ctx)
+}
+
+func (f *FSWatcher) enqueue(l loop.Interface[event], name string) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	if t, ok := f.debounce[name]; ok {
+		t.Stop()
+	}
+
+	// debounce holds a per-file timer that fires after a short idle window.
+	// A single logical write (open+O_TRUNC → write → close) generates several
+	// OS-level inotify events in quick succession; coalescing them into one
+	// notification ensures consumers never see a transiently-empty file and
+	// never receive spurious duplicate signals.
+	const debounceInterval = 5 * time.Millisecond
+
+	var timer *time.Timer
+	timer = time.AfterFunc(debounceInterval, func() {
+		// Lock only long enough to confirm this timer is still the current one for
+		// this name and remove the entry, then release before calling l.Enqueue so
+		// we never hold lock across an external call.
+		f.lock.Lock()
+		current := f.debounce[name]
+		if current != timer {
+			// This callback is for a stale timer; a newer one has
+			// been installed for this name, so do nothing.
+			f.lock.Unlock()
+			return
+		}
+		delete(f.debounce, name)
+		f.lock.Unlock()
+		l.Enqueue(event{name: name})
+	})
+
+	f.debounce[name] = timer
 }
