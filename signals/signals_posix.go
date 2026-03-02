@@ -37,7 +37,9 @@ func OnHUP(ctx context.Context) <-chan context.Context {
 	ctxhupCh := make(chan context.Context, 1)
 
 	go func() {
+		defer signal.Stop(sigCh)
 		defer close(ctxhupCh)
+
 		for {
 			ctxhup, cancel := context.WithCancelCause(ctx)
 
@@ -58,7 +60,6 @@ func OnHUP(ctx context.Context) <-chan context.Context {
 				cancel(errors.New("received SIGHUP"))
 			case <-ctx.Done():
 				cancel(ctx.Err())
-				signal.Stop(sigCh)
 				return
 			}
 		}

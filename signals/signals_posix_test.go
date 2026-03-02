@@ -184,4 +184,22 @@ func TestOnHUP(t *testing.T) {
 			t.Error("ctx2 should be cancelled in time")
 		}
 	})
+
+	t.Run("channel should be closed when main context is cancelled", func(t *testing.T) {
+		defer signal.Reset()
+
+		mainCtx, cancel := context.WithCancel(t.Context())
+		hupCh := OnHUP(mainCtx)
+		_ = <-hupCh // consume first context
+		cancel()
+
+		select {
+		case _, ok := <-hupCh:
+			if ok {
+				t.Error("channel should be closed when main context is cancelled")
+			}
+		case <-time.After(1 * time.Second):
+			t.Error("channel should be closed in time")
+		}
+	})
 }
