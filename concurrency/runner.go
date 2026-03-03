@@ -60,38 +60,36 @@ func (r *RunnerManager) Run(ctx context.Context) error {
 		return ErrManagerAlreadyStarted
 	}
 
+	if len(r.runners) == 0 {
+		return nil
+	}
+
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
 
-	errCh := make(chan error)
+	// Use a buffered channel to prevent goroutines from blocking if they all
+	// finish around the same time.
+	errCh := make(chan error, len(r.runners))
 	for _, runner := range r.runners {
 		go func(runner Runner) {
-			// Ignore context cancelled errors since errors from a runner manager
-			// will likely determine the exit code of the program.
-			// Context cancelled errors are also not really useful to the user in
-			// this situation.
-			rErr := runner(ctx)
-			if rErr != nil && !errors.Is(rErr, context.Canceled) {
-				errCh <- rErr
-				// Since the task returned, we need to cancel all other tasks.
-				// This is a noop if the parent context is already cancelled, or another
-				// task returned before this one.
-				cancel(rErr)
-				return
+			err := runner(ctx)
+			// If the context was canceled, we don't want to treat that as an error.
+			if errors.Is(err, context.Canceled) {
+				err = nil
 			}
-			errCh <- nil
-			cancel(nil)
+			errCh <- err
+			cancel(err)
 		}(runner)
 	}
 
-	// Collect all errors
-	errObjs := make([]error, 0)
-	for range len(r.runners) {
-		err := <-errCh
-		if err != nil {
-			errObjs = append(errObjs, err)
+	// Collect all errors. This loop also serves as a wait group, ensuring all
+	// runners have finished before the function returns.
+	errs := make([]error, 0, len(r.runners))
+	for range r.runners {
+		if err := <-errCh; err != nil {
+			errs = append(errs, err)
 		}
 	}
 
-	return errors.Join(errObjs...)
+	return errors.Join(errs...)
 }
