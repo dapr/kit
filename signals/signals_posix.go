@@ -50,7 +50,6 @@ func OnHUP(ctx context.Context) <-chan context.Context {
 			case <-ctx.Done():
 				// Parent context canceled before we could send; clean up and exit.
 				cancel(ctx.Err())
-				signal.Stop(sigCh)
 				return
 			}
 
