@@ -19,32 +19,31 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
 
-	"github.com/dapr/kit/events/batcher"
+	"github.com/dapr/kit/concurrency"
+	"github.com/dapr/kit/events/loop"
 )
 
 // Options are the options for the FSWatcher.
 type Options struct {
 	// Targets is a list of directories to watch for changes.
 	Targets []string
-
-	// Interval is the interval to wait before sending a notification after a file has changed.
-	// Default to 500ms.
-	Interval *time.Duration
 }
 
 // FSWatcher watches for changes to a directory on the filesystem and sends a notification to eventCh every time a file in the folder is changed.
 // Although it's possible to watch for individual files, that's not recommended; watch for the file's parent folder instead.
 // That is because, like in Kubernetes which uses system links on mounted volumes, the file may be deleted and recreated with a different inode.
-// Note that changes are batched for 0.5 seconds before notifications are sent as events on a single file often come in batches.
 type FSWatcher struct {
 	w       *fsnotify.Watcher
 	running atomic.Bool
-	batcher *batcher.Batcher[string, struct{}]
+
+	lock     sync.Mutex
+	debounce map[string]*time.Timer
 }
 
 func New(opts Options) (*FSWatcher, error) {
@@ -59,21 +58,9 @@ func New(opts Options) (*FSWatcher, error) {
 		}
 	}
 
-	interval := time.Millisecond * 500
-	if opts.Interval != nil {
-		interval = *opts.Interval
-	}
-	if interval < 0 {
-		return nil, errors.New("interval must be positive")
-	}
-
 	return &FSWatcher{
-		w: w,
-		// Often the case, writes to files are not atomic and involve multiple file system events.
-		// We want to hold off on sending events until we are sure that the file has been written to completion. We do this by waiting for a period of time after the last event has been received for a file name.
-		batcher: batcher.New[string, struct{}](batcher.Options{
-			Interval: interval,
-		}),
+		w:        w,
+		debounce: make(map[string]*time.Timer),
 	}, nil
 }
 
@@ -81,18 +68,70 @@ func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
 	if !f.running.CompareAndSwap(false, true) {
 		return errors.New("watcher already running")
 	}
-	defer f.batcher.Close()
 
-	f.batcher.Subscribe(ctx, eventCh)
+	factory := loop.New[event](64)
+	l := factory.NewLoop(&handler{eventCh: eventCh})
 
-	for {
-		select {
-		case <-ctx.Done():
-			return f.w.Close()
-		case err := <-f.w.Errors:
-			return errors.Join(fmt.Errorf("watcher error: %w", err), f.w.Close())
-		case event := <-f.w.Events:
-			f.batcher.Batch(event.Name, struct{}{})
-		}
+	return concurrency.NewRunnerManager(
+		l.Run,
+		func(ctx context.Context) error {
+			for {
+				select {
+				case <-ctx.Done():
+					return f.w.Close()
+				case err, ok := <-f.w.Errors:
+					if !ok || err == nil {
+						return nil
+					}
+					return errors.Join(fmt.Errorf("watcher error: %w", err), f.w.Close())
+				case fsEvent, ok := <-f.w.Events:
+					if !ok {
+						return nil
+					}
+					f.enqueue(l, fsEvent.Name)
+				}
+			}
+		},
+		func(ctx context.Context) error {
+			<-ctx.Done()
+			l.Close(event{shutdown: true})
+			return nil
+		},
+	).Run(ctx)
+}
+
+func (f *FSWatcher) enqueue(l loop.Interface[event], name string) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	if t, ok := f.debounce[name]; ok {
+		t.Stop()
 	}
+
+	// debounce holds a per-file timer that fires after a short idle window.
+	// A single logical write (open+O_TRUNC → write → close) generates several
+	// OS-level inotify events in quick succession; coalescing them into one
+	// notification ensures consumers never see a transiently-empty file and
+	// never receive spurious duplicate signals.
+	const debounceInterval = 5 * time.Millisecond
+
+	var timer *time.Timer
+	timer = time.AfterFunc(debounceInterval, func() {
+		// Lock only long enough to confirm this timer is still the current one for
+		// this name and remove the entry, then release before calling l.Enqueue so
+		// we never hold lock across an external call.
+		f.lock.Lock()
+		current := f.debounce[name]
+		if current != timer {
+			// This callback is for a stale timer; a newer one has
+			// been installed for this name, so do nothing.
+			f.lock.Unlock()
+			return
+		}
+		delete(f.debounce, name)
+		f.lock.Unlock()
+		l.Enqueue(event{name: name})
+	})
+
+	f.debounce[name] = timer
 }

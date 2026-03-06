@@ -1,8 +1,5 @@
-//go:build unit
-// +build unit
-
 /*
-Copyright 2023 The Dapr Authors
+Copyright 2026 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -18,11 +15,26 @@ limitations under the License.
 
 package fswatcher
 
-import (
-	"github.com/dapr/kit/events/batcher"
-)
+import "context"
 
-func (f *FSWatcher) WithBatcher(b *batcher.Batcher[string, struct{}]) *FSWatcher {
-	f.batcher = b
-	return f
+// event is a typed file system event processed by the loop.
+type event struct {
+	name     string
+	shutdown bool
+}
+
+// handler implements loop.Handler[event] and forwards events to eventCh.
+type handler struct {
+	eventCh chan<- struct{}
+}
+
+func (h *handler) Handle(ctx context.Context, e event) error {
+	if e.shutdown {
+		return nil
+	}
+	select {
+	case h.eventCh <- struct{}{}:
+	case <-ctx.Done():
+	}
+	return nil
 }

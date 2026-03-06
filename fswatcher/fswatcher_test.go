@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Dapr Authors
+Copyright 2026 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -25,22 +25,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	clocktesting "k8s.io/utils/clock/testing"
-
-	"github.com/dapr/kit/events/batcher"
-	"github.com/dapr/kit/ptr"
 )
 
 func TestFSWatcher(t *testing.T) {
-	runWatcher := func(t *testing.T, opts Options, bacher *batcher.Batcher[string, struct{}]) <-chan struct{} {
+	runWatcher := func(t *testing.T, opts Options) <-chan struct{} {
 		t.Helper()
 
 		f, err := New(opts)
 		require.NoError(t, err)
-
-		if bacher != nil {
-			f.WithBatcher(bacher)
-		}
 
 		errCh := make(chan error)
 		ctx, cancel := context.WithCancel(t.Context())
@@ -64,21 +56,7 @@ func TestFSWatcher(t *testing.T) {
 	}
 
 	t.Run("creating fswatcher with no directory should not error", func(t *testing.T) {
-		runWatcher(t, Options{}, nil)
-	})
-
-	t.Run("creating fswatcher with 0 interval should not error", func(t *testing.T) {
-		_, err := New(Options{
-			Interval: ptr.Of(time.Duration(0)),
-		})
-		require.NoError(t, err)
-	})
-
-	t.Run("creating fswatcher with negative interval should error", func(t *testing.T) {
-		_, err := New(Options{
-			Interval: ptr.Of(time.Duration(-1)),
-		})
-		require.Error(t, err)
+		runWatcher(t, Options{})
 	})
 
 	t.Run("running Run twice should error", func(t *testing.T) {
@@ -103,9 +81,8 @@ func TestFSWatcher(t *testing.T) {
 		fp := filepath.Join(t.TempDir(), "test.txt")
 		require.NoError(t, os.WriteFile(fp, []byte{}, 0o600))
 		eventsCh := runWatcher(t, Options{
-			Targets:  []string{fp},
-			Interval: ptr.Of(time.Duration(1)),
-		}, nil)
+			Targets: []string{fp},
+		})
 		assert.Empty(t, eventsCh)
 
 		if runtime.GOOS == "windows" {
@@ -127,9 +104,8 @@ func TestFSWatcher(t *testing.T) {
 		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
 		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
 		eventsCh := runWatcher(t, Options{
-			Targets:  []string{fp1, fp2},
-			Interval: ptr.Of(time.Duration(1)),
-		}, nil)
+			Targets: []string{fp1, fp2},
+		})
 		assert.Empty(t, eventsCh)
 		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
 		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
@@ -149,9 +125,8 @@ func TestFSWatcher(t *testing.T) {
 		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
 		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
 		eventsCh := runWatcher(t, Options{
-			Targets:  []string{fp1, fp2},
-			Interval: ptr.Of(time.Duration(1)),
-		}, nil)
+			Targets: []string{fp1, fp2},
+		})
 		if runtime.GOOS == "windows" {
 			// If running in windows, wait for notify to be ready.
 			time.Sleep(time.Second)
@@ -174,9 +149,8 @@ func TestFSWatcher(t *testing.T) {
 		fp1 := filepath.Join(dir1, "test1.txt")
 		fp2 := filepath.Join(dir2, "test2.txt")
 		eventsCh := runWatcher(t, Options{
-			Targets:  []string{dir1, dir2},
-			Interval: ptr.Of(time.Duration(1)),
-		}, nil)
+			Targets: []string{dir1, dir2},
+		})
 		assert.Empty(t, eventsCh)
 		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
 		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
@@ -189,60 +163,52 @@ func TestFSWatcher(t *testing.T) {
 		}
 	})
 
-	t.Run("should batch events of the same file for multiple events", func(t *testing.T) {
-		clock := clocktesting.NewFakeClock(time.Time{})
-		batcher := batcher.New[string, struct{}](batcher.Options{
-			Interval: time.Millisecond * 500,
-			Clock:    clock,
+	t.Run("should debounce burst of writes on same file", func(t *testing.T) {
+		dir := t.TempDir()
+		fp := filepath.Join(dir, "debounce.txt")
+
+		// Create the file before starting the watcher so the initial creation
+		// does not interfere with the debounce behavior we want to test.
+		require.NoError(t, os.WriteFile(fp, []byte("initial"), 0o600))
+
+		eventsCh := runWatcher(t, Options{
+			Targets: []string{fp},
 		})
-		dir1 := t.TempDir()
-		dir2 := t.TempDir()
-		fp1 := filepath.Join(dir1, "test1.txt")
-		fp2 := filepath.Join(dir2, "test2.txt")
-		eventsCh := runWatcher(t, Options{Targets: []string{dir1, dir2}}, batcher)
-		assert.Empty(t, eventsCh)
 
 		if runtime.GOOS == "windows" {
-			// If running in windows, wait for notify to be ready.
+			// If running on Windows, wait for notify to be ready, to avoid races.
 			time.Sleep(time.Second)
 		}
 
-		for range 10 {
-			require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
-			require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
-		}
-
-		assert.Eventually(t, clock.HasWaiters, time.Second, time.Millisecond*10)
-
+		// Verify that no events have been emitted before the write burst.
 		select {
 		case <-eventsCh:
-			assert.Fail(t, "unexpected event")
-		case <-time.After(time.Millisecond * 10):
+			assert.Fail(t, "unexpected event received before write burst")
+		default:
+			// No event yet, as expected.
 		}
 
-		clock.Step(time.Millisecond * 250)
-
-		for range 10 {
-			require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
-			require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
+		// Perform a burst of writes on the same file; debounce logic should
+		// coalesce these into a single notification.
+		for range 5 {
+			require.NoError(t, os.WriteFile(fp, []byte("data"), 0o600))
 		}
 
+		// Expect exactly one event corresponding to the burst.
 		select {
 		case <-eventsCh:
-			assert.Fail(t, "unexpected event")
-		case <-time.After(time.Millisecond * 10):
+			// First event received as expected.
+		case <-time.After(time.Second):
+			assert.Fail(t, "timeout waiting for debounced event")
 		}
 
-		assert.Eventually(t, clock.HasWaiters, time.Second, time.Millisecond*10)
-		clock.Step(time.Millisecond * 500)
-
-		for range 2 {
-			select {
-			case <-eventsCh:
-			case <-time.After(time.Second):
-				assert.Fail(t, "timeout waiting for event")
-			}
-			clock.Step(1)
+		// Ensure no additional events arrive for this burst within a window
+		// long enough to cover the debounce interval.
+		select {
+		case <-eventsCh:
+			assert.Fail(t, "received more than one event for debounced burst of writes")
+		case <-time.After(500 * time.Millisecond):
+			// No extra events, as expected.
 		}
 	})
 }

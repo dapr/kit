@@ -280,7 +280,6 @@ func TestFile_Run(t *testing.T) {
 		f, ok := ta.(*file)
 		require.True(t, ok)
 		f.initFileWatchInterval = time.Millisecond
-		f.fsWatcherInterval = time.Millisecond
 
 		errCh := make(chan error)
 		go func() {
@@ -455,7 +454,6 @@ func TestFile_Watch(t *testing.T) {
 		f, ok := ta.(*file)
 		require.True(t, ok)
 		f.initFileWatchInterval = time.Millisecond
-		f.fsWatcherInterval = time.Millisecond
 
 		errCh := make(chan error)
 		ctx, cancel := context.WithCancel(t.Context())
@@ -539,7 +537,6 @@ func TestFile_CurrentTrustAnchors(t *testing.T) {
 		f, ok := ta.(*file)
 		require.True(t, ok)
 		f.initFileWatchInterval = time.Millisecond
-		f.fsWatcherInterval = time.Millisecond
 
 		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)

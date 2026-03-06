@@ -58,10 +58,6 @@ type file struct {
 	jwtBundle  *jwtbundle.Bundle
 	rootPEM    []byte
 
-	// fswatcherInterval is the interval at which the trust anchors file changes
-	// are batched. Used for testing only, and 500ms otherwise.
-	fsWatcherInterval time.Duration
-
 	// initFileWatchInterval is the interval at which the trust anchors file is
 	// checked for the first time. Used for testing only, and 1 second otherwise.
 	initFileWatchInterval time.Duration
@@ -79,7 +75,6 @@ type file struct {
 
 func From(opts Options) trustanchors.Interface {
 	return &file{
-		fsWatcherInterval:     time.Millisecond * 500,
 		initFileWatchInterval: time.Second,
 
 		log:      opts.Log,
@@ -132,8 +127,7 @@ func (f *file) Run(ctx context.Context) error {
 	}
 
 	fs, err := fswatcher.New(fswatcher.Options{
-		Targets:  targets,
-		Interval: &f.fsWatcherInterval,
+		Targets: targets,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create file watcher: %w", err)
