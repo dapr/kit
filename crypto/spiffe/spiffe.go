@@ -220,10 +220,11 @@ func (s *SPIFFE) runRotation(ctx context.Context) {
 
 // Returns both X.509 SVID and JWT SVID (if available).
 func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
-	_, key, err := ed25519.GenerateKey(rand.Reader)
+	_, priv, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate private key: %w", err)
 	}
+	key := &priv
 
 	csrDER, err := x509.CreateCertificateRequest(rand.Reader, new(x509.CertificateRequest), key)
 	if err != nil {
