@@ -80,7 +80,7 @@ func GenPKIError(opts PKIOptions) (PKI, error) {
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().Add(time.Hour),
 		IsCA:                  true,
-		KeyUsage:              x509.KeyUsageCertSign,
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
 		BasicConstraintsValid: true,
 	}
 	rootCertBytes, err := x509.CreateCertificate(rand.Reader, rootCert, rootCert, rootPub, rootPK)
