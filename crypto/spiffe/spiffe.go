@@ -15,8 +15,7 @@ package spiffe
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
+	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/x509"
 	"errors"
@@ -221,7 +220,7 @@ func (s *SPIFFE) runRotation(ctx context.Context) {
 
 // Returns both X.509 SVID and JWT SVID (if available).
 func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	_, key, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate private key: %w", err)
 	}

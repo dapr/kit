@@ -16,8 +16,7 @@ package test
 import (
 	"context"
 	"crypto"
-	"crypto/ecdsa"
-	"crypto/elliptic"
+	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -70,7 +69,7 @@ func GenPKI(t *testing.T, opts PKIOptions) PKI {
 }
 
 func GenPKIError(opts PKIOptions) (PKI, error) {
-	rootPK, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	rootPub, rootPK, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return PKI{}, err
 	}
@@ -81,10 +80,10 @@ func GenPKIError(opts PKIOptions) (PKI, error) {
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().Add(time.Hour),
 		IsCA:                  true,
-		KeyUsage:              x509.KeyUsageCertSign,
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
 		BasicConstraintsValid: true,
 	}
-	rootCertBytes, err := x509.CreateCertificate(rand.Reader, rootCert, rootCert, &rootPK.PublicKey, rootPK)
+	rootCertBytes, err := x509.CreateCertificate(rand.Reader, rootCert, rootCert, rootPub, rootPK)
 	if err != nil {
 		return PKI{}, err
 	}
@@ -169,8 +168,8 @@ func (p PKI) ClientGRPCCtx(t *testing.T) context.Context {
 	return gs.ctx
 }
 
-func genLeafCert(rootPK *ecdsa.PrivateKey, rootCert *x509.Certificate, id spiffeid.ID, dns string) ([]byte, []byte, *x509.Certificate, crypto.Signer, error) {
-	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+func genLeafCert(rootPK crypto.Signer, rootCert *x509.Certificate, id spiffeid.ID, dns string) ([]byte, []byte, *x509.Certificate, crypto.Signer, error) {
+	pub, pk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
@@ -184,7 +183,7 @@ func genLeafCert(rootPK *ecdsa.PrivateKey, rootCert *x509.Certificate, id spiffe
 		SerialNumber: big.NewInt(1),
 		NotBefore:    time.Now(),
 		NotAfter:     time.Now().Add(time.Hour),
-		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		KeyUsage:     x509.KeyUsageDigitalSignature,
 		ExtKeyUsage: []x509.ExtKeyUsage{
 			x509.ExtKeyUsageServerAuth,
 			x509.ExtKeyUsageClientAuth,
@@ -199,7 +198,7 @@ func genLeafCert(rootPK *ecdsa.PrivateKey, rootCert *x509.Certificate, id spiffe
 		cert.URIs = []*url.URL{id.URL()}
 	}
 
-	certBytes, err := x509.CreateCertificate(rand.Reader, cert, rootCert, &pk.PublicKey, rootPK)
+	certBytes, err := x509.CreateCertificate(rand.Reader, cert, rootCert, pub, rootPK)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
