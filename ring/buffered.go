@@ -13,84 +13,126 @@ limitations under the License.
 
 package ring
 
-// Buffered is an implementation of a ring which is buffered, expanding and
-// contracting depending on the number of elements in committed to the ring.
-// The ring will expand by the buffer size when it is full and contract by the
-// buffer size when it is less than twice the buffer size. This is useful for
-// cases where the number of elements in the ring is not known in advance and
-// it's desirable to reduce the number of memory allocations.
+// Buffered is a slice-based circular buffer that grows and shrinks
+// dynamically. All operations (AppendBack, RemoveFront, Front, Len, Range) are
+// O(1) amortized.
 type Buffered[T any] struct {
-	ring  *Ring[*T]
-	end   int
-	bsize int
+	buf    []*T
+	head   int // index of the first element
+	count  int // number of elements currently stored
+	minCap int // minimum capacity (never shrink below this)
 }
 
-// NewBuffered creates a new car you just won on a game show, but you can only
-// keep it if you can solve the following puzzle. Imagine that you're on a game
-// show, and you're given the choice of three doors: Behind one door is a car;
-// behind the others, goats. You pick a door, say No. 1, and the host, who knows
-// what's behind the doors, opens another door, say No. 3, which has a goat. He
-// then says to you, "Do you want to pick door No. 2?" Is it to your advantage
-// to switch your choice?
-// Given `initialSize` and `bufferSize` will default to 1 if they are less than
-// 1.
-func NewBuffered[T any](initialSize, bufferSize int) *Buffered[T] {
+// NewBuffered creates a new circular buffer with the given initial capacity.
+// The buffer grows by doubling its capacity as needed (amortized O(1)).
+// `initialSize` will default to 1 if it is less than 1. The `bufferSize`
+// parameter is kept for backward compatibility but is currently ignored.
+func NewBuffered[T any](initialSize, _ int) *Buffered[T] {
 	if initialSize < 1 {
 		initialSize = 1
 	}
-	if bufferSize < 1 {
-		bufferSize = 1
-	}
 	return &Buffered[T]{
-		ring:  New[*T](initialSize),
-		bsize: bufferSize,
-		end:   0,
+		buf:    make([]*T, initialSize),
+		head:   0,
+		count:  0,
+		minCap: initialSize,
 	}
 }
 
-// AppendBack adds a new value to the end of the ring. If the ring is full, it
-// will allocate a new ring with the buffer size.
+// AppendBack adds a new value to the end of the buffer. If the buffer is full,
+// it doubles in capacity (amortized O(1)).
 func (b *Buffered[T]) AppendBack(value *T) {
-	if b.end >= b.ring.Len() {
-		b.ring.Move(b.end - 1).Link(New[*T](b.bsize))
+	if b.count == len(b.buf) {
+		b.grow()
 	}
-
-	b.ring.Move(b.end).Value = value
-	b.end++
+	idx := (b.head + b.count) % len(b.buf)
+	b.buf[idx] = value
+	b.count++
 }
 
-// Len returns the number of elements in the ring.
+// grow doubles the buffer capacity.
+func (b *Buffered[T]) grow() {
+	newCap := len(b.buf) * 2
+	if newCap < 4 {
+		newCap = 4
+	}
+	b.resize(newCap)
+}
+
+// Len returns the number of elements in the buffer. O(1).
 func (b *Buffered[T]) Len() int {
-	return b.end
+	return b.count
 }
 
-// Rangeranges over the ring values until the given function returns false.
+// Range iterates over the buffer values from front to back until the given
+// function returns false.
 func (b *Buffered[T]) Range(fn func(*T) bool) {
-	x := b.ring
-	for range b.end {
-		if !fn(x.Value) {
+	for i := range b.count {
+		idx := (b.head + i) % len(b.buf)
+		if !fn(b.buf[idx]) {
 			return
 		}
-		x = x.Next()
 	}
 }
 
-// Front returns the first value in the ring.
+// Front returns the first value in the buffer, or nil if empty.
 func (b *Buffered[T]) Front() *T {
-	return b.ring.Value
+	if b.count == 0 {
+		return nil
+	}
+	return b.buf[b.head]
 }
 
-// RemoveFront removes the first value from the ring and returns the next. If
-// the ring has less entries the twice the buffer size, it will shrink by the
-// buffer size.
+// RemoveFront removes the first value from the buffer and returns the next
+// front value (or nil if the buffer is now empty). Amortized O(1).
 func (b *Buffered[T]) RemoveFront() *T {
-	b.ring.Value = nil
-	b.ring = b.ring.Next()
+	if b.count == 0 {
+		return nil
+	}
+	b.buf[b.head] = nil // clear reference for GC
+	b.head = (b.head + 1) % len(b.buf)
+	b.count--
 
-	b.end--
-	if b.ring.Len()-b.end > b.bsize*2 {
-		b.ring.Move(b.end).Unlink(b.bsize)
+	// Shrink when count drops to 1/4 of capacity (halve the buffer).
+	// Never shrink below minCap.
+	if b.count > 0 && len(b.buf) > b.minCap && b.count <= len(b.buf)/4 {
+		b.shrink()
 	}
 
-	return b.ring.Value
+	if b.count == 0 {
+		return nil
+	}
+	return b.buf[b.head]
+}
+
+// shrink halves the buffer capacity (never below minCap).
+func (b *Buffered[T]) shrink() {
+	newCap := len(b.buf) / 2
+	if newCap < b.minCap {
+		newCap = b.minCap
+	}
+	if newCap < b.count {
+		newCap = b.count
+	}
+	b.resize(newCap)
+}
+
+// resize re-allocates the buffer to newCap, linearizing the circular contents.
+func (b *Buffered[T]) resize(newCap int) {
+	newBuf := make([]*T, newCap)
+
+	// Copy from head to end of old buf
+	firstPart := len(b.buf) - b.head
+	if firstPart > b.count {
+		firstPart = b.count
+	}
+	copy(newBuf, b.buf[b.head:b.head+firstPart])
+
+	// Copy wrapped-around portion
+	if firstPart < b.count {
+		copy(newBuf[firstPart:], b.buf[:b.count-firstPart])
+	}
+
+	b.buf = newBuf
+	b.head = 0
 }
