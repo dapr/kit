@@ -23,15 +23,15 @@ import (
 )
 
 func Test_Buffered(t *testing.T) {
-	b := NewBuffered[int](1, 5)
+	b := NewBuffered[int](1)
 	assert.Equal(t, 0, b.Len())
 	assert.Len(t, b.buf, 1)
 
-	b = NewBuffered[int](0, 5)
+	b = NewBuffered[int](0)
 	assert.Equal(t, 0, b.Len())
 	assert.Len(t, b.buf, 1)
 
-	b = NewBuffered[int](3, 5)
+	b = NewBuffered[int](3)
 	assert.Len(t, b.buf, 3)
 	assert.Equal(t, 0, b.Len())
 
@@ -103,7 +103,7 @@ func Test_Buffered(t *testing.T) {
 }
 
 func Test_BufferedRange(t *testing.T) {
-	b := NewBuffered[int](3, 5)
+	b := NewBuffered[int](3)
 	b.AppendBack(ptr.Of(0))
 	b.AppendBack(ptr.Of(1))
 	b.AppendBack(ptr.Of(2))
@@ -130,7 +130,7 @@ func Test_BufferedRange(t *testing.T) {
 }
 
 func Test_BufferedShrinkNeverBelowMinCap(t *testing.T) {
-	b := NewBuffered[int](8, 1)
+	b := NewBuffered[int](8)
 	assert.Len(t, b.buf, 8)
 
 	// Fill to capacity then drain
@@ -148,14 +148,14 @@ func Test_BufferedShrinkNeverBelowMinCap(t *testing.T) {
 }
 
 func Test_BufferedFrontEmpty(t *testing.T) {
-	b := NewBuffered[int](4, 2)
+	b := NewBuffered[int](4)
 	assert.Nil(t, b.Front())
 	assert.Nil(t, b.RemoveFront())
 }
 
 func Test_BufferedWraparound(t *testing.T) {
 	// Test that grow and shrink work correctly when the circular buffer wraps.
-	b := NewBuffered[int](4, 1)
+	b := NewBuffered[int](4)
 
 	// Fill 4 elements
 	for i := range 4 {

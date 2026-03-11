@@ -27,7 +27,7 @@ type Buffered[T any] struct {
 // The buffer grows by doubling its capacity as needed (amortized O(1)).
 // `initialSize` will default to 1 if it is less than 1. The `bufferSize`
 // parameter is kept for backward compatibility but is currently ignored.
-func NewBuffered[T any](initialSize, _ int) *Buffered[T] {
+func NewBuffered[T any](initialSize int) *Buffered[T] {
 	if initialSize < 1 {
 		initialSize = 1
 	}
