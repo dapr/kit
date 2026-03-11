@@ -37,10 +37,10 @@ type svidSource struct {
 // GetX509SVID returns the current X.509 certificate identity as a SPIFFE SVID.
 // Implements the go-spiffe x509svid.Source interface.
 func (s *svidSource) GetX509SVID() (*x509svid.SVID, error) {
+	<-s.spiffe.readyCh
+
 	s.spiffe.lock.RLock()
 	defer s.spiffe.lock.RUnlock()
-
-	<-s.spiffe.readyCh
 
 	svid := s.spiffe.currentX509SVID
 	if svid == nil {
@@ -64,9 +64,6 @@ func (e *audienceMismatchError) Error() string {
 // FetchJWTSVID returns the current JWT SVID.
 // Implements the go-spiffe jwtsvid.Source interface.
 func (s *svidSource) FetchJWTSVID(ctx context.Context, params jwtsvid.Params) (*jwtsvid.SVID, error) {
-	s.spiffe.lock.RLock()
-	defer s.spiffe.lock.RUnlock()
-
 	if params.Audience == "" {
 		return nil, errAudienceRequired
 	}
@@ -76,6 +73,9 @@ func (s *svidSource) FetchJWTSVID(ctx context.Context, params jwtsvid.Params) (*
 		return nil, ctx.Err()
 	case <-s.spiffe.readyCh:
 	}
+
+	s.spiffe.lock.RLock()
+	defer s.spiffe.lock.RUnlock()
 
 	svid, ok := s.spiffe.currentPerAudJWTSVID[params.Audience]
 	if !ok {

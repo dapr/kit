@@ -30,6 +30,61 @@ func Test_svidSource(*testing.T) {
 	var _ jwtsvid.Source = new(svidSource)
 }
 
+func TestGetX509SVID(t *testing.T) {
+	t.Run("should return error when no X509 SVID available", func(t *testing.T) {
+		s := &svidSource{
+			spiffe: &SPIFFE{
+				readyCh:         make(chan struct{}),
+				currentX509SVID: nil,
+			},
+		}
+		close(s.spiffe.readyCh)
+
+		svid, err := s.GetX509SVID()
+
+		require.Nil(t, svid)
+		require.ErrorIs(t, err, errNoX509SVIDAvailable)
+	})
+
+	t.Run("should return X509 SVID when available", func(t *testing.T) {
+		td, err := spiffeid.TrustDomainFromString("example.org")
+		require.NoError(t, err)
+		id, err := spiffeid.FromSegments(td, "workload")
+		require.NoError(t, err)
+
+		mockSVID := &x509svid.SVID{ID: id}
+		s := &svidSource{
+			spiffe: &SPIFFE{
+				readyCh:         make(chan struct{}),
+				currentX509SVID: mockSVID,
+			},
+		}
+		close(s.spiffe.readyCh)
+
+		svid, err := s.GetX509SVID()
+
+		require.NoError(t, err)
+		require.Equal(t, mockSVID, svid)
+	})
+
+	t.Run("does not hold RLock while waiting for readyCh", func(t *testing.T) {
+		readyCh := make(chan struct{})
+		s := &svidSource{spiffe: &SPIFFE{readyCh: readyCh}}
+
+		go func() { s.GetX509SVID() }() //nolint:errcheck
+		time.Sleep(10 * time.Millisecond)
+
+		writeLockFree := s.spiffe.lock.TryLock()
+		if writeLockFree {
+			s.spiffe.lock.Unlock()
+		}
+		close(readyCh)
+
+		require.True(t, writeLockFree,
+			"GetX509SVID held RLock while waiting for readyCh")
+	})
+}
+
 // createMockJWTSVID creates a mock JWT SVID for testing
 func createMockJWTSVID(audiences []string) (*jwtsvid.SVID, error) {
 	td, err := spiffeid.TrustDomainFromString("example.org")
@@ -192,6 +247,24 @@ func TestFetchJWTSVID(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, mockJWTSVID2, svid)
+	})
+
+	t.Run("does not hold RLock while waiting for readyCh", func(t *testing.T) {
+		readyCh := make(chan struct{})
+		s := &svidSource{spiffe: &SPIFFE{readyCh: readyCh}}
+
+		go func() {
+			s.FetchJWTSVID(t.Context(), jwtsvid.Params{Audience: "test-audience"}) //nolint:errcheck
+		}()
+		time.Sleep(10 * time.Millisecond)
+
+		writeLockFree := s.spiffe.lock.TryLock()
+		if writeLockFree {
+			s.spiffe.lock.Unlock()
+		}
+		close(readyCh)
+
+		require.True(t, writeLockFree, "FetchJWTSVID held RLock while waiting for readyCh")
 	})
 
 	t.Run("should wait for readyCh before checking SVID", func(t *testing.T) {
