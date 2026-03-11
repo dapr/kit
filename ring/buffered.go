@@ -52,11 +52,7 @@ func (b *Buffered[T]) AppendBack(value *T) {
 
 // grow doubles the buffer capacity.
 func (b *Buffered[T]) grow() {
-	newCap := len(b.buf) * 2
-	if newCap < 4 {
-		newCap = 4
-	}
-	b.resize(newCap)
+	b.resize(len(b.buf) * 2)
 }
 
 // Len returns the number of elements in the buffer. O(1).
@@ -110,9 +106,6 @@ func (b *Buffered[T]) shrink() {
 	newCap := len(b.buf) / 2
 	if newCap < b.minCap {
 		newCap = b.minCap
-	}
-	if newCap < b.count {
-		newCap = b.count
 	}
 	b.resize(newCap)
 }
