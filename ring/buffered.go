@@ -14,8 +14,8 @@ limitations under the License.
 package ring
 
 // Buffered is a slice-based circular buffer that grows and shrinks
-// dynamically. All operations (AppendBack, RemoveFront, Front, Len, Range) are
-// O(1) amortized.
+// dynamically. AppendBack, RemoveFront, Front, and Len run in amortized O(1)
+// time, while Range runs in O(n) time where n is the number of elements (Len()).
 type Buffered[T any] struct {
 	buf    []*T
 	head   int // index of the first element
