@@ -115,7 +115,7 @@ func EncodePrivateKey(key any) ([]byte, error) {
 	)
 
 	switch key := key.(type) {
-	case *ecdsa.PrivateKey, ed25519.PrivateKey:
+	case *ecdsa.PrivateKey, ed25519.PrivateKey, *rsa.PrivateKey:
 		keyBytes, err = x509.MarshalPKCS8PrivateKey(key)
 		if err != nil {
 			return nil, err
