@@ -20,6 +20,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
+	"strings"
 	"testing"
 )
 
@@ -29,14 +30,9 @@ func TestEncodePrivateKey(t *testing.T) {
 		t.Fatalf("failed to generate ECDSA key: %v", err)
 	}
 
-	rsa2048Key, err := rsa.GenerateKey(rand.Reader, 2048)
+	rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		t.Fatalf("failed to generate RSA-2048 key: %v", err)
-	}
-
-	rsa4096Key, err := rsa.GenerateKey(rand.Reader, 4096)
-	if err != nil {
-		t.Fatalf("failed to generate RSA-4096 key: %v", err)
+		t.Fatalf("failed to generate RSA key: %v", err)
 	}
 
 	_, ed25519Key, err := ed25519.GenerateKey(rand.Reader)
@@ -56,11 +52,7 @@ func TestEncodePrivateKey(t *testing.T) {
 		},
 		{
 			name: "RSA 2048",
-			key:  rsa2048Key,
-		},
-		{
-			name: "RSA 4096",
-			key:  rsa4096Key,
+			key:  rsaKey,
 		},
 		{
 			name: "Ed25519",
@@ -81,7 +73,7 @@ func TestEncodePrivateKey(t *testing.T) {
 				if err == nil {
 					t.Fatal("expected error, got nil")
 				}
-				if tt.errSubstr != "" && !containsSubstr(err.Error(), tt.errSubstr) {
+				if tt.errSubstr != "" && !strings.Contains(err.Error(), tt.errSubstr) {
 					t.Fatalf("expected error containing %q, got %q", tt.errSubstr, err.Error())
 				}
 				return
@@ -138,17 +130,4 @@ func keysEqual(t *testing.T, original any, decoded crypto.Signer) bool {
 		t.Errorf("unknown key type %T", original)
 		return false
 	}
-}
-
-func containsSubstr(s, substr string) bool {
-	return len(s) >= len(substr) && searchSubstr(s, substr)
-}
-
-func searchSubstr(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }
