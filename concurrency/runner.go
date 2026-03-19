@@ -46,9 +46,12 @@ func (r *RunnerManager) Add(runner ...Runner) error {
 	if r.running.Load() {
 		return ErrManagerAlreadyStarted
 	}
+
 	r.lock.Lock()
 	defer r.lock.Unlock()
+
 	r.runners = append(r.runners, runner...)
+
 	return nil
 }
 
@@ -77,7 +80,9 @@ func (r *RunnerManager) Run(ctx context.Context) error {
 			if errors.Is(err, context.Canceled) {
 				err = nil
 			}
+
 			errCh <- err
+
 			cancel(err)
 		}(runner)
 	}
@@ -86,7 +91,8 @@ func (r *RunnerManager) Run(ctx context.Context) error {
 	// runners have finished before the function returns.
 	errs := make([]error, 0, len(r.runners))
 	for range r.runners {
-		if err := <-errCh; err != nil {
+		err := <-errCh
+		if err != nil {
 			errs = append(errs, err)
 		}
 	}

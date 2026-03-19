@@ -44,7 +44,7 @@ const (
 // containing both X.509 certificates and JWT tokens (base and per-audience).
 type SVIDResponse struct {
 	X509Certificates []*x509.Certificate
-	JWT              *string
+	JWT              *string //nolint:gosec
 	PerAudienceJWT   map[string]string
 }
 
@@ -121,10 +121,12 @@ func (s *SPIFFE) Run(ctx context.Context) error {
 
 	s.lock.Lock()
 	s.log.Info("Fetching initial identity")
+
 	initialIdentity, err := s.fetchIdentity(ctx)
 	if err != nil {
 		close(s.readyCh)
 		s.lock.Unlock()
+
 		return fmt.Errorf("failed to retrieve the initial identity: %w", err)
 	}
 
@@ -151,6 +153,14 @@ func (s *SPIFFE) Ready(ctx context.Context) error {
 	}
 }
 
+func (s *SPIFFE) X509SVIDSource() x509svid.Source {
+	return &svidSource{spiffe: s}
+}
+
+func (s *SPIFFE) JWTSVIDSource() jwtsvid.Source {
+	return &svidSource{spiffe: s}
+}
+
 // logIdentityInfo creates a log message with expiry details for both X.509 and JWT SVIDs
 func (s *SPIFFE) logIdentityInfo(prefix string, cert *x509.Certificate, jwtSVID *jwtsvid.SVID, renewTime *time.Time) {
 	msg := prefix + "; cert expires on: %s"
@@ -158,11 +168,13 @@ func (s *SPIFFE) logIdentityInfo(prefix string, cert *x509.Certificate, jwtSVID 
 
 	if jwtSVID != nil {
 		msg += ", jwt expires on: %s"
+
 		args = append(args, jwtSVID.Expiry.String())
 	}
 
 	if renewTime != nil {
 		msg += ", renewal at: %s"
+
 		args = append(args, renewTime.String())
 	}
 
@@ -193,6 +205,7 @@ func (s *SPIFFE) runRotation(ctx context.Context) {
 			identity, err := s.fetchIdentity(ctx)
 			if err != nil {
 				s.log.Errorf("Error renewing identity, trying again in 10 seconds: %s", err)
+
 				select {
 				case <-s.clock.After(10 * time.Second):
 					continue
@@ -263,6 +276,7 @@ func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 		// that as an audience since that ensures that the token is
 		// valid for us and our trust domain.
 		audiences := []string{spiffeID.TrustDomain().Name()}
+
 		jwtSvid, err := jwtsvid.ParseInsecure(*svidResponse.JWT, audiences)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse JWT SVID: %w", err)
@@ -281,6 +295,7 @@ func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 		if identity.PerAudienceJWTSVID == nil {
 			identity.PerAudienceJWTSVID = make(map[string]*jwtsvid.SVID)
 		}
+
 		identity.PerAudienceJWTSVID[aud] = jwtSvid
 		s.log.Infof("Successfully received per-audience JWT SVID for audience %s with expiry: %s", aud, jwtSvid.Expiry.String())
 	}
@@ -311,20 +326,13 @@ func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 			files["jwt_svid.token"] = []byte(*svidResponse.JWT)
 		}
 
-		if err := s.dir.Write(files); err != nil {
+		err = s.dir.Write(files)
+		if err != nil {
 			return nil, err
 		}
 	}
 
 	return identity, nil
-}
-
-func (s *SPIFFE) X509SVIDSource() x509svid.Source {
-	return &svidSource{spiffe: s}
-}
-
-func (s *SPIFFE) JWTSVIDSource() jwtsvid.Source {
-	return &svidSource{spiffe: s}
 }
 
 // renewalTime is 50% through the certificate validity period.
@@ -346,6 +354,7 @@ func calculateRenewalTime(now time.Time, cert *x509.Certificate, jwtSVID *jwtsvi
 	if jwtRenewal.Before(certRenewal) {
 		return &jwtRenewal
 	}
+
 	return &certRenewal
 }
 

@@ -30,6 +30,7 @@ import (
 // Symmetric keys are returned as raw bytes, while asymmetric keys are marshalled as ASN.1 DER (X.509, not PEM-encoded).
 func SerializeKey(key jwk.Key) ([]byte, error) {
 	var rawKey any
+
 	err := key.Raw(&rawKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract raw key: %w", err)
@@ -81,6 +82,7 @@ func parseSymmetricKey(raw []byte) (jwk.Key, error) {
 
 	// Try parsing as base64-standard
 	dst := make([]byte, base64.RawStdEncoding.DecodedLen(len(raw)))
+
 	n, err := base64.RawStdEncoding.Decode(dst, trimmedRaw)
 	if err == nil {
 		return jwk.FromRaw(dst[:n])

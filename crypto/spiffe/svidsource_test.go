@@ -26,8 +26,10 @@ import (
 )
 
 func Test_svidSource(*testing.T) {
-	var _ x509svid.Source = new(svidSource)
-	var _ jwtsvid.Source = new(svidSource)
+	var (
+		_ x509svid.Source = new(svidSource)
+		_ jwtsvid.Source  = new(svidSource)
+	)
 }
 
 func TestGetX509SVID(t *testing.T) {
@@ -72,12 +74,14 @@ func TestGetX509SVID(t *testing.T) {
 		s := &svidSource{spiffe: &SPIFFE{readyCh: readyCh}}
 
 		go func() { s.GetX509SVID() }() //nolint:errcheck
+
 		time.Sleep(10 * time.Millisecond)
 
 		writeLockFree := s.spiffe.lock.TryLock()
 		if writeLockFree {
 			s.spiffe.lock.Unlock()
 		}
+
 		close(readyCh)
 
 		require.True(t, writeLockFree,
@@ -256,12 +260,14 @@ func TestFetchJWTSVID(t *testing.T) {
 		go func() {
 			s.FetchJWTSVID(t.Context(), jwtsvid.Params{Audience: "test-audience"}) //nolint:errcheck
 		}()
+
 		time.Sleep(10 * time.Millisecond)
 
 		writeLockFree := s.spiffe.lock.TryLock()
 		if writeLockFree {
 			s.spiffe.lock.Unlock()
 		}
+
 		close(readyCh)
 
 		require.True(t, writeLockFree, "FetchJWTSVID held RLock while waiting for readyCh")

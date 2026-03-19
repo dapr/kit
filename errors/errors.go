@@ -97,6 +97,7 @@ func (e *Error) ErrorCode() string {
 			}
 		}
 	}
+
 	return errorCode
 }
 
@@ -122,12 +123,13 @@ func (e *Error) Is(targetI error) bool {
 	if !errors.As(targetI, &target) {
 		return false
 	}
+
 	return e.tag == target.tag &&
 		e.grpcCode == target.grpcCode &&
 		e.httpCode == target.httpCode
 }
 
-// Allow details to be mutable and added to the error in runtime
+// AddDetails allows details to be mutable and added to the error in runtime
 func (e *Error) AddDetails(details ...proto.Message) *Error {
 	e.details = append(e.details, details...)
 
@@ -156,6 +158,7 @@ func (e *Error) GRPCStatus() *status.Status {
 
 	// convert details from proto.Msg -> protoiface.MsgV1
 	var convertedDetails []protoiface.MessageV1
+
 	for _, detail := range e.details {
 		if v1, ok := detail.(protoiface.MessageV1); ok {
 			convertedDetails = append(convertedDetails, v1)
@@ -166,6 +169,7 @@ func (e *Error) GRPCStatus() *status.Status {
 
 	if len(e.details) > 0 {
 		var err error
+
 		stat, err = stat.WithDetails(convertedDetails...)
 		if err != nil {
 			log.Debugf("Failed to add error details: %s to status: %s", err, stat)
@@ -215,6 +219,7 @@ func (e *Error) JSONErrorValue() []byte {
 		errJSON, _ := json.Marshal(fmt.Sprintf("failed to encode proto to JSON: %v", err))
 		return errJSON
 	}
+
 	return errBytes
 }
 
@@ -231,11 +236,13 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 			"domain":   typedDetail.GetDomain(),
 			"metadata": typedDetail.GetMetadata(),
 		}
+
 		var errorCode string
 		// If there is an ErrorInfo Reason, but no legacy Tag code, use the ErrorInfo Reason as the error code
 		if e.tag == "" && typedDetail.GetReason() != "" {
 			errorCode = typedDetail.GetReason()
 		}
+
 		return detailMap, errorCode
 	case *errdetails.RetryInfo:
 		desc := typedDetail.ProtoReflect().Descriptor()
@@ -243,6 +250,7 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 			"@type":       typeGoogleAPI + desc.FullName(),
 			"retry_delay": typedDetail.GetRetryDelay(),
 		}
+
 		return detailMap, ""
 	case *errdetails.DebugInfo:
 		desc := typedDetail.ProtoReflect().Descriptor()
@@ -251,6 +259,7 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 			"stack_entries": typedDetail.GetStackEntries(),
 			"detail":        typedDetail.GetDetail(),
 		}
+
 		return detailMap, ""
 	case *errdetails.QuotaFailure:
 		desc := typedDetail.ProtoReflect().Descriptor()
@@ -258,6 +267,7 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 			"@type":      typeGoogleAPI + desc.FullName(),
 			"violations": typedDetail.GetViolations(),
 		}
+
 		return detailMap, ""
 	case *errdetails.PreconditionFailure:
 		desc := typedDetail.ProtoReflect().Descriptor()
@@ -265,6 +275,7 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 			"@type":      typeGoogleAPI + desc.FullName(),
 			"violations": typedDetail.GetViolations(),
 		}
+
 		return detailMap, ""
 	case *errdetails.BadRequest:
 		desc := typedDetail.ProtoReflect().Descriptor()
@@ -272,6 +283,7 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 			"@type":            typeGoogleAPI + desc.FullName(),
 			"field_violations": typedDetail.GetFieldViolations(),
 		}
+
 		return detailMap, ""
 	case *errdetails.RequestInfo:
 		desc := typedDetail.ProtoReflect().Descriptor()
@@ -280,6 +292,7 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 			"request_id":   typedDetail.GetRequestId(),
 			"serving_data": typedDetail.GetServingData(),
 		}
+
 		return detailMap, ""
 	case *errdetails.ResourceInfo:
 		desc := typedDetail.ProtoReflect().Descriptor()
@@ -290,6 +303,7 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 			"owner":         typedDetail.GetOwner(),
 			"description":   typedDetail.GetDescription(),
 		}
+
 		return detailMap, ""
 	case *errdetails.Help:
 		desc := typedDetail.ProtoReflect().Descriptor()
@@ -297,6 +311,7 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 			"@type": typeGoogleAPI + desc.FullName(),
 			"links": typedDetail.GetLinks(),
 		}
+
 		return detailMap, ""
 	case *errdetails.LocalizedMessage:
 		desc := typedDetail.ProtoReflect().Descriptor()
@@ -305,6 +320,7 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 			"locale":  typedDetail.GetLocale(),
 			"message": typedDetail.GetMessage(),
 		}
+
 		return detailMap, ""
 	case *errdetails.QuotaFailure_Violation:
 		desc := typedDetail.ProtoReflect().Descriptor()
@@ -313,6 +329,7 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 			"subject":     typedDetail.GetSubject(),
 			"description": typedDetail.GetDescription(),
 		}
+
 		return detailMap, ""
 	case *errdetails.PreconditionFailure_Violation:
 		desc := typedDetail.ProtoReflect().Descriptor()
@@ -322,6 +339,7 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 			"description": typedDetail.GetDescription(),
 			"type":        typedDetail.GetType(),
 		}
+
 		return detailMap, ""
 	case *errdetails.BadRequest_FieldViolation:
 		desc := typedDetail.ProtoReflect().Descriptor()
@@ -330,6 +348,7 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 			"field":       typedDetail.GetField(),
 			"description": typedDetail.GetDescription(),
 		}
+
 		return detailMap, ""
 	case *errdetails.Help_Link:
 		desc := typedDetail.ProtoReflect().Descriptor()
@@ -338,6 +357,7 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 			"description": typedDetail.GetDescription(),
 			"url":         typedDetail.GetUrl(),
 		}
+
 		return detailMap, ""
 	default:
 		log.Debugf("Failed to convert error details due to incorrect type. \nSee types here: https://github.com/googleapis/googleapis/blob/master/google/rpc/error_details.proto. \nDetail: %s", detail)
@@ -346,6 +366,7 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 			"unknownDetailType": fmt.Sprintf("%T", typedDetail),
 			"unknownDetails":    fmt.Sprintf("%#v", typedDetail),
 		}
+
 		return unknownDetail, ""
 	}
 }
@@ -388,8 +409,7 @@ func (b *ErrorBuilder) WithHelpLink(url string, description string) *ErrorBuilde
 		Description: description,
 		Url:         url,
 	}
-	var links []*errdetails.Help_Link
-	links = append(links, &link)
+	links := []*errdetails.Help_Link{&link}
 
 	help := &errdetails.Help{Links: links}
 	b.err.details = append(b.err.details, help)
@@ -441,6 +461,7 @@ func (b *ErrorBuilder) WithDetails(details ...proto.Message) *ErrorBuilder {
 func (b *ErrorBuilder) Build() error {
 	// Check for ErrorInfo, since it's required per the proposal
 	containsErrorInfo := false
+
 	for _, detail := range b.err.details {
 		if _, ok := detail.(*errdetails.ErrorInfo); ok {
 			containsErrorInfo = true

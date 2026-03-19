@@ -63,8 +63,10 @@ type PKI struct {
 
 func GenPKI(t *testing.T, opts PKIOptions) PKI {
 	t.Helper()
+
 	pki, err := GenPKIError(opts)
 	require.NoError(t, err)
+
 	return pki
 }
 
@@ -83,6 +85,7 @@ func GenPKIError(opts PKIOptions) (PKI, error) {
 		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
 		BasicConstraintsValid: true,
 	}
+
 	rootCertBytes, err := x509.CreateCertificate(rand.Reader, rootCert, rootCert, rootPub, rootPK)
 	if err != nil {
 		return PKI{}, err
@@ -99,6 +102,7 @@ func GenPKIError(opts PKIOptions) (PKI, error) {
 	if err != nil {
 		return PKI{}, err
 	}
+
 	clientCertPEM, clientPKPEM, clientCert, clientPK, err := genLeafCert(rootPK, rootCert, opts.ClientID, opts.ClientDNS)
 	if err != nil {
 		return PKI{}, err
@@ -153,8 +157,8 @@ func (p PKI) ClientGRPCCtx(t *testing.T) context.Context {
 	go func() {
 		server.Serve(lis)
 	}()
-	//nolint:staticcheck
-	conn, err := grpc.DialContext(t.Context(), lis.Addr().String(),
+
+	conn, err := grpc.DialContext(t.Context(), lis.Addr().String(), //nolint:staticcheck
 		grpc.WithTransportCredentials(grpccredentials.MTLSClientCredentials(clientSVID, clientSVID, tlsconfig.AuthorizeAny())),
 	)
 	require.NoError(t, err)
@@ -229,11 +233,13 @@ func (m *mockSVID) GetX509SVID() (*x509svid.SVID, error) {
 
 type greeterServer struct {
 	helloworld.UnimplementedGreeterServer
+
 	ctx context.Context
 }
 
 func (s *greeterServer) SayHello(ctx context.Context, _ *helloworld.HelloRequest) (*helloworld.HelloReply, error) {
 	p, _ := peer.FromContext(ctx)
 	s.ctx = peer.NewContext(context.Background(), p)
+
 	return new(helloworld.HelloReply), nil
 }

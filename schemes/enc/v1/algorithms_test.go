@@ -39,10 +39,12 @@ func TestKeyAlgorithmValidate(t *testing.T) {
 				if err == nil {
 					t.Errorf("KeyAlgorithm.Validate() error = %v, wantErr %v", err, tt.wantErr)
 				}
+
 				return
 			} else if err != nil {
 				t.Errorf("KeyAlgorithm.Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			if got != tt.want {
 				t.Errorf("KeyAlgorithm.Validate() = %v, want %v", got, tt.want)
 			}
@@ -74,6 +76,7 @@ func TestKeyAlgorithmMarshalJSON(t *testing.T) {
 				t.Errorf("KeyAlgorithm.MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if string(got) != tt.want {
 				t.Errorf("KeyAlgorithm.MarshalJSON() = %v, want %v", got, tt.want)
 			}
@@ -102,10 +105,12 @@ func TestKeyAlgorithmUnmarshalJSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var a KeyAlgorithm
+
 			err := json.Unmarshal([]byte(tt.message), &a)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("KeyAlgorithm.UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			if a != tt.want {
 				t.Errorf("KeyAlgorithm.UnmarshalJSON() = %v, want %v", a, tt.want)
 			}

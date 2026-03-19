@@ -37,10 +37,12 @@ func TestCipherValidate(t *testing.T) {
 				if err == nil {
 					t.Errorf("Cipher.Validate() error = %v, wantErr %v", err, tt.wantErr)
 				}
+
 				return
 			} else if err != nil {
 				t.Errorf("Cipher.Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			if got != tt.want {
 				t.Errorf("Cipher.Validate() = %v, want %v", got, tt.want)
 			}
@@ -67,6 +69,7 @@ func TestCipherMarshalJSON(t *testing.T) {
 				t.Errorf("Cipher.MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if string(got) != tt.want {
 				t.Errorf("Cipher.MarshalJSON() = %v, want %v", got, tt.want)
 			}
@@ -92,10 +95,12 @@ func TestCipherUnmarshalJSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var a Cipher
+
 			err := json.Unmarshal([]byte(tt.message), &a)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Cipher.UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			if a != tt.want {
 				t.Errorf("Cipher.UnmarshalJSON() = %v, want %v", a, tt.want)
 			}

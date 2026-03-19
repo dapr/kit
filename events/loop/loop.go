@@ -53,7 +53,8 @@ func (l *loop[T]) Run(ctx context.Context) error {
 		//   - when we "roll over" to a new segment, or
 		//   - when Close() is called for the final segment.
 		for req := range current.ch {
-			if err := l.handler.Handle(ctx, req); err != nil {
+			err := l.handler.Handle(ctx, req)
+			if err != nil {
 				return err
 			}
 		}
@@ -105,6 +106,7 @@ func (l *loop[T]) Enqueue(req T) {
 		newSeg := l.getSegment()
 		l.tail.next = newSeg
 		close(l.tail.ch)
+
 		l.tail = newSeg
 		l.tail.ch <- req
 	}
@@ -116,8 +118,10 @@ func (l *loop[T]) Close(req T) {
 		// Already closed; just unlock and wait for Run to finish.
 		l.lock.Unlock()
 		<-l.closeCh
+
 		return
 	}
+
 	l.closed.Store(true)
 
 	// Enqueue the final request; if the tail is full, roll over as in Enqueue.
@@ -127,6 +131,7 @@ func (l *loop[T]) Close(req T) {
 		newSeg := l.getSegment()
 		l.tail.next = newSeg
 		close(l.tail.ch)
+
 		l.tail = newSeg
 		l.tail.ch <- req
 	}

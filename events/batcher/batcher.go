@@ -77,6 +77,7 @@ func New[K comparable, T any](opts Options) *Batcher[K, T] {
 func (b *Batcher[K, T]) Subscribe(ctx context.Context, ch ...chan<- T) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
+
 	for _, c := range ch {
 		b.subscribe(ctx, c)
 	}
@@ -96,10 +97,12 @@ func (b *Batcher[K, T]) subscribe(ctx context.Context, ch chan<- T) {
 	})
 
 	b.wg.Add(1)
+
 	go func() {
 		defer func() {
 			b.lock.Lock()
 			close(ch)
+
 			for i, eventCh := range b.eventChs {
 				if eventCh.id == id {
 					b.eventChs = append(b.eventChs[:i], b.eventChs[i+1:]...)
@@ -130,9 +133,11 @@ func (b *Batcher[K, T]) subscribe(ctx context.Context, ch chan<- T) {
 func (b *Batcher[K, T]) execute(i *item[K, T]) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
+
 	if b.closed.Load() {
 		return
 	}
+
 	for _, ev := range b.eventChs {
 		select {
 		case ev.ch <- i.value:
@@ -156,6 +161,7 @@ func (b *Batcher[K, T]) Batch(key K, value T) {
 // subscribers. The batcher will be a no-op after this call.
 func (b *Batcher[K, T]) Close() {
 	defer b.wg.Wait()
+
 	b.queue.Close()
 	b.lock.Lock()
 	if b.closed.CompareAndSwap(false, true) {

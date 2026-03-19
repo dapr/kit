@@ -52,6 +52,7 @@ func (c Chain) Then(j Job) Job {
 	for i := range c.wrappers {
 		j = c.wrappers[len(c.wrappers)-i-1](j)
 	}
+
 	return j
 }
 
@@ -62,15 +63,19 @@ func Recover(logger Logger) JobWrapper {
 			defer func() {
 				if r := recover(); r != nil {
 					const size = 64 << 10
+
 					buf := make([]byte, size)
 					buf = buf[:runtime.Stack(buf, false)]
+
 					err, ok := r.(error)
 					if !ok {
 						err = fmt.Errorf("%v", r)
 					}
+
 					logger.Error(err, "panic", "stack", "...\n"+string(buf))
 				}
 			}()
+
 			j.Run()
 		})
 	}
@@ -88,13 +93,17 @@ func DelayIfStillRunning(logger Logger) JobWrapper {
 func DelayIfStillRunningWithClock(logger Logger, clk clock.Clock) JobWrapper {
 	return func(j Job) Job {
 		var mu sync.Mutex
+
 		return FuncJob(func() {
 			start := clk.Now()
+
 			mu.Lock()
 			defer mu.Unlock()
+
 			if dur := clk.Since(start); dur > time.Minute {
 				logger.Info("delay", "duration", dur)
 			}
+
 			j.Run()
 		})
 	}
@@ -106,10 +115,12 @@ func SkipIfStillRunning(logger Logger) JobWrapper {
 	return func(j Job) Job {
 		ch := make(chan struct{}, 1)
 		ch <- struct{}{}
+
 		return FuncJob(func() {
 			select {
 			case v := <-ch:
 				j.Run()
+
 				ch <- v
 			default:
 				logger.Info("skip")

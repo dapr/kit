@@ -11,7 +11,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:nosnakecase
 package crypto
 
 import (
@@ -28,6 +27,7 @@ func TestEncryptionRSAPKCS1v15(t *testing.T) {
 	require.NotNil(t, key)
 
 	var ciphertext []byte
+
 	t.Run("encrypt", func(t *testing.T) {
 		ciphertext, err = EncryptPublicKey([]byte(message), Algorithm_RSA1_5, key, nil)
 		require.NoError(t, err)
@@ -59,6 +59,7 @@ func TestEncryptionRSAOAEP(t *testing.T) {
 	for _, alg := range algs {
 		t.Run(alg, func(t *testing.T) {
 			var ciphertext []byte
+
 			t.Run("encrypt", func(t *testing.T) {
 				ciphertext, err = EncryptPublicKey([]byte(message), alg, key, nil)
 				require.NoError(t, err)

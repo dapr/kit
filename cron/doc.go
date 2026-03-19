@@ -1,5 +1,5 @@
 /*
-This package is a fork of "github.com/robfig/cron/v3" that implements cron spec parser and job runner with support for mocking the time.
+Package cron is a fork of "github.com/robfig/cron/v3" that implements cron spec parser and job runner with support for mocking the time.
 
 # Usage
 

@@ -41,11 +41,13 @@ func TestFileKey(t *testing.T) {
 					cipher:     tt.cipher,
 					payloadKey: payloadKey,
 				}
+
 				gotAead, err := k.getCipher()
 				if (err != nil) != tt.wantErr {
 					t.Errorf("fileKey.getCipher() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
+
 				if err == nil && gotAead == nil {
 					t.Error("fileKey.getCipher() = nil")
 				}
@@ -75,10 +77,12 @@ func TestFileKey(t *testing.T) {
 
 	t.Run("nonceForSegment", func(t *testing.T) {
 		noncePrefix := []byte{1, 2, 3, 4, 5, 6, 7}
+
 		type args struct {
 			num  uint32
 			last bool
 		}
+
 		tests := []struct {
 			name string
 			args args
@@ -117,8 +121,11 @@ func TestFileKey(t *testing.T) {
 
 	t.Run("headerMessage", func(t *testing.T) {
 		// Validate that headerMessage returns the right message, and that there's a newline at the end
-		const manifest = `{"foo":"bar"}`
-		const expect = SchemeName + "\n" + manifest + "\n"
+		const (
+			manifest = `{"foo":"bar"}`
+			expect   = SchemeName + "\n" + manifest + "\n"
+		)
+
 		t.Log(hex.EncodeToString([]byte(expect)))
 
 		got := fileKey{}.headerMessage([]byte(manifest))
@@ -127,6 +134,7 @@ func TestFileKey(t *testing.T) {
 
 	t.Run("computeHeaderSignature", func(t *testing.T) {
 		const manifest = `{"foo":"bar"}`
+
 		key := mustDecodeHexString("4ae3be77186824592c9b6aa625f6ac1ba16fddf60359f3342e6761883a1f82d4")
 		noncePrefix := []byte{1, 2, 3, 4, 5, 6, 7}
 		expectSignature := mustDecodeHexString("ac54af18f2cf36631ec41af34dcdd32e526a26df6975a3a6a83c78d997ded017")
@@ -146,5 +154,6 @@ func mustDecodeHexString(s string) []byte {
 	if err != nil {
 		panic(err)
 	}
+
 	return b
 }

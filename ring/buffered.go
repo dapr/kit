@@ -31,6 +31,7 @@ func NewBuffered[T any](initialSize int) *Buffered[T] {
 	if initialSize < 1 {
 		initialSize = 1
 	}
+
 	return &Buffered[T]{
 		buf:    make([]*T, initialSize),
 		head:   0,
@@ -45,6 +46,7 @@ func (b *Buffered[T]) AppendBack(value *T) {
 	if b.count == len(b.buf) {
 		b.grow()
 	}
+
 	idx := (b.head + b.count) % len(b.buf)
 	b.buf[idx] = value
 	b.count++
@@ -76,6 +78,7 @@ func (b *Buffered[T]) Front() *T {
 	if b.count == 0 {
 		return nil
 	}
+
 	return b.buf[b.head]
 }
 
@@ -85,6 +88,7 @@ func (b *Buffered[T]) RemoveFront() *T {
 	if b.count == 0 {
 		return nil
 	}
+
 	b.buf[b.head] = nil // clear reference for GC
 	b.head = (b.head + 1) % len(b.buf)
 	b.count--
@@ -98,16 +102,13 @@ func (b *Buffered[T]) RemoveFront() *T {
 	if b.count == 0 {
 		return nil
 	}
+
 	return b.buf[b.head]
 }
 
 // shrink halves the buffer capacity (never below minCap).
 func (b *Buffered[T]) shrink() {
-	newCap := len(b.buf) / 2
-	if newCap < b.minCap {
-		newCap = b.minCap
-	}
-	b.resize(newCap)
+	b.resize(max(len(b.buf)/2, b.minCap))
 }
 
 // resize re-allocates the buffer to newCap, linearizing the circular contents.
@@ -115,10 +116,7 @@ func (b *Buffered[T]) resize(newCap int) {
 	newBuf := make([]*T, newCap)
 
 	// Copy from head to end of old buf
-	firstPart := len(b.buf) - b.head
-	if firstPart > b.count {
-		firstPart = b.count
-	}
+	firstPart := min(len(b.buf)-b.head, b.count)
 	copy(newBuf, b.buf[b.head:b.head+firstPart])
 
 	// Copy wrapped-around portion

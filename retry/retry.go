@@ -116,6 +116,7 @@ func DecodeConfigWithPrefix(c *Config, input any, prefix string) error {
 // `RetryNotifyRecover` or `backoff.RetryNotify` is used.
 func (c *Config) NewBackOff() backoff.BackOff {
 	var b backoff.BackOff
+
 	switch c.Policy {
 	case PolicyConstant:
 		b = backoff.NewConstantBackOff(c.Duration)
@@ -200,6 +201,7 @@ func (p *PolicyType) DecodeString(value string) error {
 	default:
 		return fmt.Errorf("unexpected back off policy type: %s", value)
 	}
+
 	return nil
 }
 

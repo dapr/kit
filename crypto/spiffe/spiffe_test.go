@@ -145,6 +145,7 @@ func Test_Run(t *testing.T) {
 		})
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- s.Run(ctx)
 		}()
@@ -160,6 +161,7 @@ func Test_Run(t *testing.T) {
 		}
 
 		cancel()
+
 		select {
 		case err := <-errCh:
 			require.NoError(t, err)
@@ -185,10 +187,12 @@ func Test_Run(t *testing.T) {
 		})
 
 		var fetches atomic.Int32
+
 		s := New(Options{
 			Log: logger.NewLogger("test"),
 			RequestSVIDFn: func(context.Context, []byte) (*SVIDResponse, error) {
 				fetches.Add(1)
+
 				return &SVIDResponse{
 					X509Certificates: []*x509.Certificate{pki.LeafCert},
 				}, nil
@@ -200,6 +204,7 @@ func Test_Run(t *testing.T) {
 
 		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
+
 		go func() {
 			select {
 			case <-s.readyCh:
@@ -219,6 +224,7 @@ func Test_Run(t *testing.T) {
 		}, time.Second, time.Millisecond)
 
 		cancel()
+
 		select {
 		case err := <-errCh:
 			require.NoError(t, err)
@@ -233,13 +239,16 @@ func Test_Run(t *testing.T) {
 		})
 
 		respCert := []*x509.Certificate{pki.LeafCert}
+
 		var respErr error
 
 		var fetches atomic.Int32
+
 		s := New(Options{
 			Log: logger.NewLogger("test"),
 			RequestSVIDFn: func(context.Context, []byte) (*SVIDResponse, error) {
 				fetches.Add(1)
+
 				return &SVIDResponse{
 					X509Certificates: respCert,
 				}, respErr
@@ -251,6 +260,7 @@ func Test_Run(t *testing.T) {
 
 		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
+
 		go func() {
 			select {
 			case <-s.readyCh:
@@ -266,6 +276,7 @@ func Test_Run(t *testing.T) {
 
 		respCert = nil
 		respErr = errors.New("this is an error")
+
 		clock.Step(pki.LeafCert.NotAfter.Sub(now) / 2)
 		assert.EventuallyWithT(t, func(c *assert.CollectT) {
 			assert.Equal(c, int32(2), fetches.Load())
@@ -284,6 +295,7 @@ func Test_Run(t *testing.T) {
 		}, time.Second, time.Millisecond)
 
 		cancel()
+
 		select {
 		case err := <-errCh:
 			require.NoError(t, err)

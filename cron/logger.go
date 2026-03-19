@@ -14,7 +14,6 @@ You can check the original license at:
 		https://github.com/robfig/cron/blob/master/LICENSE
 */
 
-//nolint
 package cron
 
 import (
@@ -78,26 +77,32 @@ func (pl printfLogger) Error(err error, msg string, keysAndValues ...any) {
 func formatString(numKeysAndValues int) string {
 	var sb strings.Builder
 	sb.WriteString("%s")
+
 	if numKeysAndValues > 0 {
 		sb.WriteString(", ")
 	}
-	for i := 0; i < numKeysAndValues/2; i++ {
+
+	for i := range numKeysAndValues / 2 {
 		if i > 0 {
 			sb.WriteString(", ")
 		}
+
 		sb.WriteString("%v=%v")
 	}
+
 	return sb.String()
 }
 
 // formatTimes formats any time.Time values as RFC3339.
 func formatTimes(keysAndValues []any) []any {
-	var formattedArgs []any
+	formattedArgs := make([]any, 0, len(keysAndValues))
 	for _, arg := range keysAndValues {
 		if t, ok := arg.(time.Time); ok {
 			arg = t.Format(time.RFC3339)
 		}
+
 		formattedArgs = append(formattedArgs, arg)
 	}
+
 	return formattedArgs
 }

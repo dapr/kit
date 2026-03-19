@@ -32,9 +32,11 @@ func (h *handler) Handle(ctx context.Context, e event) error {
 	if e.shutdown {
 		return nil
 	}
+
 	select {
 	case h.eventCh <- struct{}{}:
 	case <-ctx.Done():
 	}
+
 	return nil
 }

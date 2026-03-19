@@ -54,11 +54,13 @@ func (d *Dir) Write(files map[string][]byte) error {
 	newDir := filepath.Join(d.base, fmt.Sprintf("%d-%s", time.Now().UTC().UnixNano(), d.targetDir))
 
 	// Ensure base exists
-	if err := os.MkdirAll(d.base, 0o700); err != nil {
+	err := os.MkdirAll(d.base, 0o700)
+	if err != nil {
 		return err
 	}
 	// Create the new versioned directory
-	if err := os.MkdirAll(newDir, 0o700); err != nil {
+	err = os.MkdirAll(newDir, 0o700)
+	if err != nil {
 		return err
 	}
 
@@ -66,12 +68,16 @@ func (d *Dir) Write(files map[string][]byte) error {
 	for file, b := range files {
 		path := filepath.Join(newDir, file)
 		// Ensure parent directories exist for nested files
-		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		err = os.MkdirAll(filepath.Dir(path), 0o700)
+		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(path, b, 0o600); err != nil {
+
+		err = os.WriteFile(path, b, 0o600)
+		if err != nil {
 			return err
 		}
+
 		d.log.Infof("Written file %s", file)
 	}
 
@@ -85,7 +91,8 @@ func (d *Dir) Write(files map[string][]byte) error {
 
 	// Best-effort cleanup from the *previous* run
 	if d.prev != nil {
-		if err := os.RemoveAll(*d.prev); err != nil {
+		err = os.RemoveAll(*d.prev)
+		if err != nil {
 			return err
 		}
 	}

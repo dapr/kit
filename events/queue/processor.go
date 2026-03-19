@@ -46,6 +46,7 @@ func NewProcessor[K comparable, T Queueable[K]](opts Options[K, T]) *Processor[K
 	if cl == nil {
 		cl = kclock.RealClock{}
 	}
+
 	return &Processor[K, T]{
 		executeFn:          opts.ExecuteFn,
 		queue:              newQueue[K, T](),
@@ -92,6 +93,7 @@ func (p *Processor[K, T]) Dequeue(key K) {
 	p.lock.Lock()
 	peek, ok := p.queue.Peek()
 	p.queue.Remove(key)
+
 	if ok && peek.Key() == key {
 		// If the item was the first one in the queue, restart the processor
 		p.process(true)
@@ -103,11 +105,13 @@ func (p *Processor[K, T]) Dequeue(key K) {
 // This method blocks until the processor loop returns.
 func (p *Processor[K, T]) Close() error {
 	defer p.wg.Wait()
+
 	if p.stopped.CompareAndSwap(false, true) {
 		// Send a signal to stop
 		close(p.stopCh)
 		// Blocks until processor loop ends
 		p.processorRunningCh <- struct{}{}
+
 		return nil
 	}
 
@@ -131,14 +135,11 @@ func (p *Processor[K, T]) process(isNext bool) {
 			default:
 			}
 		}
+
 		return
 	}
 
-	p.wg.Add(1)
-	go func() {
-		defer p.wg.Done()
-		p.processLoop()
-	}()
+	p.wg.Go(p.processLoop)
 }
 
 // Processing loop.
@@ -161,6 +162,7 @@ func (p *Processor[K, T]) processLoop() {
 		p.lock.Lock()
 		r, ok = p.queue.Peek()
 		p.lock.Unlock()
+
 		if !ok {
 			return
 		}
@@ -205,6 +207,7 @@ func (p *Processor[K, T]) processLoop() {
 			if !t.Stop() {
 				<-t.C()
 			}
+
 			return
 		}
 	}
@@ -222,8 +225,10 @@ func (p *Processor[K, T]) execute(r T) {
 		p.lock.Unlock()
 		return
 	}
+
 	r, ok = p.queue.Pop()
 	p.lock.Unlock()
+
 	if !ok {
 		return
 	}

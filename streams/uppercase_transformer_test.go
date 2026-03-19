@@ -54,11 +54,13 @@ func TestUppercaseTransformer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tr := UppercaseTransformer(strings.NewReader(tt.in))
+
 			gotOut, err := io.ReadAll(tr)
 			if err != nil {
 				t.Errorf("read stream error = %v", err)
 				return
 			}
+
 			if string(gotOut) != tt.out {
 				t.Errorf("gotOut = %v, want %v", string(gotOut), tt.out)
 			}

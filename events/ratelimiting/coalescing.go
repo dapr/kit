@@ -69,6 +69,7 @@ func NewCoalescing(opts OptionsCoalescing) (RateLimiter, error) {
 	if opts.InitialDelay != nil {
 		initialDelay = *opts.InitialDelay
 	}
+
 	if initialDelay <= 0 {
 		return nil, errors.New("initial delay must be > 0")
 	}
@@ -77,6 +78,7 @@ func NewCoalescing(opts OptionsCoalescing) (RateLimiter, error) {
 	if opts.MaxDelay != nil {
 		maxDelay = *opts.MaxDelay
 	}
+
 	if maxDelay <= 0 {
 		return nil, errors.New("max delay must be > 0")
 	}
@@ -111,6 +113,7 @@ func (c *coalescing) Run(ctx context.Context, ch chan<- struct{}) error {
 	// Prevent wg race condition on Close and Run.
 	c.lock.Lock()
 	c.wg.Add(1)
+
 	c.lock.Unlock()
 	defer c.wg.Done()
 
@@ -121,10 +124,13 @@ func (c *coalescing) Run(ctx context.Context, ch chan<- struct{}) error {
 		// If the timer doesn't exist yet, we're waiting for the first event (which
 		// will fire immediately when received).
 		var timerCh <-chan time.Time
+
 		c.lock.RLock()
+
 		if c.hasTimer.Load() {
 			timerCh = c.timer.C()
 		}
+
 		c.lock.RUnlock()
 
 		select {
@@ -140,6 +146,32 @@ func (c *coalescing) Run(ctx context.Context, ch chan<- struct{}) error {
 		case <-timerCh:
 			c.handleTimerFired(ctx, ch)
 		}
+	}
+}
+
+func (c *coalescing) Add() {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	c.pendingEvents++
+	c.wg.Go(func() {
+		select {
+		case c.inputCh <- struct{}{}:
+		case <-c.closeCh:
+		}
+	})
+}
+
+func (c *coalescing) Close() {
+	defer func() {
+		// Prevent wg race condition on Close and Run.
+		c.lock.Lock()
+		c.wg.Wait()
+		c.lock.Unlock()
+	}()
+
+	if c.closed.CompareAndSwap(false, true) {
+		close(c.closeCh)
 	}
 }
 
@@ -173,10 +205,7 @@ func (c *coalescing) handleInputCh(ctx context.Context, ch chan<- struct{}) {
 		// 500ms, 1s, 2s, 4s, 5s, 5s, 5s, ...
 		if c.currentDur < c.maxDelay {
 			c.backoffFactor *= 2
-			c.currentDur = time.Duration(float64(c.initialDelay) * float64(c.backoffFactor))
-			if c.currentDur > c.maxDelay {
-				c.currentDur = c.maxDelay
-			}
+			c.currentDur = min(time.Duration(float64(c.initialDelay)*float64(c.backoffFactor)), c.maxDelay)
 		}
 
 		c.timer.Reset(c.currentDur)
@@ -186,6 +215,7 @@ func (c *coalescing) handleInputCh(ctx context.Context, ch chan<- struct{}) {
 func (c *coalescing) handleTimerFired(ctx context.Context, ch chan<- struct{}) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
+
 	c.fireEvent(ctx, ch)
 	c.reset()
 }
@@ -196,14 +226,12 @@ func (c *coalescing) fireEvent(ctx context.Context, ch chan<- struct{}) {
 	// was sent and then the rate limiting window expired with no new events.
 	if c.pendingEvents > 0 {
 		c.pendingEvents = 0
-		c.wg.Add(1)
-		go func() {
-			defer c.wg.Done()
+		c.wg.Go(func() {
 			select {
 			case ch <- struct{}{}:
 			case <-ctx.Done():
 			}
-		}()
+		})
 	}
 }
 
@@ -220,32 +248,6 @@ func (c *coalescing) reset() {
 	c.backoffFactor = 1
 	c.hasTimer.Store(false)
 	c.timer = nil
-}
-
-func (c *coalescing) Add() {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	c.pendingEvents++
-	c.wg.Add(1)
-	go func() {
-		defer c.wg.Done()
-		select {
-		case c.inputCh <- struct{}{}:
-		case <-c.closeCh:
-		}
-	}()
-}
-
-func (c *coalescing) Close() {
-	defer func() {
-		// Prevent wg race condition on Close and Run.
-		c.lock.Lock()
-		c.wg.Wait()
-		c.lock.Unlock()
-	}()
-	if c.closed.CompareAndSwap(false, true) {
-		close(c.closeCh)
-	}
 }
 
 var _ RateLimiter = (*coalescing)(nil)

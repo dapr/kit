@@ -23,6 +23,7 @@ import (
 // are also tracked, but will be ignored if the pool is already cancelled.
 type Pool struct {
 	context.Context
+
 	closed chan struct{}
 	pool   []<-chan struct{}
 	lock   sync.RWMutex
@@ -49,6 +50,7 @@ func NewPool(ctx ...context.Context) *Pool {
 	}
 
 	p.lock.RLock()
+
 	go func() {
 		defer cancel()
 		defer p.lock.RUnlock()
@@ -58,10 +60,12 @@ func NewPool(ctx ...context.Context) *Pool {
 		for i := 0; i < len(p.pool); i++ {
 			ch := p.pool[i]
 			p.lock.RUnlock()
+
 			select {
 			case <-ch:
 			case <-p.closed:
 			}
+
 			p.lock.RLock()
 		}
 	}()
@@ -74,12 +78,14 @@ func NewPool(ctx ...context.Context) *Pool {
 func (p *Pool) Add(ctx context.Context) *Pool {
 	p.lock.Lock()
 	defer p.lock.Unlock()
+
 	select {
 	case <-p.Done():
 	case <-p.closed:
 	default:
 		p.pool = append(p.pool, ctx.Done())
 	}
+
 	return p
 }
 
@@ -87,6 +93,7 @@ func (p *Pool) Add(ctx context.Context) *Pool {
 func (p *Pool) Cancel() {
 	p.lock.Lock()
 	defer p.lock.Unlock()
+
 	if p.pool != nil {
 		close(p.closed)
 		p.pool = nil
@@ -97,5 +104,6 @@ func (p *Pool) Cancel() {
 func (p *Pool) Size() int {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
+
 	return len(p.pool)
 }

@@ -35,6 +35,7 @@ func TestQueue(t *testing.T) {
 	require.Equal(t, 5, queue.Len())
 
 	i := 0
+
 	for {
 		// Pop an element from the queue
 		r, ok := queue.Pop()
@@ -46,6 +47,7 @@ func TestQueue(t *testing.T) {
 			require.False(t, ok)
 			break
 		}
+
 		i++
 
 		// Results should be in order

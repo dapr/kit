@@ -50,24 +50,29 @@ func TestAtomicInt32_New_Get_Delete(t *testing.T) {
 
 	t.Run("concurrent access multiple keys", func(t *testing.T) {
 		var wg sync.WaitGroup
+
 		keys := []string{"key1", "key2", "key3"}
 		iterations := 100
 
 		wg.Add(len(keys) * 2)
+
 		for _, key := range keys {
 			go func(k string) {
 				defer wg.Done()
+
 				for range iterations {
 					m.GetOrCreate(k, 0).Add(1)
 				}
 			}(key)
 			go func(k string) {
 				defer wg.Done()
+
 				for range iterations {
 					m.GetOrCreate(k, 0).Add(-1)
 				}
 			}(key)
 		}
+
 		wg.Wait()
 
 		for _, key := range keys {

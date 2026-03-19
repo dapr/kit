@@ -100,9 +100,12 @@ func (f *file) Run(ctx context.Context) error {
 			fs = append(fs, *f.jwksPath)
 		}
 
-		if found, err := filesExist(fs...); err != nil {
+		found, err := filesExist(fs...)
+		if err != nil {
 			return err
-		} else if found {
+		}
+
+		if found {
 			break
 		}
 
@@ -117,7 +120,8 @@ func (f *file) Run(ctx context.Context) error {
 
 	f.log.Infof("Trust anchors file '%s' found", f.caPath)
 
-	if err := f.updateAnchors(ctx); err != nil {
+	err := f.updateAnchors(ctx)
+	if err != nil {
 		return err
 	}
 
@@ -136,8 +140,9 @@ func (f *file) Run(ctx context.Context) error {
 	close(f.readyCh)
 
 	f.log.Infof("Watching trust anchors file '%s' for changes", f.caPath)
+
 	if f.jwksPath != nil {
-		f.log.Infof("Watching JWT bundle file '%s' for changes", f.jwksPath)
+		f.log.Infof("Watching JWT bundle file '%s' for changes", *f.jwksPath)
 	}
 
 	return concurrency.NewRunnerManager(
@@ -152,7 +157,8 @@ func (f *file) Run(ctx context.Context) error {
 				case <-f.caEvent:
 					f.log.Info("Trust anchors file changed, reloading trust anchors")
 
-					if err = f.updateAnchors(ctx); err != nil {
+					err = f.updateAnchors(ctx)
+					if err != nil {
 						return fmt.Errorf("%w: '%s': %v", ErrFailedToReadTrustAnchorsFile, f.caPath, err)
 					}
 				}
@@ -172,56 +178,11 @@ func (f *file) CurrentTrustAnchors(ctx context.Context) ([]byte, error) {
 
 	f.lock.RLock()
 	defer f.lock.RUnlock()
+
 	rootPEM := make([]byte, len(f.rootPEM))
 	copy(rootPEM, f.rootPEM)
+
 	return rootPEM, nil
-}
-
-func (f *file) updateAnchors(ctx context.Context) error {
-	f.lock.Lock()
-	defer f.lock.Unlock()
-
-	rootPEMs, err := os.ReadFile(f.caPath)
-	if err != nil {
-		return fmt.Errorf("failed to read trust anchors file '%s': %w", f.caPath, err)
-	}
-
-	trustAnchorCerts, err := pem.DecodePEMCertificates(rootPEMs)
-	if err != nil {
-		return fmt.Errorf("failed to decode trust anchors: %w", err)
-	}
-
-	f.rootPEM = rootPEMs
-	f.x509Bundle = x509bundle.FromX509Authorities(spiffeid.TrustDomain{}, trustAnchorCerts)
-
-	if f.jwksPath != nil {
-		jwks, err := os.ReadFile(*f.jwksPath)
-		if err != nil {
-			return fmt.Errorf("failed to read JWT bundle file '%s': %w", *f.jwksPath, err)
-		}
-
-		jwtBundle, err := jwtbundle.Parse(spiffeid.TrustDomain{}, jwks)
-		if err != nil {
-			return fmt.Errorf("failed to parse JWT bundle: %w", err)
-		}
-		f.jwtBundle = jwtBundle
-	}
-
-	var wg sync.WaitGroup
-	defer wg.Wait()
-
-	wg.Add(len(f.subs))
-	for _, ch := range f.subs {
-		go func(chi chan<- struct{}) {
-			defer wg.Done()
-			select {
-			case chi <- struct{}{}:
-			case <-ctx.Done():
-			}
-		}(ch)
-	}
-
-	return nil
 }
 
 func (f *file) GetX509BundleForTrustDomain(_ spiffeid.TrustDomain) (*x509bundle.Bundle, error) {
@@ -233,7 +194,9 @@ func (f *file) GetX509BundleForTrustDomain(_ spiffeid.TrustDomain) (*x509bundle.
 
 	f.lock.RLock()
 	defer f.lock.RUnlock()
+
 	bundle := f.x509Bundle
+
 	return bundle, nil
 }
 
@@ -246,7 +209,9 @@ func (f *file) GetJWTBundleForTrustDomain(_ spiffeid.TrustDomain) (*jwtbundle.Bu
 
 	f.lock.RLock()
 	defer f.lock.RUnlock()
+
 	bundle := f.jwtBundle
+
 	return bundle, nil
 }
 
@@ -277,18 +242,71 @@ func (f *file) Watch(ctx context.Context, ch chan<- []byte) {
 	}
 }
 
+func (f *file) updateAnchors(ctx context.Context) error {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	rootPEMs, err := os.ReadFile(f.caPath)
+	if err != nil {
+		return fmt.Errorf("failed to read trust anchors file '%s': %w", f.caPath, err)
+	}
+
+	trustAnchorCerts, err := pem.DecodePEMCertificates(rootPEMs)
+	if err != nil {
+		return fmt.Errorf("failed to decode trust anchors: %w", err)
+	}
+
+	f.rootPEM = rootPEMs
+	f.x509Bundle = x509bundle.FromX509Authorities(spiffeid.TrustDomain{}, trustAnchorCerts)
+
+	if f.jwksPath != nil {
+		jwks, err := os.ReadFile(*f.jwksPath)
+		if err != nil {
+			return fmt.Errorf("failed to read JWT bundle file '%s': %w", *f.jwksPath, err)
+		}
+
+		jwtBundle, err := jwtbundle.Parse(spiffeid.TrustDomain{}, jwks)
+		if err != nil {
+			return fmt.Errorf("failed to parse JWT bundle: %w", err)
+		}
+
+		f.jwtBundle = jwtBundle
+	}
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	wg.Add(len(f.subs))
+
+	for _, ch := range f.subs {
+		go func(chi chan<- struct{}) {
+			defer wg.Done()
+
+			select {
+			case chi <- struct{}{}:
+			case <-ctx.Done():
+			}
+		}(ch)
+	}
+
+	return nil
+}
+
 func filesExist(paths ...string) (bool, error) {
 	for _, path := range paths {
 		if path == "" {
 			continue
 		}
 
-		if _, err := os.Stat(path); err != nil {
+		_, err := os.Stat(path)
+		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				return false, nil
 			}
+
 			return false, fmt.Errorf("failed to stat file '%s': %w", path, err)
 		}
 	}
+
 	return true, nil
 }

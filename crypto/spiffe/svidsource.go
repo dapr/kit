@@ -81,6 +81,7 @@ func (s *svidSource) FetchJWTSVID(ctx context.Context, params jwtsvid.Params) (*
 	if !ok {
 		svid = s.spiffe.currentBaseJWTSVID
 	}
+
 	if svid == nil {
 		return nil, errNoJWTSVIDAvailable
 	}

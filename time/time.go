@@ -51,6 +51,7 @@ func ParseISO8601Duration(from string) (years int, months int, days int, duratio
 			err = errors.New("unsupported ISO8601 duration format: " + from)
 			return
 		}
+
 		repetition, err = strconv.Atoi(from[1:i])
 		if err != nil {
 			err = errors.New("unsupported ISO8601 duration format: " + from)
@@ -70,11 +71,14 @@ func ParseISO8601Duration(from string) (years int, months int, days int, duratio
 		err = errors.New("unsupported ISO8601 duration format: " + from)
 		return
 	}
+
 	i++
 
 	start := i
 	isParsingTime := false
+
 	var tmp int
+
 	for i < l {
 		switch from[i] {
 		case 'T':
@@ -82,6 +86,7 @@ func ParseISO8601Duration(from string) (years int, months int, days int, duratio
 				err = errors.New("unsupported ISO8601 duration format: " + from)
 				return
 			}
+
 			isParsingTime = true
 			start = i + 1
 
@@ -90,11 +95,13 @@ func ParseISO8601Duration(from string) (years int, months int, days int, duratio
 				err = errors.New("unsupported ISO8601 duration format: " + from)
 				return
 			}
+
 			years, err = strconv.Atoi(from[start:i])
 			if err != nil {
 				err = errors.New("unsupported ISO8601 duration format: " + from)
 				return
 			}
+
 			start = i + 1
 
 		case 'W':
@@ -102,11 +109,13 @@ func ParseISO8601Duration(from string) (years int, months int, days int, duratio
 				err = errors.New("unsupported ISO8601 duration format: " + from)
 				return
 			}
+
 			tmp, err = strconv.Atoi(from[start:i])
 			if err != nil {
 				err = errors.New("unsupported ISO8601 duration format: " + from)
 				return
 			}
+
 			days += tmp * 7
 			start = i + 1
 
@@ -115,11 +124,13 @@ func ParseISO8601Duration(from string) (years int, months int, days int, duratio
 				err = errors.New("unsupported ISO8601 duration format: " + from)
 				return
 			}
+
 			tmp, err = strconv.Atoi(from[start:i])
 			if err != nil {
 				err = errors.New("unsupported ISO8601 duration format: " + from)
 				return
 			}
+
 			days += tmp
 			start = i + 1
 
@@ -128,11 +139,13 @@ func ParseISO8601Duration(from string) (years int, months int, days int, duratio
 				err = errors.New("unsupported ISO8601 duration format: " + from)
 				return
 			}
+
 			tmp, err = strconv.Atoi(from[start:i])
 			if err != nil {
 				err = errors.New("unsupported ISO8601 duration format: " + from)
 				return
 			}
+
 			duration += time.Duration(tmp) * time.Hour
 			start = i + 1
 
@@ -141,11 +154,13 @@ func ParseISO8601Duration(from string) (years int, months int, days int, duratio
 				err = errors.New("unsupported ISO8601 duration format: " + from)
 				return
 			}
+
 			tmp, err = strconv.Atoi(from[start:i])
 			if err != nil {
 				err = errors.New("unsupported ISO8601 duration format: " + from)
 				return
 			}
+
 			duration += time.Duration(tmp) * time.Second
 			start = i + 1
 
@@ -154,16 +169,19 @@ func ParseISO8601Duration(from string) (years int, months int, days int, duratio
 				err = errors.New("unsupported ISO8601 duration format: " + from)
 				return
 			}
+
 			tmp, err = strconv.Atoi(from[start:i])
 			if err != nil {
 				err = errors.New("unsupported ISO8601 duration format: " + from)
 				return
 			}
+
 			if isParsingTime {
 				duration += time.Duration(tmp) * time.Minute
 			} else {
 				months = tmp
 			}
+
 			start = i + 1
 		}
 
@@ -181,10 +199,12 @@ func ParseDuration(from string) (int, int, int, time.Duration, int, error) {
 	if err == nil {
 		return y, m, d, dur, r, nil
 	}
+
 	dur, err = time.ParseDuration(from)
 	if err == nil {
 		return 0, 0, 0, dur, -1, nil
 	}
+
 	return 0, 0, 0, 0, 0, errors.New("unsupported duration format: " + from)
 }
 
@@ -201,17 +221,23 @@ func ParseTime(from string, offset *time.Time) (time.Time, error) {
 	} else {
 		start = time.Now()
 	}
+
 	y, m, d, dur, r, err := ParseISO8601Duration(from)
 	if err == nil {
 		if r != -1 {
 			return time.Time{}, errors.New("repetitions are not allowed")
 		}
+
 		return start.AddDate(y, m, d).Add(dur), nil
 	}
-	if dur, err = time.ParseDuration(from); err == nil {
+
+	dur, err = time.ParseDuration(from)
+	if err == nil {
 		return start.Add(dur), nil
 	}
-	if t, err := time.Parse(time.RFC3339Nano, from); err == nil {
+
+	t, err := time.Parse(time.RFC3339Nano, from)
+	if err == nil {
 		return t, nil
 	}
 

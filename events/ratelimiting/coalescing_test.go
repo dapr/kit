@@ -29,6 +29,7 @@ import (
 func TestCoalescing(t *testing.T) {
 	runCoalescingTests := func(t *testing.T, clock clock.WithTicker, opts OptionsCoalescing) (*coalescing, chan struct{}) {
 		t.Helper()
+
 		c, err := NewCoalescing(opts)
 		require.NoError(t, err)
 
@@ -38,6 +39,7 @@ func TestCoalescing(t *testing.T) {
 
 		ch := make(chan struct{})
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- c.Run(t.Context(), ch)
 		}()
@@ -58,6 +60,7 @@ func TestCoalescing(t *testing.T) {
 
 	assertChannel := func(t *testing.T, ch chan struct{}) {
 		t.Helper()
+
 		select {
 		case <-ch:
 		case <-time.After(time.Second):
@@ -67,6 +70,7 @@ func TestCoalescing(t *testing.T) {
 
 	assertNoChannel := func(t *testing.T, ch chan struct{}) {
 		t.Helper()
+
 		select {
 		case <-ch:
 			require.Fail(t, "should not have received event")
@@ -80,6 +84,7 @@ func TestCoalescing(t *testing.T) {
 
 		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- c.Run(ctx, make(chan struct{}))
 		}()
@@ -99,6 +104,7 @@ func TestCoalescing(t *testing.T) {
 		require.NoError(t, err)
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- c.Run(t.Context(), make(chan struct{}))
 		}()
@@ -118,6 +124,7 @@ func TestCoalescing(t *testing.T) {
 		require.NoError(t, err)
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- c.Run(t.Context(), make(chan struct{}))
 		}()
@@ -155,11 +162,11 @@ func TestCoalescing(t *testing.T) {
 		require.Error(t, err)
 
 		_, err = NewCoalescing(OptionsCoalescing{
-			MaxPendingEvents: ptr.Of(0),
+			MaxPendingEvents: new(int),
 		})
 		require.Error(t, err)
 		_, err = NewCoalescing(OptionsCoalescing{
-			MaxPendingEvents: ptr.Of(-1),
+			MaxPendingEvents: new(-1),
 		})
 		require.Error(t, err)
 
@@ -172,7 +179,7 @@ func TestCoalescing(t *testing.T) {
 		_, err = NewCoalescing(OptionsCoalescing{
 			InitialDelay:     ptr.Of(time.Second),
 			MaxDelay:         ptr.Of(time.Second * 2),
-			MaxPendingEvents: ptr.Of(2),
+			MaxPendingEvents: new(2),
 		})
 		require.NoError(t, err)
 	})
@@ -295,7 +302,7 @@ func TestCoalescing(t *testing.T) {
 		c, ch := runCoalescingTests(t, clock, OptionsCoalescing{
 			InitialDelay:     ptr.Of(time.Second),
 			MaxDelay:         ptr.Of(time.Second * 5),
-			MaxPendingEvents: ptr.Of(3),
+			MaxPendingEvents: new(3),
 		})
 
 		c.Add()
@@ -345,9 +352,11 @@ func TestCoalescing(t *testing.T) {
 		assertChannel(t, ch)
 
 		assert.Eventually(t, c.hasTimer.Load, time.Second, time.Millisecond)
+
 		for range 10 {
 			c.Add()
 		}
+
 		assert.Eventually(t, clock.HasWaiters, time.Second, time.Millisecond)
 		clock.Step(time.Second * 5)
 

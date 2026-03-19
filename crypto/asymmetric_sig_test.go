@@ -11,7 +11,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:nosnakecase
 package crypto
 
 import (
@@ -37,6 +36,7 @@ func TestSigningRSAPKCS1v15(t *testing.T) {
 	require.NotNil(t, key)
 
 	var signature []byte
+
 	t.Run("sign", func(t *testing.T) {
 		signature, err = SignPrivateKey(messageHash, Algorithm_RS256, key)
 		require.NoError(t, err)
@@ -45,6 +45,7 @@ func TestSigningRSAPKCS1v15(t *testing.T) {
 
 	t.Run("verify", func(t *testing.T) {
 		var valid bool
+
 		valid, err = VerifyPublicKey(messageHash, signature, Algorithm_RS256, key)
 		require.NoError(t, err)
 		require.True(t, valid)
@@ -57,6 +58,7 @@ func TestSigningRSAPSS(t *testing.T) {
 	require.NotNil(t, key)
 
 	var signature []byte
+
 	t.Run("sign", func(t *testing.T) {
 		signature, err = SignPrivateKey(messageHash, Algorithm_PS256, key)
 		require.NoError(t, err)
@@ -65,6 +67,7 @@ func TestSigningRSAPSS(t *testing.T) {
 
 	t.Run("verify", func(t *testing.T) {
 		var valid bool
+
 		valid, err = VerifyPublicKey(messageHash, signature, Algorithm_PS256, key)
 		require.NoError(t, err)
 		require.True(t, valid)
@@ -77,6 +80,7 @@ func TestSigningECDSA(t *testing.T) {
 	require.NotNil(t, key)
 
 	var signature []byte
+
 	t.Run("sign", func(t *testing.T) {
 		signature, err = SignPrivateKey(messageHash, Algorithm_ES256, key)
 		require.NoError(t, err)
@@ -85,6 +89,7 @@ func TestSigningECDSA(t *testing.T) {
 
 	t.Run("verify", func(t *testing.T) {
 		var valid bool
+
 		valid, err = VerifyPublicKey(messageHash, signature, Algorithm_ES256, key)
 		require.NoError(t, err)
 		require.True(t, valid)
@@ -98,6 +103,7 @@ func TestSigningEdDSA(t *testing.T) {
 	require.NotNil(t, key)
 
 	var signature []byte
+
 	t.Run("sign", func(t *testing.T) {
 		signature, err = SignPrivateKey([]byte(message), Algorithm_EdDSA, key)
 		require.NoError(t, err)
@@ -106,6 +112,7 @@ func TestSigningEdDSA(t *testing.T) {
 
 	t.Run("verify", func(t *testing.T) {
 		var valid bool
+
 		valid, err = VerifyPublicKey([]byte(message), signature, Algorithm_EdDSA, key)
 		require.NoError(t, err)
 		require.True(t, valid)

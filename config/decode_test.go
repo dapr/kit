@@ -27,7 +27,7 @@ import (
 	"github.com/dapr/kit/ptr"
 )
 
-type testConfig struct { //nolint: maligned
+type testConfig struct {
 	Int         int            `mapstructure:"int"`
 	IntPtr      *int           `mapstructure:"intPtr"`
 	Int64       int64          `mapstructure:"int64"`
@@ -95,37 +95,37 @@ func TestDecode(t *testing.T) {
 	tests := map[string]any{
 		"primitive values": map[string]any{
 			"int":         -9999,
-			"intPtr":      ptr.Of(-9999),
+			"intPtr":      new(-9999),
 			"int64":       -1234,
-			"int64Ptr":    ptr.Of(-12345),
+			"int64Ptr":    new(-12345),
 			"int32":       -5678,
-			"int32Ptr":    ptr.Of(-5678),
+			"int32Ptr":    new(-5678),
 			"int16":       -9012,
-			"int16Ptr":    ptr.Of(-9012),
+			"int16Ptr":    new(-9012),
 			"int8":        -128,
-			"int8Ptr":     ptr.Of(-128),
+			"int8Ptr":     new(-128),
 			"uint":        9999,
-			"uintPtr":     ptr.Of(9999),
+			"uintPtr":     new(9999),
 			"uint64":      1234,
-			"uint64Ptr":   ptr.Of(1234),
+			"uint64Ptr":   new(1234),
 			"uint32":      5678,
-			"uint32Ptr":   ptr.Of(5678),
+			"uint32Ptr":   new(5678),
 			"uint16":      9012,
-			"uint16Ptr":   ptr.Of(9012),
+			"uint16Ptr":   new(9012),
 			"byte":        255,
-			"bytePtr":     ptr.Of(255),
+			"bytePtr":     new(255),
 			"float64":     1234.5,
-			"float64Ptr":  ptr.Of(1234.5),
+			"float64Ptr":  new(1234.5),
 			"float32":     6789.5,
-			"float32Ptr":  ptr.Of(6789.5),
+			"float32Ptr":  new(6789.5),
 			"bool":        true,
-			"boolPtr":     ptr.Of(true),
+			"boolPtr":     new(true),
 			"duration":    5 * time.Second,
 			"durationPtr": ptr.Of(5 * time.Second),
 			"time":        timeVal,
-			"timePtr":     ptr.Of(timeVal),
+			"timePtr":     new(timeVal),
 			"string":      1234,
-			"stringPtr":   ptr.Of("1234"),
+			"stringPtr":   new("1234"),
 			"decoded":     "unlimited",
 			"decodedPtr":  "unlimited",
 			"nested": map[string]any{
@@ -184,9 +184,11 @@ func TestDecode(t *testing.T) {
 	}
 
 	expected := getExpected()
+
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			var actual testConfig
+
 			err := config.Decode(tc, &actual)
 			require.NoError(t, err)
 			assert.Equal(t, expected, actual)
@@ -196,6 +198,7 @@ func TestDecode(t *testing.T) {
 
 func TestDecodeErrors(t *testing.T) {
 	var actual testConfig
+
 	err := config.Decode(map[string]any{
 		"int":         "-badval",
 		"intPtr":      "-badval",
@@ -243,10 +246,12 @@ func TestDecodeErrors(t *testing.T) {
 	errMsg = errMsg[prefixIndex+len(expectedPrefix):]
 	errMsg = strings.TrimSpace(errMsg)
 	errors := strings.Split(errMsg, "\n")
+
 	errorSet := make(map[string]struct{}, len(errors))
 	for _, e := range errors {
 		errorSet[e] = struct{}{}
 	}
+
 	expectedErrors := []string{
 		"* error decoding 'int': invalid int \"-badval\"",
 		"* error decoding 'intPtr': invalid int \"-badval\"",
@@ -285,6 +290,7 @@ func TestDecodeErrors(t *testing.T) {
 		assert.Contains(t, errors, expectedError)
 		delete(errorSet, expectedError)
 	}
+
 	assert.Empty(t, errorSet)
 }
 
@@ -299,39 +305,39 @@ func getExpected() testConfig {
 
 	return testConfig{
 		Int:         -9999,
-		IntPtr:      ptr.Of(-9999),
+		IntPtr:      new(-9999),
 		Int64:       -1234,
-		Int64Ptr:    ptr.Of(int64(-12345)),
+		Int64Ptr:    new(int64(-12345)),
 		Int32:       -5678,
-		Int32Ptr:    ptr.Of(int32(-5678)),
+		Int32Ptr:    new(int32(-5678)),
 		Int16:       -9012,
-		Int16Ptr:    ptr.Of(int16(-9012)),
+		Int16Ptr:    new(int16(-9012)),
 		Int8:        -128,
-		Int8Ptr:     ptr.Of(int8(-128)),
+		Int8Ptr:     new(int8(-128)),
 		Uint:        9999,
-		UintPtr:     ptr.Of(uint(9999)),
+		UintPtr:     new(uint(9999)),
 		Uint64:      1234,
-		Uint64Ptr:   ptr.Of(uint64(1234)),
+		Uint64Ptr:   new(uint64(1234)),
 		Uint32:      5678,
-		Uint32Ptr:   ptr.Of(uint32(5678)),
+		Uint32Ptr:   new(uint32(5678)),
 		Uint16:      9012,
-		Uint16Ptr:   ptr.Of(uint16(9012)),
+		Uint16Ptr:   new(uint16(9012)),
 		Byte:        255,
-		BytePtr:     ptr.Of(byte(255)),
+		BytePtr:     new(byte(255)),
 		Float64:     1234.5,
-		Float64Ptr:  ptr.Of(1234.5),
+		Float64Ptr:  new(1234.5),
 		Float32:     6789.5,
-		Float32Ptr:  ptr.Of(float32(6789.5)),
+		Float32Ptr:  new(float32(6789.5)),
 		Bool:        true,
-		BoolPtr:     ptr.Of(true),
+		BoolPtr:     new(true),
 		Duration:    5 * time.Second,
 		DurationPtr: ptr.Of(5 * time.Second),
 		Time:        timeVal,
-		TimePtr:     ptr.Of(timeVal),
+		TimePtr:     new(timeVal),
 		String:      "1234",
-		StringPtr:   ptr.Of("1234"),
+		StringPtr:   new("1234"),
 		Decoded:     -1,
-		DecodedPtr:  ptr.Of(Decoded(-1)),
+		DecodedPtr:  new(Decoded(-1)),
 		Nested: nested{
 			Integer: 1234,
 			String:  "5678",

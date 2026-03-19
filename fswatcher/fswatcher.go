@@ -53,7 +53,8 @@ func New(opts Options) (*FSWatcher, error) {
 	}
 
 	for _, target := range opts.Targets {
-		if err = w.Add(target); err != nil {
+		err = w.Add(target)
+		if err != nil {
 			return nil, fmt.Errorf("failed to add target %s: %w", target, err)
 		}
 	}
@@ -83,11 +84,13 @@ func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
 					if !ok || err == nil {
 						return nil
 					}
+
 					return errors.Join(fmt.Errorf("watcher error: %w", err), f.w.Close())
 				case fsEvent, ok := <-f.w.Events:
 					if !ok {
 						return nil
 					}
+
 					f.enqueue(l, fsEvent.Name)
 				}
 			}
@@ -95,6 +98,7 @@ func (f *FSWatcher) Run(ctx context.Context, eventCh chan<- struct{}) error {
 		func(ctx context.Context) error {
 			<-ctx.Done()
 			l.Close(event{shutdown: true})
+
 			return nil
 		},
 	).Run(ctx)
@@ -116,11 +120,13 @@ func (f *FSWatcher) enqueue(l loop.Interface[event], name string) {
 	const debounceInterval = 5 * time.Millisecond
 
 	var timer *time.Timer
+
 	timer = time.AfterFunc(debounceInterval, func() {
 		// Lock only long enough to confirm this timer is still the current one for
 		// this name and remove the entry, then release before calling l.Enqueue so
 		// we never hold lock across an external call.
 		f.lock.Lock()
+
 		current := f.debounce[name]
 		if current != timer {
 			// This callback is for a stale timer; a newer one has
@@ -128,6 +134,7 @@ func (f *FSWatcher) enqueue(l loop.Interface[event], name string) {
 			f.lock.Unlock()
 			return
 		}
+
 		delete(f.debounce, name)
 		f.lock.Unlock()
 		l.Enqueue(event{name: name})

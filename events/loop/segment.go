@@ -32,6 +32,7 @@ func (l *loop[T]) getSegment() *queueSegment[T] {
 	if segSize == 0 {
 		segSize = 1
 	}
+
 	seg.ch = make(chan T, segSize)
 
 	return seg
@@ -42,6 +43,7 @@ func (l *loop[T]) putSegment(seg *queueSegment[T]) {
 	if seg == nil {
 		return
 	}
+
 	seg.ch = nil
 	seg.next = nil
 	l.factory.segPool.Put(seg)

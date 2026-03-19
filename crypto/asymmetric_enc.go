@@ -11,7 +11,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:nosnakecase
 package crypto
 
 import (
@@ -61,7 +60,8 @@ func encryptPublicKeyRSAPKCS1v15(plaintext []byte, key jwk.Key) ([]byte, error) 
 	if key.Raw(rsaKey) != nil {
 		return nil, ErrKeyTypeMismatch
 	}
-	return rsa.EncryptPKCS1v15(rand.Reader, rsaKey, plaintext)
+
+	return rsa.EncryptPKCS1v15(rand.Reader, rsaKey, plaintext) //nolint:staticcheck
 }
 
 func encryptPublicKeyRSAOAEP(plaintext []byte, key jwk.Key, hash crypto.Hash, label []byte) ([]byte, error) {
@@ -69,6 +69,7 @@ func encryptPublicKeyRSAOAEP(plaintext []byte, key jwk.Key, hash crypto.Hash, la
 	if key.Raw(rsaKey) != nil {
 		return nil, ErrKeyTypeMismatch
 	}
+
 	return rsa.EncryptOAEP(hash.New(), rand.Reader, rsaKey, plaintext, label)
 }
 
@@ -95,7 +96,8 @@ func decryptPrivateKeyRSAPKCS1v15(ciphertext []byte, key jwk.Key) ([]byte, error
 	if key.Raw(rsaKey) != nil {
 		return nil, ErrKeyTypeMismatch
 	}
-	return rsa.DecryptPKCS1v15(rand.Reader, rsaKey, ciphertext)
+
+	return rsa.DecryptPKCS1v15(rand.Reader, rsaKey, ciphertext) //nolint:staticcheck
 }
 
 func decryptPrivateKeyRSAOAEP(ciphertext []byte, key jwk.Key, hash crypto.Hash, label []byte) ([]byte, error) {
@@ -103,5 +105,6 @@ func decryptPrivateKeyRSAOAEP(ciphertext []byte, key jwk.Key, hash crypto.Hash, 
 	if key.Raw(rsaKey) != nil {
 		return nil, ErrKeyTypeMismatch
 	}
+
 	return rsa.DecryptOAEP(hash.New(), rand.Reader, rsaKey, ciphertext, label)
 }
