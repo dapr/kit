@@ -34,18 +34,18 @@ var (
 
 func TestScheme(t *testing.T) {
 	// Fake wrapKeyFn and unwrapKeyFn, which just return the plaintext key
-	//nolint:stylecheck
-	var wrapKeyFn WrapKeyFn = func(plaintextKey []byte, algorithm, keyName string, nonce []byte) (wrappedKey []byte, tag []byte, err error) {
+	wrapKeyFn := func(plaintextKey []byte, algorithm, keyName string, nonce []byte) (wrappedKey []byte, tag []byte, err error) {
 		return plaintextKey, nil, nil
 	}
-	//nolint:stylecheck
-	var unwrapKeyFn UnwrapKeyFn = func(wrappedKey []byte, algorithm, keyName string, nonce, tag []byte) (plaintextKey []byte, err error) {
+	unwrapKeyFn := func(wrappedKey []byte, algorithm, keyName string, nonce, tag []byte) (plaintextKey []byte, err error) {
 		return wrappedKey, nil
 	}
 
 	// In all these tests, the key name and wrapping algorithms don't matter as we don't actually wrap/unwrap keys
-	const keyName = "mykey"
-	const algorithm = KeyAlgorithmAES
+	const (
+		keyName   = "mykey"
+		algorithm = KeyAlgorithmAES
+	)
 
 	testData := map[string][]byte{
 		// Data is short and fits in a single segment
@@ -92,7 +92,9 @@ func TestScheme(t *testing.T) {
 				start := idx + 1
 				idx = bytes.IndexByte(encData[start:], '\n')
 				require.Positive(t, idx)
+
 				var manifest Manifest
+
 				err = json.Unmarshal(encData[start:(start+idx)], &manifest)
 				require.NoError(t, err)
 				require.NoError(t, manifest.Validate())
@@ -145,6 +147,7 @@ func TestScheme(t *testing.T) {
 			return func(t *testing.T) {
 				enc, err := os.Open(filepath.Join("testdata", fileName))
 				require.NoError(t, err)
+
 				defer enc.Close()
 
 				// Decrypt the encrypted data
@@ -194,7 +197,9 @@ func TestScheme(t *testing.T) {
 		require.Greater(t, start, 14)
 		end := start + bytes.IndexByte(encData[start:], '\n')
 		require.Greater(t, end, start)
+
 		var manifest Manifest
+
 		err = json.Unmarshal(encData[start:end], &manifest)
 		require.NoError(t, err)
 		require.NoError(t, manifest.Validate())
@@ -226,7 +231,9 @@ func TestScheme(t *testing.T) {
 		require.Greater(t, start, 14)
 		end := start + bytes.IndexByte(encData[start:], '\n')
 		require.Greater(t, end, start)
+
 		var manifest Manifest
+
 		err = json.Unmarshal(encData[start:end], &manifest)
 		require.NoError(t, err)
 		require.NoError(t, manifest.Validate())
@@ -257,7 +264,9 @@ func TestScheme(t *testing.T) {
 		require.Greater(t, start, 14)
 		end := start + bytes.IndexByte(encData[start:], '\n')
 		require.Greater(t, end, start)
+
 		var manifest Manifest
+
 		err = json.Unmarshal(encData[start:end], &manifest)
 		require.NoError(t, err)
 		require.NoError(t, manifest.Validate())
@@ -267,6 +276,7 @@ func TestScheme(t *testing.T) {
 	t.Run("decryption of a message created with OmitKeyName requires passing a key name", func(t *testing.T) {
 		enc, err := os.Open(filepath.Join("testdata", "single-segment-no-key-name.enc"))
 		require.NoError(t, err)
+
 		defer enc.Close()
 
 		// Decryption requires passing the key name
@@ -288,6 +298,7 @@ func TestScheme(t *testing.T) {
 	t.Run("decryption of a message created with OmitKeyName fails without a key name", func(t *testing.T) {
 		enc, err := os.Open(filepath.Join("testdata", "single-segment-no-key-name.enc"))
 		require.NoError(t, err)
+
 		defer enc.Close()
 
 		// Do not pass a key name
@@ -307,12 +318,14 @@ func TestScheme(t *testing.T) {
 			gotKeyName   string
 			gotAlgorithm string
 		)
+
 		_, err := Encrypt(
 			strings.NewReader("hello world"),
 			EncryptOptions{
 				WrapKeyFn: func(plaintextKey []byte, algorithm, keyName string, nonce []byte) (wrappedKey []byte, tag []byte, err error) {
 					gotAlgorithm = algorithm
 					gotKeyName = keyName
+
 					return wrapKeyFn(plaintextKey, algorithm, keyName, nonce)
 				},
 				// The actual values don't matter in this test
@@ -331,10 +344,12 @@ func TestScheme(t *testing.T) {
 	t.Run("override key name in decryption", func(t *testing.T) {
 		enc, err := os.Open(filepath.Join("testdata", "single-segment.enc"))
 		require.NoError(t, err)
+
 		defer enc.Close()
 
 		// Decrypt the encrypted data
 		var gotKeyName string
+
 		dec, err := Decrypt(
 			enc,
 			DecryptOptions{
@@ -393,6 +408,7 @@ func TestScheme(t *testing.T) {
 	t.Run("unwrapping key fails in Decrypt", func(t *testing.T) {
 		f, err := os.Open(filepath.Join("testdata", "single-segment.enc"))
 		require.NoError(t, err)
+
 		defer f.Close()
 
 		// When the wrapping function returns an error, that is swallowed and the user will only see "failed to validate the document's signature"
@@ -413,6 +429,7 @@ func TestScheme(t *testing.T) {
 	t.Run("unwrapping key returns different key in Decrypt", func(t *testing.T) {
 		f, err := os.Open(filepath.Join("testdata", "single-segment.enc"))
 		require.NoError(t, err)
+
 		defer f.Close()
 
 		dec, err := Decrypt(
@@ -455,6 +472,7 @@ func TestScheme(t *testing.T) {
 	t.Run("decryption fails with manifest not found", func(t *testing.T) {
 		f, err := os.Open(filepath.Join("testdata", "single-segment.enc"))
 		require.NoError(t, err)
+
 		defer f.Close()
 
 		dec, err := Decrypt(
@@ -483,6 +501,7 @@ func TestScheme(t *testing.T) {
 	t.Run("decryption fails with manifest not valid JSON", func(t *testing.T) {
 		f, err := os.Open(filepath.Join("testdata", "single-segment.enc"))
 		require.NoError(t, err)
+
 		defer f.Close()
 
 		// This manifest will not unmarshal as JSON
@@ -502,6 +521,7 @@ func TestScheme(t *testing.T) {
 	t.Run("decryption fails with manifest not validating", func(t *testing.T) {
 		f, err := os.Open(filepath.Join("testdata", "single-segment.enc"))
 		require.NoError(t, err)
+
 		defer f.Close()
 
 		// This manifest will unmarshal into the Manifest struct, but will fail the Validate() method
@@ -522,6 +542,7 @@ func TestScheme(t *testing.T) {
 	t.Run("decryption fails with MAC not found", func(t *testing.T) {
 		f, err := os.Open(filepath.Join("testdata", "single-segment.enc"))
 		require.NoError(t, err)
+
 		defer f.Close()
 
 		dec, err := Decrypt(
@@ -538,6 +559,7 @@ func TestScheme(t *testing.T) {
 	t.Run("decryption fails with MAC zero bytes", func(t *testing.T) {
 		f, err := os.Open(filepath.Join("testdata", "single-segment.enc"))
 		require.NoError(t, err)
+
 		defer f.Close()
 
 		in := io.MultiReader(
@@ -558,6 +580,7 @@ func TestScheme(t *testing.T) {
 	t.Run("decryption fails with MAC not valid Base64", func(t *testing.T) {
 		f, err := os.Open(filepath.Join("testdata", "single-segment.enc"))
 		require.NoError(t, err)
+
 		defer f.Close()
 
 		// Replace some bytes in the MAC
@@ -577,12 +600,13 @@ func TestScheme(t *testing.T) {
 	t.Run("decryption fails with header too long", func(t *testing.T) {
 		f, err := os.Open(filepath.Join("testdata", "single-segment.enc"))
 		require.NoError(t, err)
+
 		defer f.Close()
 
 		// After the manifest (included in the first 120 bytes), add 80KB of zeros
 		in := io.MultiReader(
 			io.LimitReader(f, 120),
-			bytes.NewReader(bytes.Repeat([]byte{0}, 120<<10)),
+			bytes.NewReader(make([]byte, 120<<10)),
 		)
 		dec, err := Decrypt(
 			in,
@@ -598,6 +622,7 @@ func TestScheme(t *testing.T) {
 	t.Run("decryption fails with input stream error after header", func(t *testing.T) {
 		f, err := os.Open(filepath.Join("testdata", "single-segment.enc"))
 		require.NoError(t, err)
+
 		defer f.Close()
 
 		dec, err := Decrypt(
@@ -616,6 +641,7 @@ func TestScheme(t *testing.T) {
 	t.Run("decryption fails when a byte is changed in the ciphertext", func(t *testing.T) {
 		f, err := os.Open(filepath.Join("testdata", "large-file.enc"))
 		require.NoError(t, err)
+
 		defer f.Close()
 
 		// Replace a byte in the second segment (segment 1)
@@ -638,6 +664,7 @@ func TestScheme(t *testing.T) {
 	t.Run("decryption fails when a segment is removed from the ciphertext", func(t *testing.T) {
 		f, err := os.Open(filepath.Join("testdata", "large-file.enc"))
 		require.NoError(t, err)
+
 		defer f.Close()
 
 		// Remove the third segment (segment 2)
@@ -660,6 +687,7 @@ func TestScheme(t *testing.T) {
 	t.Run("decryption fails when the last segment is removed from the ciphertext", func(t *testing.T) {
 		f, err := os.Open(filepath.Join("testdata", "large-file.enc"))
 		require.NoError(t, err)
+
 		defer f.Close()
 
 		// Remove the last segment (segment 4)
@@ -770,8 +798,10 @@ func TestReplaceReader(t *testing.T) {
 	const message = "Ho sceso, dandoti il braccio, almeno un milione di scale e ora che non ci sei è il vuoto ad ogni gradino."
 
 	t.Run("replace bytes", func(t *testing.T) {
-		const replace = "✂️"
-		const expect = "Ho sceso, dandoti il braccio, almeno un milione di scale e ora✂️è il vuoto ad ogni gradino."
+		const (
+			replace = "✂️"
+			expect  = "Ho sceso, dandoti il braccio, almeno un milione di scale e ora✂️è il vuoto ad ogni gradino."
+		)
 
 		rr := newReplaceReader(strings.NewReader(message), 62, 78, strings.NewReader(replace))
 		read, err := io.ReadAll(rr)
@@ -840,6 +870,7 @@ func (r *replaceReader) Read(p []byte) (int, error) {
 			err = nil
 			r.replace = nil
 		}
+
 		return n, err
 	}
 
@@ -847,6 +878,7 @@ func (r *replaceReader) Read(p []byte) (int, error) {
 	if (max + r.read) > r.cutStart {
 		max = r.cutStart - r.read
 	}
+
 	n, err := r.stream.Read(p[:max])
 	r.read += n
 
@@ -857,6 +889,7 @@ func (r *replaceReader) Read(p []byte) (int, error) {
 		} else {
 			io.CopyN(io.Discard, r.stream, int64(r.cutEnd-r.cutStart))
 		}
+
 		r.replacing = true
 	}
 

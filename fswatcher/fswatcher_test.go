@@ -37,12 +37,14 @@ func TestFSWatcher(t *testing.T) {
 		errCh := make(chan error)
 		ctx, cancel := context.WithCancel(t.Context())
 		eventsCh := make(chan struct{})
+
 		go func() {
 			errCh <- f.Run(ctx, eventsCh)
 		}()
 
 		t.Cleanup(func() {
 			cancel()
+
 			select {
 			case err := <-errCh:
 				require.NoError(t, err)
@@ -52,6 +54,7 @@ func TestFSWatcher(t *testing.T) {
 		})
 
 		assert.Eventually(t, f.running.Load, time.Second, time.Millisecond*10)
+
 		return eventsCh
 	}
 
@@ -89,6 +92,7 @@ func TestFSWatcher(t *testing.T) {
 			// If running in windows, wait for notify to be ready.
 			time.Sleep(time.Second)
 		}
+
 		require.NoError(t, os.WriteFile(fp, []byte{}, 0o600))
 
 		select {
@@ -109,6 +113,7 @@ func TestFSWatcher(t *testing.T) {
 		assert.Empty(t, eventsCh)
 		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
 		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
+
 		for range 2 {
 			select {
 			case <-eventsCh:
@@ -122,18 +127,22 @@ func TestFSWatcher(t *testing.T) {
 		dir := t.TempDir()
 		fp1 := filepath.Join(dir, "test1.txt")
 		fp2 := filepath.Join(dir, "test2.txt")
+
 		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
 		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
 		eventsCh := runWatcher(t, Options{
 			Targets: []string{fp1, fp2},
 		})
+
 		if runtime.GOOS == "windows" {
 			// If running in windows, wait for notify to be ready.
 			time.Sleep(time.Second)
 		}
+
 		assert.Empty(t, eventsCh)
 		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
 		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
+
 		for range 2 {
 			select {
 			case <-eventsCh:
@@ -154,6 +163,7 @@ func TestFSWatcher(t *testing.T) {
 		assert.Empty(t, eventsCh)
 		require.NoError(t, os.WriteFile(fp1, []byte{}, 0o600))
 		require.NoError(t, os.WriteFile(fp2, []byte{}, 0o600))
+
 		for range 2 {
 			select {
 			case <-eventsCh:

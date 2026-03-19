@@ -43,6 +43,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("runner with a task that completes should return nil", func(t *testing.T) {
 		var i atomic.Int32
+
 		require.NoError(t, NewRunnerCloserManager(log, nil, func(context.Context) error {
 			i.Add(1)
 			return nil
@@ -52,6 +53,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("runner with a task and closer that completes should return nil", func(t *testing.T) {
 		var i atomic.Int32
+
 		mngr := NewRunnerCloserManager(log, nil, func(context.Context) error {
 			i.Add(1)
 			return nil
@@ -66,6 +68,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("runner with multiple tasks and closers that complete should return nil", func(t *testing.T) {
 		var i atomic.Int32
+
 		mngr := NewRunnerCloserManager(log, nil,
 			func(context.Context) error {
 				i.Add(1)
@@ -104,6 +107,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("a runner that errors should error but still call the closers", func(t *testing.T) {
 		var i atomic.Int32
+
 		mngr := NewRunnerCloserManager(log, nil,
 			func(context.Context) error {
 				i.Add(1)
@@ -131,6 +135,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("a runner that has closter errors should error", func(t *testing.T) {
 		var i atomic.Int32
+
 		mngr := NewRunnerCloserManager(log, nil,
 			func(context.Context) error {
 				i.Add(1)
@@ -158,6 +163,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("a runner with multiple errors should collect all errors (string match)", func(t *testing.T) {
 		var i atomic.Int32
+
 		mngr := NewRunnerCloserManager(log, nil,
 			func(context.Context) error {
 				i.Add(1)
@@ -195,6 +201,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("a runner with multiple errors should collect all errors (unique)", func(t *testing.T) {
 		var i atomic.Int32
+
 		mngr := NewRunnerCloserManager(log, nil,
 			func(context.Context) error {
 				i.Add(1)
@@ -235,6 +242,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("should be able to add runner with New, Add and AddCloser", func(t *testing.T) {
 		var i atomic.Int32
+
 		mngr := NewRunnerCloserManager(log, nil,
 			func(context.Context) error {
 				i.Add(1)
@@ -271,6 +279,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("when a runner returns, expect context to be cancelled for other runners, but not for closers returning", func(t *testing.T) {
 		var i atomic.Int32
+
 		mngr := NewRunnerCloserManager(log, nil,
 			func(context.Context) error {
 				i.Add(1)
@@ -278,49 +287,60 @@ func Test_RunnerClosterManager(t *testing.T) {
 			},
 			func(ctx context.Context) error {
 				i.Add(1)
+
 				select {
 				case <-ctx.Done():
 				case <-time.After(time.Second):
 					t.Error("context should have been cancelled in time")
 				}
+
 				return nil
 			},
 			func(ctx context.Context) error {
 				i.Add(1)
+
 				select {
 				case <-ctx.Done():
 				case <-time.After(time.Second):
 					t.Error("context should have been cancelled in time")
 				}
+
 				return nil
 			},
 		)
 
 		closer1Ch := make(chan struct{})
 		closer2Ch := make(chan struct{})
+
 		require.NoError(t, mngr.AddCloser(
 			func(context.Context) error {
 				i.Add(1)
 				close(closer1Ch)
+
 				return nil
 			},
 			func(ctx context.Context) error {
 				i.Add(1)
+
 				select {
 				case <-ctx.Done():
 					t.Error("context should not have been cancelled")
 				case <-closer1Ch:
 				}
+
 				close(closer2Ch)
+
 				return nil
 			},
 			func(ctx context.Context) error {
 				i.Add(1)
+
 				select {
 				case <-ctx.Done():
 					t.Error("context should not have been cancelled")
 				case <-closer2Ch:
 				}
+
 				return nil
 			},
 		))
@@ -331,23 +351,28 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("when a runner errors, expect context to be cancelled for other runners, but closers should still run", func(t *testing.T) {
 		var i atomic.Int32
+
 		mngr := NewRunnerCloserManager(log, nil,
 			func(ctx context.Context) error {
 				i.Add(1)
+
 				select {
 				case <-ctx.Done():
 				case <-time.After(time.Second):
 					t.Error("context should have been cancelled in time")
 				}
+
 				return errors.New("error1")
 			},
 			func(ctx context.Context) error {
 				i.Add(1)
+
 				select {
 				case <-ctx.Done():
 				case <-time.After(time.Second):
 					t.Error("context should have been cancelled in time")
 				}
+
 				return errors.New("error2")
 			},
 			func(context.Context) error {
@@ -359,20 +384,24 @@ func Test_RunnerClosterManager(t *testing.T) {
 		require.NoError(t, mngr.AddCloser(
 			func(ctx context.Context) error {
 				i.Add(1)
+
 				select {
 				case <-ctx.Done():
 					t.Error("context should not have been cancelled")
 				default:
 				}
+
 				return errors.New("closererror1")
 			},
 			func(ctx context.Context) error {
 				i.Add(1)
+
 				select {
 				case <-ctx.Done():
 					t.Error("context should not have been cancelled")
 				default:
 				}
+
 				return errors.New("closererror2")
 			},
 		))
@@ -388,6 +417,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("a manger started twice should error", func(t *testing.T) {
 		var i atomic.Int32
+
 		m := NewRunnerCloserManager(log, nil, func(context.Context) error {
 			i.Add(1)
 			return nil
@@ -400,6 +430,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("a manger started twice should error", func(t *testing.T) {
 		var i atomic.Int32
+
 		m := NewRunnerCloserManager(log, nil, func(context.Context) error {
 			i.Add(1)
 			return nil
@@ -420,12 +451,14 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("adding a task to a started manager should error", func(t *testing.T) {
 		var i atomic.Int32
+
 		m := NewRunnerCloserManager(log, nil, func(context.Context) error {
 			i.Add(1)
 			return nil
 		})
 		require.NoError(t, m.Run(t.Context()))
 		assert.Equal(t, int32(1), i.Load())
+
 		err := m.Add(func(context.Context) error {
 			i.Add(1)
 			return nil
@@ -437,6 +470,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 
 	t.Run("adding a closer to a closing manager should error", func(t *testing.T) {
 		var i atomic.Int32
+
 		m := NewRunnerCloserManager(log, nil, func(context.Context) error {
 			i.Add(1)
 			return nil
@@ -469,6 +503,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 		mngr := NewRunnerCloserManager(log, &dur)
 
 		var i atomic.Int32
+
 		require.NoError(t, mngr.AddCloser(func() {
 			i.Add(1)
 		}))
@@ -479,12 +514,14 @@ func Test_RunnerClosterManager(t *testing.T) {
 		mngr.clock = clock
 
 		fatalCalled := make(chan struct{})
+
 		mngr.WithFatalShutdown(func() {
 			i.Add(1)
 			close(fatalCalled)
 		})
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- mngr.Run(t.Context())
 		}()
@@ -519,6 +556,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 		t.Cleanup(cancel)
 
 		fatalCalled := make(chan struct{})
+
 		mngr.WithFatalShutdown(func() {
 			close(fatalCalled)
 		})
@@ -528,6 +566,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 		})
 
 		errCh := make(chan error)
+
 		t.Cleanup(func() {
 			select {
 			case err := <-errCh:
@@ -536,6 +575,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 				t.Error("manager not closed")
 			}
 		})
+
 		go func() {
 			errCh <- mngr.Run(t.Context())
 		}()
@@ -551,6 +591,7 @@ func Test_RunnerClosterManager(t *testing.T) {
 		case <-time.After(time.Second * 3):
 			t.Error("fatal shutdown not called")
 		}
+
 		cancel()
 	})
 }
@@ -558,11 +599,13 @@ func Test_RunnerClosterManager(t *testing.T) {
 func TestClose(t *testing.T) {
 	t.Run("calling close should stop the main runner and call all closers", func(t *testing.T) {
 		var i atomic.Int32
+
 		runnerWaiting := make(chan struct{})
 		mngr := NewRunnerCloserManager(log, nil, func(ctx context.Context) error {
 			close(runnerWaiting)
 			<-ctx.Done()
 			i.Add(1)
+
 			return nil
 		})
 		require.NoError(t, mngr.AddCloser(func() {
@@ -570,6 +613,7 @@ func TestClose(t *testing.T) {
 		}))
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- mngr.Run(t.Context())
 		}()
@@ -594,15 +638,18 @@ func TestClose(t *testing.T) {
 
 	t.Run("calling close should wait for all closers to return", func(t *testing.T) {
 		var i atomic.Int32
+
 		runnerWaiting := make(chan struct{})
 		mngr := NewRunnerCloserManager(log, nil, func(ctx context.Context) error {
 			close(runnerWaiting)
 			<-ctx.Done()
 			i.Add(1)
+
 			return nil
 		})
 
 		returnClose := make(chan struct{})
+
 		require.NoError(t, mngr.AddCloser(
 			func() {
 				i.Add(1)
@@ -611,16 +658,19 @@ func TestClose(t *testing.T) {
 			func() error {
 				i.Add(1)
 				<-returnClose
+
 				return nil
 			},
 			func(context.Context) error {
 				i.Add(1)
 				<-returnClose
+
 				return nil
 			},
 			mockCloser(func() error {
 				i.Add(1)
 				<-returnClose
+
 				return nil
 			}),
 		))
@@ -628,6 +678,7 @@ func TestClose(t *testing.T) {
 		assert.Len(t, mngr.closers, 4)
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- mngr.Run(t.Context())
 		}()
@@ -642,6 +693,7 @@ func TestClose(t *testing.T) {
 		assert.Equal(t, int32(0), i.Load())
 
 		closeReturned := make(chan struct{})
+
 		go func() {
 			mngr.Close()
 			close(closeReturned)
@@ -669,12 +721,15 @@ func TestClose(t *testing.T) {
 
 	t.Run("calling close should wait for all closers return but should not call fatal when enabled", func(t *testing.T) {
 		dur := time.Second
+
 		var i atomic.Int32
+
 		runnerWaiting := make(chan struct{})
 		mngr := NewRunnerCloserManager(log, &dur, func(ctx context.Context) error {
 			close(runnerWaiting)
 			<-ctx.Done()
 			i.Add(1)
+
 			return nil
 		})
 
@@ -688,6 +743,7 @@ func TestClose(t *testing.T) {
 		assert.Len(t, mngr.closers, 1)
 
 		returnClose := make(chan struct{})
+
 		require.NoError(t, mngr.AddCloser(
 			func() {
 				i.Add(1)
@@ -696,16 +752,19 @@ func TestClose(t *testing.T) {
 			func() error {
 				i.Add(1)
 				<-returnClose
+
 				return nil
 			},
 			func(context.Context) error {
 				i.Add(1)
 				<-returnClose
+
 				return nil
 			},
 			mockCloser(func() error {
 				i.Add(1)
 				<-returnClose
+
 				return nil
 			}),
 		))
@@ -713,6 +772,7 @@ func TestClose(t *testing.T) {
 		assert.Len(t, mngr.closers, 5)
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- mngr.Run(t.Context())
 		}()
@@ -727,6 +787,7 @@ func TestClose(t *testing.T) {
 		assert.Equal(t, int32(0), i.Load())
 
 		closeReturned := make(chan struct{})
+
 		go func() {
 			mngr.Close()
 			close(closeReturned)
@@ -756,12 +817,15 @@ func TestClose(t *testing.T) {
 
 	t.Run("calling close should call fatal if the grace period is reached", func(t *testing.T) {
 		dur := time.Second
+
 		var i atomic.Int32
+
 		runnerWaiting := make(chan struct{})
 		mngr := NewRunnerCloserManager(log, &dur, func(ctx context.Context) error {
 			close(runnerWaiting)
 			<-ctx.Done()
 			i.Add(1)
+
 			return nil
 		})
 
@@ -769,6 +833,7 @@ func TestClose(t *testing.T) {
 		mngr.clock = clock
 
 		fatalCalled := make(chan struct{})
+
 		mngr.WithFatalShutdown(func() {
 			close(fatalCalled)
 		})
@@ -776,6 +841,7 @@ func TestClose(t *testing.T) {
 		assert.Len(t, mngr.closers, 1)
 
 		returnClose := make(chan struct{})
+
 		for range 4 {
 			require.NoError(t, mngr.AddCloser(func() {
 				i.Add(1)
@@ -786,6 +852,7 @@ func TestClose(t *testing.T) {
 		assert.Len(t, mngr.closers, 5)
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- mngr.Run(t.Context())
 		}()
@@ -800,6 +867,7 @@ func TestClose(t *testing.T) {
 		assert.Equal(t, int32(0), i.Load())
 
 		closeReturned := make(chan struct{})
+
 		go func() {
 			mngr.Close()
 			close(closeReturned)
@@ -849,6 +917,7 @@ func TestClose(t *testing.T) {
 		))
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- mngr.Run(t.Context())
 		}()
@@ -920,9 +989,11 @@ func TestAddCloser(t *testing.T) {
 
 		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- mngr.Run(ctx)
 		}()
+
 		require.NoError(t, mngr.AddCloser(func() {}))
 		cancel()
 		require.NoError(t, <-errCh)
@@ -933,12 +1004,14 @@ func TestAddCloser(t *testing.T) {
 
 		ctx, cancel := context.WithCancel(t.Context())
 		closerCh := make(chan struct{})
+
 		require.NoError(t, mngr.AddCloser(func() {
 			cancel()
 			<-closerCh
 		}))
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- mngr.Run(t.Context())
 		}()
@@ -950,6 +1023,7 @@ func TestAddCloser(t *testing.T) {
 		}
 
 		closeErrCh := make(chan error)
+
 		go func() {
 			closeErrCh <- mngr.AddCloser(nil)
 		}()
@@ -989,12 +1063,14 @@ func TestWaitUntilShutdown(t *testing.T) {
 	mngr.clock = clock
 
 	shutDownReturned := make(chan struct{})
+
 	go func() {
 		mngr.WaitUntilShutdown()
 		close(shutDownReturned)
 	}()
 
 	returnClose := make(chan struct{})
+
 	require.NoError(t, mngr.AddCloser(func() {
 		<-returnClose
 	}))
@@ -1002,6 +1078,7 @@ func TestWaitUntilShutdown(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 
 	errCh := make(chan error)
+
 	go func() {
 		errCh <- mngr.Run(ctx)
 	}()

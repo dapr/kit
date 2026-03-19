@@ -134,21 +134,26 @@ func TestDecode(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			var actual retry.Config
+
 			err := retry.DecodeConfigWithPrefix(&actual, tc.config, "backOff")
 			if tc.err != "" {
 				require.Error(t, err)
 				assert.Equal(t, tc.err, err.Error())
 			} else {
 				b := actual.NewBackOff()
+
 				config := retry.DefaultConfig()
 				if tc.overrides != nil {
 					tc.overrides(&config)
 				}
+
 				assert.Equal(t, config, actual, "unexpected decoded configuration")
-				if actual.Policy == retry.PolicyConstant {
+
+				switch actual.Policy {
+				case retry.PolicyConstant:
 					_, ok := b.(*backoff.ConstantBackOff)
 					assert.True(t, ok)
-				} else if actual.Policy == retry.PolicyExponential {
+				case retry.PolicyExponential:
 					_, ok := b.(*backoff.ExponentialBackOff)
 					assert.True(t, ok)
 				}
@@ -251,6 +256,7 @@ func TestRetryNotifyRecoverCancel(t *testing.T) {
 			return errRetry
 		}, b, func(err error, d time.Duration) {
 			notifyCalls++
+
 			startedC <- struct{}{}
 		}, func() {
 			recoveryCalls++
@@ -269,8 +275,10 @@ func TestRetryNotifyRecoverCancel(t *testing.T) {
 
 func TestCheckEmptyConfig(t *testing.T) {
 	var config retry.Config
+
 	err := retry.DecodeConfig(&config, map[string]any{})
 	require.NoError(t, err)
+
 	defaultConfig := retry.DefaultConfig()
 	assert.Equal(t, config, defaultConfig)
 }

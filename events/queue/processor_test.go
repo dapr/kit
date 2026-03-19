@@ -55,6 +55,7 @@ func TestProcessor(t *testing.T) {
 		t.Helper()
 
 		runtime.Gosched()
+
 		select {
 		case r := <-executeCh:
 			t.Fatalf("received unexpected item: %s", r.Name)
@@ -77,6 +78,7 @@ func TestProcessor(t *testing.T) {
 		for i := 1; i <= 5; i++ {
 			t.Logf("Waiting for signal %d", i)
 			clock.Step(time.Second)
+
 			received := assertExecutedItem(t)
 			assert.Equal(t, strconv.Itoa(i), received.Name)
 		}
@@ -121,6 +123,7 @@ func TestProcessor(t *testing.T) {
 			if i == 1 {
 				expect = "99"
 			}
+
 			t.Logf("Waiting for signal %s", expect)
 			received := assertExecutedItem(t)
 			assert.Equal(t, expect, received.Name)
@@ -138,6 +141,7 @@ func TestProcessor(t *testing.T) {
 				newTestItem(i, clock.Now().Add(time.Second*time.Duration(i))),
 			)
 		}
+
 		assert.Equal(t, 5, processor.queue.Len())
 
 		// Dequeue items 2 and 4
@@ -156,6 +160,7 @@ func TestProcessor(t *testing.T) {
 				// Skip items that have been removed
 				t.Logf("Should not receive signal %d", i)
 				assertNoExecutedItem(t)
+
 				continue
 			}
 
@@ -187,10 +192,13 @@ func TestProcessor(t *testing.T) {
 				t.Logf("Should not receive signal %d", i)
 				clock.Step(time.Second)
 				assertNoExecutedItem(t)
+
 				continue
 			}
+
 			t.Logf("Waiting for signal %d", i)
 			clock.Step(time.Second)
+
 			received := assertExecutedItem(t)
 			assert.Equal(t, strconv.Itoa(i), received.Name)
 		}
@@ -215,6 +223,7 @@ func TestProcessor(t *testing.T) {
 				// This item has been pushed down
 				t.Logf("Should not receive signal %d now", i)
 				assertNoExecutedItem(t)
+
 				continue
 			}
 
@@ -223,6 +232,7 @@ func TestProcessor(t *testing.T) {
 				// Item 4 should come now
 				expect = 4
 			}
+
 			t.Logf("Waiting for signal %d", expect)
 			received := assertExecutedItem(t)
 			assert.Equal(t, strconv.Itoa(expect), received.Name)
@@ -249,6 +259,7 @@ func TestProcessor(t *testing.T) {
 				t.Logf("Should not receive signal %d now", i)
 				clock.Step(time.Second)
 				assertNoExecutedItem(t)
+
 				continue
 			}
 
@@ -257,8 +268,10 @@ func TestProcessor(t *testing.T) {
 				// Item 2 should come now
 				expect = 2
 			}
+
 			t.Logf("Waiting for signal %d", expect)
 			clock.Sleep(time.Second)
+
 			received := assertExecutedItem(t)
 			assert.Equal(t, strconv.Itoa(expect), received.Name)
 		}
@@ -269,22 +282,30 @@ func TestProcessor(t *testing.T) {
 			count    = 150
 			maxDelay = 30
 		)
+
 		now := clock.Now()
+
 		wg := sync.WaitGroup{}
 		for i := range count {
 			wg.Add(1)
+
 			go func(i int) {
 				defer wg.Done()
+
 				execTime := now.Add(time.Second * time.Duration(rand.Intn(maxDelay))) //nolint:gosec
 				processor.Enqueue(newTestItem(i, execTime))
 			}(i)
 		}
+
 		wg.Wait()
 
 		// Collect
 		collected := make([]bool, count)
+
 		var collectedCount int64
+
 		doneCh := make(chan struct{})
+
 		go func() {
 			for {
 				select {
@@ -294,6 +315,7 @@ func TestProcessor(t *testing.T) {
 					n, err := strconv.Atoi(r.Name)
 					if err == nil {
 						collected[n] = true
+
 						atomic.AddInt64(&collectedCount, 1)
 					}
 				}
@@ -378,6 +400,7 @@ func TestClose(t *testing.T) {
 	assert.Equal(t, 1, processor.queue.Len())
 
 	closeCh := make(chan error)
+
 	go func() {
 		closeCh <- processor.Close()
 	}()

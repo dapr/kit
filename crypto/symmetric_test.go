@@ -11,7 +11,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:nosnakecase
 package crypto
 
 import (
@@ -35,13 +34,15 @@ func TestEncryptSymmetricAESCBC(t *testing.T) {
 		key       []byte
 		iv        []byte
 	}
+
 	type test struct {
 		name           string
 		args           args
 		wantCiphertext []byte
 		wantErr        error
 	}
-	tests := []test{
+
+	tests := []test{ //nolint:prealloc
 		{
 			name: "key size mismatch",
 			args: args{
@@ -86,6 +87,7 @@ func TestEncryptSymmetricAESCBC(t *testing.T) {
 				t.Errorf("encryptSymmetricAESCBC() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if !reflect.DeepEqual(gotCiphertext, tt.wantCiphertext) {
 				t.Errorf("encryptSymmetricAESCBC() = %v, want %v", gotCiphertext, tt.wantCiphertext)
 			}
@@ -100,13 +102,15 @@ func TestEncryptSymmetricAESCBCNOPAD(t *testing.T) {
 		key       []byte
 		iv        []byte
 	}
+
 	type test struct {
 		name           string
 		args           args
 		wantCiphertext []byte
 		wantErr        error
 	}
-	tests := []test{
+
+	tests := []test{ //nolint:prealloc
 		{
 			name: "key size mismatch",
 			args: args{
@@ -161,6 +165,7 @@ func TestEncryptSymmetricAESCBCNOPAD(t *testing.T) {
 				t.Errorf("encryptSymmetricAESCBC() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if !reflect.DeepEqual(gotCiphertext, tt.wantCiphertext) {
 				t.Errorf("encryptSymmetricAESCBC() = %v, want %v", gotCiphertext, tt.wantCiphertext)
 			}
@@ -175,13 +180,15 @@ func TestDecryptSymmetricAESCBC(t *testing.T) {
 		key        []byte
 		iv         []byte
 	}
+
 	type test struct {
 		name          string
 		args          args
 		wantPlaintext []byte
 		wantErr       error
 	}
-	tests := []test{
+
+	tests := []test{ //nolint:prealloc
 		{
 			name: "key size mismatch",
 			args: args{
@@ -236,6 +243,7 @@ func TestDecryptSymmetricAESCBC(t *testing.T) {
 				t.Errorf("decryptSymmetricAESCBC() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if !reflect.DeepEqual(gotPlaintext, tt.wantPlaintext) {
 				t.Errorf("decryptSymmetricAESCBC() = %v, want %v", gotPlaintext, tt.wantPlaintext)
 			}
@@ -250,13 +258,15 @@ func TestDecryptSymmetricAESCBCNOPAD(t *testing.T) {
 		key        []byte
 		iv         []byte
 	}
+
 	type test struct {
 		name          string
 		args          args
 		wantPlaintext []byte
 		wantErr       error
 	}
-	tests := []test{
+
+	tests := []test{ //nolint:prealloc
 		{
 			name: "key size mismatch",
 			args: args{
@@ -311,6 +321,7 @@ func TestDecryptSymmetricAESCBCNOPAD(t *testing.T) {
 				t.Errorf("decryptSymmetricAESCBC() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if !reflect.DeepEqual(gotPlaintext, tt.wantPlaintext) {
 				t.Errorf("decryptSymmetricAESCBC() = %v, want %v", gotPlaintext, tt.wantPlaintext)
 			}
@@ -326,6 +337,7 @@ func TestEncryptSymmetricAESGCM(t *testing.T) {
 		nonce          []byte
 		associatedData []byte
 	}
+
 	type test struct {
 		name           string
 		args           args
@@ -333,7 +345,8 @@ func TestEncryptSymmetricAESGCM(t *testing.T) {
 		wantTag        []byte
 		wantErr        error
 	}
-	tests := []test{
+
+	tests := []test{ //nolint:prealloc
 		{
 			name: "key size mismatch",
 			args: args{
@@ -380,9 +393,11 @@ func TestEncryptSymmetricAESGCM(t *testing.T) {
 				t.Errorf("encryptSymmetricAESGCM() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if !reflect.DeepEqual(gotCiphertext, tt.wantCiphertext) {
 				t.Errorf("encryptSymmetricAESGCM() gotCiphertext = %v, want %v", gotCiphertext, tt.wantCiphertext)
 			}
+
 			if !reflect.DeepEqual(gotTag, tt.wantTag) {
 				t.Errorf("encryptSymmetricAESGCM() gotTag = %v, want %v", gotTag, tt.wantTag)
 			}
@@ -399,13 +414,15 @@ func TestDecryptSymmetricAESGCM(t *testing.T) {
 		tag            []byte
 		associatedData []byte
 	}
+
 	type test struct {
 		name          string
 		args          args
 		wantPlaintext []byte
 		wantErr       error
 	}
-	tests := []test{
+
+	tests := []test{ //nolint:prealloc
 		{
 			name: "key size mismatch",
 			args: args{
@@ -465,6 +482,7 @@ func TestDecryptSymmetricAESGCM(t *testing.T) {
 				t.Errorf("decryptSymmetricAESGCM() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if !reflect.DeepEqual(gotPlaintext, tt.wantPlaintext) && len(gotPlaintext) != 0 && len(tt.wantPlaintext) != 0 {
 				t.Errorf("decryptSymmetricAESGCM() = %v, want %v", gotPlaintext, tt.wantPlaintext)
 			}
@@ -478,13 +496,15 @@ func TestEncryptSymmetricAESKW(t *testing.T) {
 		algorithm string
 		key       []byte
 	}
+
 	type test struct {
 		name           string
 		args           args
 		wantCiphertext []byte
 		wantErr        error
 	}
-	tests := []test{}
+
+	tests := []test{} //nolint:prealloc
 
 	// Test cases from RFC3394
 	for _, v := range readTestVectors("symmetric-test-vectors.json", "aes-kw") {
@@ -507,6 +527,7 @@ func TestEncryptSymmetricAESKW(t *testing.T) {
 				t.Errorf("encryptSymmetricAESKW() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if !reflect.DeepEqual(gotCiphertext, tt.wantCiphertext) {
 				t.Errorf("encryptSymmetricAESKW() = %v, want %v", gotCiphertext, tt.wantCiphertext)
 			}
@@ -520,13 +541,15 @@ func TestDecryptSymmetricAESKW(t *testing.T) {
 		algorithm  string
 		key        []byte
 	}
+
 	type test struct {
 		name          string
 		args          args
 		wantPlaintext []byte
 		wantErr       error
 	}
-	tests := []test{}
+
+	tests := []test{} //nolint:prealloc
 
 	// Test cases from RFC3394
 	for _, v := range readTestVectors("symmetric-test-vectors.json", "aes-kw") {
@@ -549,6 +572,7 @@ func TestDecryptSymmetricAESKW(t *testing.T) {
 				t.Errorf("decryptSymmetricAESKW() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if !reflect.DeepEqual(gotPlaintext, tt.wantPlaintext) {
 				t.Errorf("decryptSymmetricAESKW() = %v, want %v", gotPlaintext, tt.wantPlaintext)
 			}
@@ -564,6 +588,7 @@ func TestEncryptSymmetricChaCha20Poly1305(t *testing.T) {
 		nonce          []byte
 		associatedData []byte
 	}
+
 	type test struct {
 		name           string
 		args           args
@@ -571,7 +596,8 @@ func TestEncryptSymmetricChaCha20Poly1305(t *testing.T) {
 		wantTag        []byte
 		wantErr        error
 	}
-	tests := []test{}
+
+	tests := []test{} //nolint:prealloc
 
 	for _, v := range readTestVectors("symmetric-test-vectors.json", "chacha20-poly1305") {
 		tests = append(tests, test{
@@ -596,9 +622,11 @@ func TestEncryptSymmetricChaCha20Poly1305(t *testing.T) {
 				t.Errorf("encryptSymmetricChaCha20Poly1305() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if !reflect.DeepEqual(gotCiphertext, tt.wantCiphertext) {
 				t.Errorf("encryptSymmetricChaCha20Poly1305() gotCiphertext = %v, want %v", gotCiphertext, tt.wantCiphertext)
 			}
+
 			if !reflect.DeepEqual(gotTag, tt.wantTag) {
 				t.Errorf("encryptSymmetricChaCha20Poly1305() gotTag = %v, want %v", gotTag, tt.wantTag)
 			}
@@ -615,13 +643,15 @@ func TestDecryptSymmetricChaCha20Poly1305(t *testing.T) {
 		tag            []byte
 		associatedData []byte
 	}
+
 	type test struct {
 		name          string
 		args          args
 		wantPlaintext []byte
 		wantErr       error
 	}
-	tests := []test{}
+
+	tests := []test{} //nolint:prealloc
 
 	for _, v := range readTestVectors("symmetric-test-vectors.json", "chacha20-poly1305") {
 		tests = append(tests, test{
@@ -646,6 +676,7 @@ func TestDecryptSymmetricChaCha20Poly1305(t *testing.T) {
 				t.Errorf("decryptSymmetricChaCha20Poly1305() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if !reflect.DeepEqual(gotPlaintext, tt.wantPlaintext) && len(gotPlaintext) != 0 && len(tt.wantPlaintext) != 0 {
 				t.Errorf("decryptSymmetricChaCha20Poly1305() = %v, want %v", gotPlaintext, tt.wantPlaintext)
 			}
@@ -664,6 +695,7 @@ func TestAESCBCHMAC(t *testing.T) {
 		ciphertext []byte
 		tag        []byte
 	}
+
 	tests := []test{
 		{
 			alg:        Algorithm_A128CBC_HS256,
@@ -726,6 +758,7 @@ func readTestVectors(fileName string, vectorsName string) []testVector {
 	defer f.Close()
 
 	read := map[string][]testVector{}
+
 	err = json.NewDecoder(f).Decode(&read)
 	if err != nil {
 		panic(err)
@@ -739,5 +772,6 @@ func mustDecodeHexString(s string) []byte {
 	if err != nil {
 		panic(err)
 	}
+
 	return b
 }

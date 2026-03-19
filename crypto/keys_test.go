@@ -37,6 +37,7 @@ func TestSymmetricKeys(t *testing.T) {
 	rawKey := make([]byte, 16)
 	_, rawErr := io.ReadFull(rand.Reader, rawKey)
 	require.NoError(t, rawErr)
+
 	rawKeyJSON, _ := json.Marshal(map[string]any{
 		"kty": "oct",
 		"k":   rawKey,
@@ -49,6 +50,7 @@ func TestSymmetricKeys(t *testing.T) {
 				exported []byte
 				err      error
 			)
+
 			t.Run("parse", func(t *testing.T) {
 				key, err = ParseKey(parse, contentType)
 				require.NoError(t, err)
@@ -89,6 +91,7 @@ func TestPrivateKeysRSA(t *testing.T) {
 				exported []byte
 				err      error
 			)
+
 			t.Run("parse", func(t *testing.T) {
 				key, err = ParseKey(parse, contentType)
 				require.NoError(t, err)
@@ -126,6 +129,7 @@ func TestPublicKeysRSA(t *testing.T) {
 				exported []byte
 				err      error
 			)
+
 			t.Run("parse", func(t *testing.T) {
 				key, err = ParseKey(parse, contentType)
 				require.NoError(t, err)
@@ -162,6 +166,7 @@ func TestPrivateKeysEd25519(t *testing.T) {
 				exported []byte
 				err      error
 			)
+
 			t.Run("parse", func(t *testing.T) {
 				key, err = ParseKey(parse, contentType)
 				require.NoError(t, err)
@@ -200,6 +205,7 @@ func TestPublicKeysEd25519(t *testing.T) {
 				exported []byte
 				err      error
 			)
+
 			t.Run("parse", func(t *testing.T) {
 				key, err = ParseKey(parse, contentType)
 				require.NoError(t, err)
@@ -237,6 +243,7 @@ func TestPrivateKeysP256(t *testing.T) {
 				exported []byte
 				err      error
 			)
+
 			t.Run("parse", func(t *testing.T) {
 				key, err = ParseKey(parse, contentType)
 				require.NoError(t, err)
@@ -276,6 +283,7 @@ func TestPublicKeysP256(t *testing.T) {
 				exported []byte
 				err      error
 			)
+
 			t.Run("parse", func(t *testing.T) {
 				key, err = ParseKey(parse, contentType)
 				require.NoError(t, err)

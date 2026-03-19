@@ -100,6 +100,7 @@ func TestNormalize(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
+
 			assert.Equal(t, tc.expected, actual)
 		})
 	}

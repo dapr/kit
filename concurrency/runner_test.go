@@ -32,6 +32,7 @@ func Test_RunnerManager(t *testing.T) {
 
 	t.Run("runner with a task that completes should return nil", func(t *testing.T) {
 		var i int32
+
 		require.NoError(t, NewRunnerManager(func(ctx context.Context) error {
 			atomic.AddInt32(&i, 1)
 			return nil
@@ -41,6 +42,7 @@ func Test_RunnerManager(t *testing.T) {
 
 	t.Run("runner with multiple tasks that complete should return nil", func(t *testing.T) {
 		var i int32
+
 		require.NoError(t, NewRunnerManager(
 			func(ctx context.Context) error {
 				atomic.AddInt32(&i, 1)
@@ -60,6 +62,7 @@ func Test_RunnerManager(t *testing.T) {
 
 	t.Run("a runner that errors should error", func(t *testing.T) {
 		var i int32
+
 		require.EqualError(t, NewRunnerManager(
 			func(ctx context.Context) error {
 				atomic.AddInt32(&i, 1)
@@ -79,6 +82,7 @@ func Test_RunnerManager(t *testing.T) {
 
 	t.Run("a runner with multiple errors should collect all errors (string match)", func(t *testing.T) {
 		var i int32
+
 		err := NewRunnerManager(
 			func(ctx context.Context) error {
 				atomic.AddInt32(&i, 1)
@@ -100,6 +104,7 @@ func Test_RunnerManager(t *testing.T) {
 
 	t.Run("a runner with multiple errors should collect all errors (unique)", func(t *testing.T) {
 		var i int32
+
 		err := NewRunnerManager(
 			func(ctx context.Context) error {
 				atomic.AddInt32(&i, 1)
@@ -121,6 +126,7 @@ func Test_RunnerManager(t *testing.T) {
 
 	t.Run("should be able to add runner with both New and Add", func(t *testing.T) {
 		var i int32
+
 		mngr := NewRunnerManager(
 			func(ctx context.Context) error {
 				atomic.AddInt32(&i, 1)
@@ -145,6 +151,7 @@ func Test_RunnerManager(t *testing.T) {
 
 	t.Run("when a runner returns, expect context to be cancelled for other runners", func(t *testing.T) {
 		var i int32
+
 		require.NoError(t, NewRunnerManager(
 			func(ctx context.Context) error {
 				atomic.AddInt32(&i, 1)
@@ -152,20 +159,24 @@ func Test_RunnerManager(t *testing.T) {
 			},
 			func(ctx context.Context) error {
 				atomic.AddInt32(&i, 1)
+
 				select {
 				case <-ctx.Done():
 				case <-time.After(time.Second):
 					t.Error("context should have been cancelled in time")
 				}
+
 				return nil
 			},
 			func(ctx context.Context) error {
 				atomic.AddInt32(&i, 1)
+
 				select {
 				case <-ctx.Done():
 				case <-time.After(time.Second):
 					t.Error("context should have been cancelled in time")
 				}
+
 				return nil
 			},
 		).Run(t.Context()))
@@ -174,23 +185,28 @@ func Test_RunnerManager(t *testing.T) {
 
 	t.Run("when a runner errors, expect context to be cancelled for other runners", func(t *testing.T) {
 		var i int32
+
 		err := NewRunnerManager(
 			func(ctx context.Context) error {
 				atomic.AddInt32(&i, 1)
+
 				select {
 				case <-ctx.Done():
 				case <-time.After(time.Second):
 					t.Error("context should have been cancelled in time")
 				}
+
 				return errors.New("error1")
 			},
 			func(ctx context.Context) error {
 				atomic.AddInt32(&i, 1)
+
 				select {
 				case <-ctx.Done():
 				case <-time.After(time.Second):
 					t.Error("context should have been cancelled in time")
 				}
+
 				return errors.New("error2")
 			},
 			func(ctx context.Context) error {
@@ -205,6 +221,7 @@ func Test_RunnerManager(t *testing.T) {
 
 	t.Run("a manger started twice should error", func(t *testing.T) {
 		var i int32
+
 		m := NewRunnerManager(func(ctx context.Context) error {
 			atomic.AddInt32(&i, 1)
 			return nil
@@ -217,12 +234,14 @@ func Test_RunnerManager(t *testing.T) {
 
 	t.Run("adding a task to a started manager should error", func(t *testing.T) {
 		var i int32
+
 		m := NewRunnerManager(func(ctx context.Context) error {
 			atomic.AddInt32(&i, 1)
 			return nil
 		})
 		require.NoError(t, m.Run(t.Context()))
 		assert.Equal(t, int32(1), i)
+
 		err := m.Add(func(ctx context.Context) error {
 			atomic.AddInt32(&i, 1)
 			return nil

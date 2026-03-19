@@ -58,6 +58,7 @@ func TestBatch(t *testing.T) {
 	ch1 := make(chan struct{})
 	ch2 := make(chan struct{})
 	ch3 := make(chan struct{})
+
 	b.Subscribe(t.Context(), ch1, ch2)
 	b.Subscribe(t.Context(), ch3)
 
@@ -111,9 +112,11 @@ func TestBatch(t *testing.T) {
 			Clock:    fakeClock,
 		})
 		t.Cleanup(b.Close)
+
 		ch1 := make(chan int, 10)
 		ch2 := make(chan int, 10)
 		ch3 := make(chan int, 10)
+
 		b.Subscribe(t.Context(), ch1, ch2)
 		b.Subscribe(t.Context(), ch3)
 
@@ -154,6 +157,7 @@ func TestSubscribeAfterClose(t *testing.T) {
 
 	b := New[string, struct{}](Options{Interval: time.Millisecond * 10})
 	b.Close()
+
 	ch := make(chan struct{})
 	b.Subscribe(t.Context(), ch)
 	assert.Empty(t, b.eventChs)

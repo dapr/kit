@@ -35,6 +35,7 @@ func TestWithLocation(t *testing.T) {
 
 func TestWithParser(t *testing.T) {
 	parser := NewParser(Dow)
+
 	c := New(WithParser(parser))
 	if c.parser != parser {
 		t.Error("expected provided parser")
@@ -43,8 +44,10 @@ func TestWithParser(t *testing.T) {
 
 func TestWithVerboseLogger(t *testing.T) {
 	var buf syncWriter
+
 	logger := log.New(&buf, "", log.LstdFlags)
 	clock := clocktesting.NewFakeClock(time.Now())
+
 	c := New(WithLogger(VerbosePrintfLogger(logger)), WithClock(clock))
 	if c.logger.(printfLogger).logger != logger {
 		t.Error("expected provided logger")

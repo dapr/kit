@@ -114,6 +114,7 @@ func Test_OuterCancel(t *testing.T) {
 		require.NoError(t, ctx3.Err())
 
 		mcancel := l.Lock()
+
 		require.Error(t, ctx1.Err())
 		require.Error(t, ctx2.Err())
 		require.Error(t, ctx3.Err())
@@ -173,9 +174,11 @@ func Test_OuterCancel(t *testing.T) {
 		gotRLock := make(chan struct{})
 
 		errCh := make(chan error, 1)
+
 		go func() {
 			_, c1, err := l.RLock(ctx)
 			errCh <- err
+
 			t.Cleanup(c1)
 			close(gotRLock)
 		}()

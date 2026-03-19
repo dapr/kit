@@ -42,15 +42,19 @@ func (h *testHandler[T]) Handle(ctx context.Context, v T) error {
 
 	h.mu.Lock()
 	defer h.mu.Unlock()
+
 	h.seen = append(h.seen, v)
+
 	return h.err
 }
 
 func (h *testHandler[T]) Values() []T {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+
 	out := make([]T, len(h.seen))
 	copy(out, h.seen)
+
 	return out
 }
 
@@ -59,6 +63,7 @@ func TestLoop_EnqueueAndRunOrder_Unbounded(t *testing.T) {
 	defer cancel()
 
 	h := &testHandler[int]{}
+
 	const segmentSize = 4
 
 	f := New[int](segmentSize)
@@ -66,12 +71,16 @@ func TestLoop_EnqueueAndRunOrder_Unbounded(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
+
 	errCh := make(chan error, 1)
+
 	t.Cleanup(func() {
 		require.NoError(t, <-errCh)
 	})
+
 	go func() {
 		defer wg.Done()
+
 		errCh <- l.Run(ctx)
 	}()
 
@@ -109,12 +118,16 @@ func TestLoop_CloseTwiceIsSafe(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
+
 	errCh := make(chan error, 1)
+
 	t.Cleanup(func() {
 		require.NoError(t, <-errCh)
 	})
+
 	go func() {
 		defer wg.Done()
+
 		errCh <- l.Run(ctx)
 	}()
 
@@ -123,6 +136,7 @@ func TestLoop_CloseTwiceIsSafe(t *testing.T) {
 
 	// Second close should not panic or deadlock.
 	done := make(chan struct{})
+
 	go func() {
 		l.Close(3)
 		close(done)
@@ -153,12 +167,16 @@ func TestLoop_Reset(t *testing.T) {
 
 	var wg1 sync.WaitGroup
 	wg1.Add(1)
+
 	errCh := make(chan error, 1)
+
 	t.Cleanup(func() {
 		require.NoError(t, <-errCh)
 	})
+
 	go func() {
 		defer wg1.Done()
+
 		errCh <- l.Run(ctx)
 	}()
 
@@ -177,12 +195,16 @@ func TestLoop_Reset(t *testing.T) {
 
 	var wg2 sync.WaitGroup
 	wg2.Add(1)
+
 	errCh2 := make(chan error, 1)
+
 	t.Cleanup(func() {
 		require.NoError(t, <-errCh2)
 	})
+
 	go func() {
 		defer wg2.Done()
+
 		errCh2 <- l.Run(ctx)
 	}()
 
@@ -204,12 +226,16 @@ func TestLoop_EnqueueAfterCloseIsDropped(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
+
 	errCh := make(chan error, 1)
+
 	t.Cleanup(func() {
 		require.NoError(t, <-errCh)
 	})
+
 	go func() {
 		defer wg.Done()
+
 		errCh <- l.Run(ctx)
 	}()
 

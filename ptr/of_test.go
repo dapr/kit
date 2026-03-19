@@ -23,10 +23,8 @@ import (
 
 func TestPtr(t *testing.T) {
 	b := true
+
 	pb := Of(b)
-	if pb == nil {
-		t.Fatal("unexpected nil conversion")
-	}
 	if *pb != b {
 		t.Fatalf("got %v, want %v", *pb, b)
 	}
@@ -37,6 +35,7 @@ func TestSliceOfPtrs(t *testing.T) {
 	if len(arr) != 0 {
 		t.Fatal("expected zero length")
 	}
+
 	arr = SliceOfPtrs(1, 2, 3, 4, 5)
 	for i, v := range arr {
 		if *v != i+1 {
