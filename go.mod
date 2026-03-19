@@ -1,6 +1,6 @@
 module github.com/dapr/kit
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/alphadose/haxmap v1.3.1
@@ -37,7 +37,6 @@ require (
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
-	github.com/zeebo/errs v1.4.0 // indirect
 	golang.org/x/mod v0.33.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
