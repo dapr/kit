@@ -49,7 +49,8 @@ func From(opts Options) trustanchors.Interface {
 func (m *multi) Run(ctx context.Context) error {
 	r := concurrency.NewRunnerManager()
 	for _, ta := range m.trustAnchors {
-		if err := r.Add(ta.Run); err != nil {
+		err := r.Add(ta.Run)
+		if err != nil {
 			return err
 		}
 	}
@@ -82,5 +83,4 @@ func (m *multi) GetJWTBundleForTrustDomain(td spiffeid.TrustDomain) (*jwtbundle.
 }
 
 func (m *multi) Watch(context.Context, chan<- []byte) {
-	return
 }

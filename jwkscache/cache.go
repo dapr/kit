@@ -92,7 +92,9 @@ func (c *JWKSCache) Start(ctx context.Context) error {
 		err = fmt.Errorf("failed to init cache: %w", err)
 		// Store the error in the initCh, then close it
 		c.initCh <- err
+
 		close(c.initCh)
+
 		return err
 	}
 
@@ -207,6 +209,7 @@ func (c *JWKSCache) initJWKSFromURL(ctx context.Context, url string) error {
 			if !caCertPool.AppendCertsFromPEM(caCert) {
 				return errors.New("failed to add root certificate to certificate pool")
 			}
+
 			tlsConfig.RootCAs = caCertPool
 		}
 
@@ -230,12 +233,15 @@ func (c *JWKSCache) initJWKSFromURL(ctx context.Context, url string) error {
 	// Fetch the JWKS right away to start, so we can check it's valid and populate the cache
 	refreshCtx, refreshCancel := context.WithTimeout(ctx, c.requestTimeout)
 	_, err = cache.Refresh(refreshCtx, url)
+
 	refreshCancel()
+
 	if err != nil {
 		return fmt.Errorf("failed to fetch JWKS: %w", err)
 	}
 
 	c.jwks = jwk.NewCachedSet(cache, url)
+
 	return nil
 }
 
@@ -246,6 +252,7 @@ func (c *JWKSCache) initJWKSFromFile(ctx context.Context, file string) error {
 	// Start watching for changes in the filesystem
 	eventCh := make(chan struct{})
 	loaded := make(chan error, 1) // Needs to be buffered to prevent a goroutine leak
+
 	go func() {
 		// Log errors only
 		fw, err := fswatcher.New(fswatcher.Options{
@@ -255,12 +262,15 @@ func (c *JWKSCache) initJWKSFromFile(ctx context.Context, file string) error {
 			c.logger.Errorf("Error while watching for changes to the local JWKS file: %v", err)
 			return
 		}
-		if err = fw.Run(ctx, eventCh); err != nil {
+
+		err = fw.Run(ctx, eventCh)
+		if err != nil {
 			c.logger.Errorf("Error while watching for changes to the local JWKS file: %v", err)
 		}
 	}()
 	go func() {
 		var firstDone bool
+
 		for {
 			select {
 			case <-eventCh:
@@ -270,11 +280,14 @@ func (c *JWKSCache) initJWKSFromFile(ctx context.Context, file string) error {
 				} else {
 					c.logger.Debug("Loading JWKS file from disk")
 				}
+
 				err := c.parseJWKSFile(file)
 				if !firstDone {
 					// The first time, signal that the initialization was complete and pass the error
 					loaded <- err
+
 					close(loaded)
+
 					firstDone = true
 				} else if err != nil {
 					// Log errors only

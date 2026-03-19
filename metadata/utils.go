@@ -35,12 +35,14 @@ func GetMetadataPropertyWithMatchedKey(props map[string]string, keys ...string) 
 	for k, v := range props {
 		lcProps[strings.ToLower(k)] = v
 	}
+
 	for _, k := range keys {
 		val, ok = lcProps[strings.ToLower(k)]
 		if ok {
 			return k, val, true
 		}
 	}
+
 	return "", "", false
 }
 
@@ -88,6 +90,7 @@ func decodeMetadataMap(inputMap map[string]string, result any) error {
 	if err != nil {
 		return err
 	}
+
 	return decoder.Decode(inputMap)
 }
 
@@ -110,10 +113,12 @@ func resolveAliases(md map[string]string, t reflect.Type) error {
 	if t.Kind() != reflect.Pointer {
 		return fmt.Errorf("not a pointer: %s", t.Kind().String())
 	}
+
 	t = t.Elem()
 	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
+
 	if t.Kind() != reflect.Struct {
 		return fmt.Errorf("not a struct: %s", t.Kind().String())
 	}
@@ -126,9 +131,7 @@ func resolveAliases(md map[string]string, t reflect.Type) error {
 
 func resolveAliasesInType(md map[string]string, keys map[string]string, t reflect.Type) {
 	// Iterate through all the properties of the type to see if anyone has the "mapstructurealiases" property
-	for i := range t.NumField() {
-		currentField := t.Field(i)
-
+	for currentField := range t.Fields() {
 		// Ignored fields that are not exported or that don't have a "mapstructure" tag
 		mapstructureTag := currentField.Tag.Get("mapstructure")
 		if !currentField.IsExported() || mapstructureTag == "" {
@@ -155,7 +158,7 @@ func resolveAliasesInType(md map[string]string, keys map[string]string, t reflec
 
 		// Look for the first alias that has a value
 		var mdKey string
-		for _, alias := range strings.Split(aliasesTag, ",") {
+		for alias := range strings.SplitSeq(aliasesTag, ",") {
 			mdKey, ok = keys[alias]
 			if !ok {
 				continue
@@ -163,6 +166,7 @@ func resolveAliasesInType(md map[string]string, keys map[string]string, t reflec
 
 			// We found an alias
 			md[mapstructureTag] = md[mdKey]
+
 			break
 		}
 	}

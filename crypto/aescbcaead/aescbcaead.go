@@ -104,8 +104,10 @@ func NewAESCBCAEAD(p aesCBCAEADParams) (cipher.AEAD, error) {
 	if len(p.key) != l {
 		return nil, fmt.Errorf("key must be %d bytes long", l)
 	}
+
 	macKey := p.key[0:p.macKeySize]
 	encKey := p.key[len(p.key)-p.encKeySize:]
+
 	return &aesCBCAEAD{
 		aesCBCAEADParams: p,
 		encKey:           encKey,
@@ -115,6 +117,7 @@ func NewAESCBCAEAD(p aesCBCAEADParams) (cipher.AEAD, error) {
 
 type aesCBCAEAD struct {
 	aesCBCAEADParams
+
 	encKey, macKey []byte
 }
 
@@ -147,6 +150,7 @@ func (aead *aesCBCAEAD) Seal(dst, nonce, plaintext, additionalData []byte) []byt
 
 	// Allocate a byte slice large enough to contain the ciphertext and the tag
 	size := len(plaintext) + aead.tagSize
+
 	dstLen := len(dst)
 	if cap(dst) >= (dstLen + size) {
 		dst = dst[:dstLen+size]
@@ -155,6 +159,7 @@ func (aead *aesCBCAEAD) Seal(dst, nonce, plaintext, additionalData []byte) []byt
 		copy(d, dst)
 		dst = d
 	}
+
 	out := dst[dstLen:]
 
 	// Encrypt the message
@@ -185,6 +190,7 @@ func (aead *aesCBCAEAD) Open(dst, nonce, ciphertext, additionalData []byte) ([]b
 
 	// Ensure the destination slice has enough capacity
 	size := len(ciphertext)
+
 	dstLen := len(dst)
 	if cap(dst) >= (dstLen + size) {
 		dst = dst[:dstLen+size]
@@ -193,6 +199,7 @@ func (aead *aesCBCAEAD) Open(dst, nonce, ciphertext, additionalData []byte) ([]b
 		copy(d, dst)
 		dst = d
 	}
+
 	out := dst[dstLen:]
 
 	// Decrypt the ciphertext
@@ -201,6 +208,7 @@ func (aead *aesCBCAEAD) Open(dst, nonce, ciphertext, additionalData []byte) ([]b
 		// Should never happen
 		return nil, err
 	}
+
 	cipher.NewCBCDecrypter(block, nonce).
 		CryptBlocks(out, ciphertext)
 
@@ -209,7 +217,9 @@ func (aead *aesCBCAEAD) Open(dst, nonce, ciphertext, additionalData []byte) ([]b
 	if err != nil {
 		return nil, err
 	}
+
 	dst = dst[:dstLen+len(out)]
+
 	return dst, nil
 }
 

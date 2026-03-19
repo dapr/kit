@@ -40,7 +40,9 @@ func (o *Options) SetOutputLevel(outputLevel string) error {
 	if toLogLevel(outputLevel) == UndefinedLevel {
 		return fmt.Errorf("undefined Log Output Level: %s", outputLevel)
 	}
+
 	o.OutputLevel = outputLevel
+
 	return nil
 }
 
@@ -61,6 +63,7 @@ func (o *Options) AttachCmdFlags(
 			defaultOutputLevel,
 			"Options are debug, info, warn, error, or fatal (default info)")
 	}
+
 	if boolVar != nil {
 		boolVar(
 			&o.JSONFormatEnabled,
@@ -100,5 +103,6 @@ func ApplyOptionsToLoggers(options *Options) error {
 	for _, v := range internalLoggers {
 		v.SetOutputLevel(daprLogLevel)
 	}
+
 	return nil
 }

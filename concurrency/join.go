@@ -25,14 +25,19 @@ import (
 // allowed to complete.
 func Join(ctx context.Context, runners ...Runner) error {
 	errs := make([]error, len(runners))
+
 	var wg sync.WaitGroup
+
 	wg.Add(len(runners))
+
 	for i := range runners {
 		go func(i int) {
 			errs[i] = runners[i](ctx)
+
 			wg.Done()
 		}(i)
 	}
+
 	wg.Wait()
 
 	return errors.Join(errs...)

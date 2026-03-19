@@ -45,13 +45,16 @@ func (sp ByteSlicePool) Get(capacity int) []byte {
 		if capacity < sp.MinCap {
 			capacity = sp.MinCap
 		}
+
 		return make([]byte, 0, capacity)
 	}
+
 	buf := bp.([]byte)
 	// This will be optimized by the compiler
 	for i := range buf {
 		buf[i] = 0
 	}
+
 	return buf[:0]
 }
 
@@ -74,12 +77,6 @@ func (sp ByteSlicePool) Resize(orig []byte, size int) []byte {
 	// Allocate a new byte slice and then discard the old one, too small, so it can be garbage collected
 	temp := make([]byte, size, max(size, cap(orig)*2))
 	copy(temp, orig)
-	return temp
-}
 
-func max(x, y int) int {
-	if x < y {
-		return y
-	}
-	return x
+	return temp
 }

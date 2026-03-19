@@ -14,13 +14,13 @@ limitations under the License.
 package errors
 
 const (
-	// Generic
+	// CodeNotFound Generic.
 	CodeNotFound      = "NOT_FOUND"
 	CodeNotConfigured = "NOT_CONFIGURED"
 	CodeNotSupported  = "NOT_SUPPORTED"
 	CodeIllegalKey    = "ILLEGAL_KEY"
 
-	// Components
+	// CodePrefixStateStore is for StateStore components.
 	CodePrefixStateStore         = "DAPR_STATE_"
 	CodePrefixPubSub             = "DAPR_PUBSUB_"
 	CodePrefixBindings           = "DAPR_BINDING_"
@@ -32,7 +32,7 @@ const (
 	CodePrefixCryptography       = "DAPR_CRYPTOGRAPHY_"
 	CodePrefixPlacement          = "DAPR_PLACEMENT_"
 
-	// State
+	// CodePostfixGetStateFailed is for State.
 	CodePostfixGetStateFailed      = "GET_STATE_FAILED"
 	CodePostfixTooManyTransactions = "TOO_MANY_TRANSACTIONS"
 	CodePostfixQueryFailed         = "QUERY_FAILED"

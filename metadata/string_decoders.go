@@ -22,14 +22,13 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/dapr/kit/ptr"
 	kitstrings "github.com/dapr/kit/strings"
 )
 
 func toTruthyBoolHookFunc() mapstructure.DecodeHookFunc {
-	stringType := reflect.TypeOf("")
-	boolType := reflect.TypeOf(true)
-	boolPtrType := reflect.TypeOf(ptr.Of(true))
+	stringType := reflect.TypeFor[string]()
+	boolType := reflect.TypeFor[bool]()
+	boolPtrType := reflect.TypeFor[*bool]()
 
 	return func(
 		f reflect.Type,
@@ -39,17 +38,19 @@ func toTruthyBoolHookFunc() mapstructure.DecodeHookFunc {
 		if f == stringType && t == boolType {
 			return kitstrings.IsTruthy(data.(string)), nil
 		}
+
 		if f == stringType && t == boolPtrType {
-			return ptr.Of(kitstrings.IsTruthy(data.(string))), nil
+			return new(kitstrings.IsTruthy(data.(string))), nil
 		}
+
 		return data, nil
 	}
 }
 
 func toStringArrayHookFunc() mapstructure.DecodeHookFunc {
-	stringType := reflect.TypeOf("")
-	stringSliceType := reflect.TypeOf([]string{})
-	stringSlicePtrType := reflect.TypeOf(ptr.Of([]string{}))
+	stringType := reflect.TypeFor[string]()
+	stringSliceType := reflect.TypeFor[[]string]()
+	stringSlicePtrType := reflect.TypeFor[*[]string]()
 
 	return func(
 		f reflect.Type,
@@ -59,9 +60,11 @@ func toStringArrayHookFunc() mapstructure.DecodeHookFunc {
 		if f == stringType && t == stringSliceType {
 			return strings.Split(data.(string), ","), nil
 		}
+
 		if f == stringType && t == stringSlicePtrType {
-			return ptr.Of(strings.Split(data.(string), ",")), nil
+			return new(strings.Split(data.(string), ",")), nil
 		}
+
 		return data, nil
 	}
 }
@@ -69,12 +72,14 @@ func toStringArrayHookFunc() mapstructure.DecodeHookFunc {
 func toTimeDurationArrayHookFunc() mapstructure.DecodeHookFunc {
 	convert := func(input string) ([]time.Duration, error) {
 		parts := strings.Split(input, ",")
+
 		res := make([]time.Duration, 0, len(parts))
 		for _, v := range parts {
 			input := strings.TrimSpace(v)
 			if input == "" {
 				continue
 			}
+
 			val, err := time.ParseDuration(input)
 			if err != nil {
 				// If we can't parse the duration, try parsing it as int64 seconds
@@ -82,16 +87,19 @@ func toTimeDurationArrayHookFunc() mapstructure.DecodeHookFunc {
 				if errParse != nil {
 					return nil, errors.Join(err, errParse)
 				}
+
 				val = time.Duration(seconds * int64(time.Second))
 			}
+
 			res = append(res, val)
 		}
+
 		return res, nil
 	}
 
-	stringType := reflect.TypeOf("")
-	durationSliceType := reflect.TypeOf([]time.Duration{})
-	durationSlicePtrType := reflect.TypeOf(ptr.Of([]time.Duration{}))
+	stringType := reflect.TypeFor[string]()
+	durationSliceType := reflect.TypeFor[[]time.Duration]()
+	durationSlicePtrType := reflect.TypeFor[*[]time.Duration]()
 
 	return func(
 		f reflect.Type,
@@ -102,14 +110,18 @@ func toTimeDurationArrayHookFunc() mapstructure.DecodeHookFunc {
 			inputArrayString := data.(string)
 			return convert(inputArrayString)
 		}
+
 		if f == stringType && t == durationSlicePtrType {
 			inputArrayString := data.(string)
+
 			res, err := convert(inputArrayString)
 			if err != nil {
 				return nil, err
 			}
-			return ptr.Of(res), nil
+
+			return new(res), nil
 		}
+
 		return data, nil
 	}
 }

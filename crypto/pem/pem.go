@@ -45,18 +45,22 @@ func DecodePEMCertificatesChain(crtb []byte) ([]*x509.Certificate, error) {
 	return certs, nil
 }
 
-// DecodePEMCertificatesChain takes a PEM-encoded x509 certificates byte array
+// DecodePEMCertificates takes a PEM-encoded x509 certificates byte array
 // and returns all certificates in a slice of x509.Certificate objects.
 func DecodePEMCertificates(crtb []byte) ([]*x509.Certificate, error) {
 	certs := []*x509.Certificate{}
+
 	for len(crtb) > 0 {
-		var err error
-		var cert *x509.Certificate
+		var (
+			err  error
+			cert *x509.Certificate
+		)
 
 		cert, crtb, err = decodeCertificatePEM(crtb)
 		if err != nil {
 			return nil, err
 		}
+
 		if cert != nil {
 			// it's a cert, add to pool
 			certs = append(certs, cert)
@@ -75,10 +79,13 @@ func decodeCertificatePEM(crtb []byte) (*x509.Certificate, []byte, error) {
 	if block == nil {
 		return nil, nil, nil
 	}
+
 	if block.Type != "CERTIFICATE" {
 		return nil, nil, nil
 	}
+
 	c, err := x509.ParseCertificate(block.Bytes)
+
 	return c, crtb, err
 }
 
@@ -100,6 +107,7 @@ func DecodePEMPrivateKey(key []byte) (crypto.Signer, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		return key.(crypto.Signer), nil
 	default:
 		return nil, fmt.Errorf("unsupported block type %s", block.Type)
@@ -120,6 +128,7 @@ func EncodePrivateKey(key any) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		blockType = "PRIVATE KEY"
 	default:
 		return nil, fmt.Errorf("unsupported key type %T", key)
@@ -133,6 +142,7 @@ func EncodePrivateKey(key any) ([]byte, error) {
 // EncodeX509 will encode a single *x509.Certificate into PEM format.
 func EncodeX509(cert *x509.Certificate) ([]byte, error) {
 	caPem := bytes.NewBuffer([]byte{})
+
 	err := pem.Encode(caPem, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
 	if err != nil {
 		return nil, err
@@ -153,6 +163,7 @@ func EncodeX509Chain(certs []*x509.Certificate) ([]byte, error) {
 	}
 
 	certPEM := bytes.NewBuffer([]byte{})
+
 	for _, cert := range certs {
 		if cert == nil {
 			continue
@@ -201,6 +212,7 @@ func GetPEM(val string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("value is neither a valid file path or nor a valid PEM-encoded string: %w", err)
 	}
+
 	return pemBytes, nil
 }
 

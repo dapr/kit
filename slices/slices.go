@@ -19,9 +19,11 @@ func Deduplicate[S ~[]E, E comparable](s S) S {
 	for _, v := range s {
 		ded[v] = struct{}{}
 	}
+
 	unique := make(S, 0, len(ded))
 	for v := range ded {
 		unique = append(unique, v)
 	}
+
 	return unique
 }

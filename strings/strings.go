@@ -26,6 +26,7 @@ func IsTruthy(val string) bool {
 		// Short-circuit, this can never be a truthy value
 		return false
 	}
+
 	switch strings.ToLower(val) {
 	case "y", "yes", "true", "t", "on", "1":
 		return true
@@ -40,5 +41,6 @@ func IsYaml(fileName string) bool {
 	if extension == ".yaml" || extension == ".yml" {
 		return true
 	}
+
 	return false
 }

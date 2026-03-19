@@ -23,12 +23,15 @@ import (
 //nolint:cyclop
 func Normalize(i any) (any, error) {
 	var err error
+
 	switch x := i.(type) {
 	case map[any]any:
 		m2 := map[string]any{}
+
 		for k, v := range x {
 			if strKey, ok := k.(string); ok {
-				if m2[strKey], err = Normalize(v); err != nil {
+				m2[strKey], err = Normalize(v)
+				if err != nil {
 					return nil, err
 				}
 			} else {
@@ -40,7 +43,8 @@ func Normalize(i any) (any, error) {
 	case map[string]any:
 		m2 := map[string]any{}
 		for k, v := range x {
-			if m2[k], err = Normalize(v); err != nil {
+			m2[k], err = Normalize(v)
+			if err != nil {
 				return nil, err
 			}
 		}
@@ -48,7 +52,8 @@ func Normalize(i any) (any, error) {
 		return m2, nil
 	case []any:
 		for i, v := range x {
-			if x[i], err = Normalize(v); err != nil {
+			x[i], err = Normalize(v)
+			if err != nil {
 				return nil, err
 			}
 		}

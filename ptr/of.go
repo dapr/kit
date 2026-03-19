@@ -19,14 +19,15 @@ package ptr
 
 // Of returns a pointer to the provided value.
 func Of[T any](v T) *T {
-	return &v
+	return new(v)
 }
 
 // SliceOfPtrs returns a slice of *T from the specified values.
 func SliceOfPtrs[T any](vv ...T) []*T {
 	slc := make([]*T, len(vv))
 	for i := range vv {
-		slc[i] = Of(vv[i])
+		slc[i] = new(vv[i])
 	}
+
 	return slc
 }

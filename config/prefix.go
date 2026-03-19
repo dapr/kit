@@ -26,14 +26,14 @@ func PrefixedBy(input any, prefix string) (any, error) {
 		// a key that is not a string.
 		return input, err
 	}
+
 	input = normalized
 
 	if inputMap, ok := input.(map[string]any); ok {
 		converted := make(map[string]any, len(inputMap))
 		for k, v := range inputMap {
-			if strings.HasPrefix(k, prefix) {
-				key := uncapitalize(strings.TrimPrefix(k, prefix))
-				converted[key] = v
+			if key, ok := strings.CutPrefix(k, prefix); ok {
+				converted[uncapitalize(key)] = v
 			}
 		}
 
@@ -41,9 +41,8 @@ func PrefixedBy(input any, prefix string) (any, error) {
 	} else if inputMap, ok := input.(map[string]string); ok {
 		converted := make(map[string]string, len(inputMap))
 		for k, v := range inputMap {
-			if strings.HasPrefix(k, prefix) {
-				key := uncapitalize(strings.TrimPrefix(k, prefix))
-				converted[key] = v
+			if key, ok := strings.CutPrefix(k, prefix); ok {
+				converted[uncapitalize(key)] = v
 			}
 		}
 

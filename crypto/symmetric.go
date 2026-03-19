@@ -11,7 +11,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:nosnakecase
 package crypto
 
 import (
@@ -107,6 +106,7 @@ func encryptSymmetricAESCBC(plaintext []byte, algorithm string, key []byte, iv [
 	if len(key) != expectedKeySize(algorithm) {
 		return nil, ErrKeyTypeMismatch
 	}
+
 	if len(iv) != aes.BlockSize {
 		return nil, ErrInvalidNonce
 	}
@@ -147,9 +147,11 @@ func decryptSymmetricAESCBC(ciphertext []byte, algorithm string, key []byte, iv 
 	if len(key) != expectedKeySize(algorithm) {
 		return nil, ErrKeyTypeMismatch
 	}
+
 	if len(iv) != aes.BlockSize {
 		return nil, ErrInvalidNonce
 	}
+
 	if (len(ciphertext) % aes.BlockSize) != 0 {
 		return nil, ErrInvalidCiphertextLength
 	}
@@ -211,6 +213,7 @@ func encryptSymmetricAEAD(aead cipher.AEAD, plaintext []byte, nonce []byte, asso
 	out := aead.Seal(nil, nonce, plaintext, associatedData)
 	// Tag is added at the end
 	tagSize := aead.Overhead()
+
 	return out[0 : len(out)-tagSize], out[len(out)-tagSize:], nil
 }
 
@@ -252,6 +255,7 @@ func decryptSymmetricAEAD(aead cipher.AEAD, ciphertext []byte, nonce []byte, tag
 
 	// Add the tag at the end of the ciphertext
 	ciphertext = append(ciphertext, tag...)
+
 	return aead.Open(nil, nonce, ciphertext, associatedData)
 }
 
@@ -293,6 +297,7 @@ func encryptSymmetricChaCha20Poly1305(plaintext []byte, algorithm string, key []
 
 	// Tag is added at the end
 	out := aead.Seal(nil, nonce, plaintext, associatedData)
+
 	return out[0 : len(out)-chacha20poly1305.Overhead], out[len(out)-chacha20poly1305.Overhead:], nil
 }
 
@@ -312,6 +317,7 @@ func decryptSymmetricChaCha20Poly1305(ciphertext []byte, algorithm string, key [
 
 	// Add the tag at the end of the ciphertext
 	ciphertext = append(ciphertext, tag...)
+
 	return aead.Open(nil, nonce, ciphertext, associatedData)
 }
 
@@ -322,6 +328,7 @@ func getChaCha20Poly1305Cipher(algorithm string, key []byte, nonce []byte) (aead
 		if err == nil && len(nonce) != chacha20poly1305.NonceSize {
 			err = ErrInvalidNonce
 		}
+
 		return
 
 	case Algorithm_XC20P, Algorithm_XC20PKW:
@@ -329,6 +336,7 @@ func getChaCha20Poly1305Cipher(algorithm string, key []byte, nonce []byte) (aead
 		if err == nil && len(nonce) != chacha20poly1305.NonceSizeX {
 			err = ErrInvalidNonce
 		}
+
 		return
 	}
 
@@ -341,23 +349,28 @@ func getAESCBCHMACCipher(algorithm string, key []byte) (aead cipher.AEAD, err er
 		if len(key) != 32 {
 			return nil, ErrKeyTypeMismatch
 		}
+
 		aead, err = aescbcaead.NewAESCBC128SHA256(key)
 	case Algorithm_A192CBC_HS384:
 		if len(key) != 48 {
 			return nil, ErrKeyTypeMismatch
 		}
+
 		aead, err = aescbcaead.NewAESCBC192SHA384(key)
 	case Algorithm_A256CBC_HS512:
 		if len(key) != 64 {
 			return nil, ErrKeyTypeMismatch
 		}
+
 		aead, err = aescbcaead.NewAESCBC256SHA512(key)
 	default:
 		return nil, errors.New("invalid algorithm")
 	}
+
 	if err != nil {
 		return nil, ErrKeyTypeMismatch
 	}
+
 	return aead, nil
 }
 
@@ -370,5 +383,6 @@ func expectedKeySize(alg string) int {
 	case "256":
 		return 32
 	}
+
 	return 0
 }

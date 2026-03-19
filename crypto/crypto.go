@@ -11,7 +11,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:nosnakecase
 package crypto
 
 import (
@@ -76,5 +75,6 @@ func getSHAHash(alg string) crypto.Hash {
 	case "512":
 		return crypto.SHA512
 	}
+
 	return crypto.Hash(0)
 }

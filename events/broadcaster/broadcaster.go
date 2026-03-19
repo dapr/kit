@@ -49,6 +49,7 @@ func New[T any]() *Broadcaster[T] {
 func (b *Broadcaster[T]) Subscribe(ctx context.Context, ch ...chan<- T) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
+
 	for _, c := range ch {
 		b.subscribe(ctx, c)
 	}
@@ -70,6 +71,7 @@ func (b *Broadcaster[T]) subscribe(ctx context.Context, ch chan<- T) {
 	})
 
 	b.wg.Add(1)
+
 	go func() {
 		defer func() {
 			close(closeEventCh)
@@ -108,9 +110,11 @@ func (b *Broadcaster[T]) subscribe(ctx context.Context, ch chan<- T) {
 func (b *Broadcaster[T]) Broadcast(value T) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
+
 	if b.closed.Load() {
 		return
 	}
+
 	for _, ev := range b.eventChs {
 		select {
 		case <-ev.closeEventCh:
@@ -124,6 +128,7 @@ func (b *Broadcaster[T]) Broadcast(value T) {
 // the subscribers. The Broadcaster will be a no-op after this call.
 func (b *Broadcaster[T]) Close() {
 	defer b.wg.Wait()
+
 	b.lock.Lock()
 	if b.closed.CompareAndSwap(false, true) {
 		close(b.closeCh)

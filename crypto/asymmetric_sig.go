@@ -11,7 +11,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:nosnakecase
 package crypto
 
 import (
@@ -63,6 +62,7 @@ func signPrivateKeyRSAPKCS1v15(digest []byte, hash crypto.Hash, key jwk.Key) ([]
 	if key.Raw(rsaKey) != nil {
 		return nil, ErrKeyTypeMismatch
 	}
+
 	return rsa.SignPKCS1v15(rand.Reader, rsaKey, hash, digest)
 }
 
@@ -71,6 +71,7 @@ func signPrivateKeyRSAPSS(digest []byte, hash crypto.Hash, key jwk.Key) ([]byte,
 	if key.Raw(rsaKey) != nil {
 		return nil, ErrKeyTypeMismatch
 	}
+
 	return rsa.SignPSS(rand.Reader, rsaKey, hash, digest, nil)
 }
 
@@ -87,6 +88,7 @@ func signPrivateKeyEdDSA(message []byte, key jwk.Key) ([]byte, error) {
 	if key.KeyType() != jwa.OKP {
 		return nil, ErrKeyTypeMismatch
 	}
+
 	okpKey, ok := key.(jwk.OKPPrivateKey)
 	if !ok {
 		return nil, ErrKeyTypeMismatch
@@ -98,6 +100,7 @@ func signPrivateKeyEdDSA(message []byte, key jwk.Key) ([]byte, error) {
 		if okpKey.Raw(ed25519Key) != nil {
 			return nil, ErrKeyTypeMismatch
 		}
+
 		return ed25519.Sign(*ed25519Key, message), nil
 
 	default:
@@ -137,13 +140,16 @@ func verifyPublicKeyRSAPKCS1v15(digest []byte, signature []byte, hash crypto.Has
 	if key.Raw(rsaKey) != nil {
 		return false, ErrKeyTypeMismatch
 	}
+
 	err := rsa.VerifyPKCS1v15(rsaKey, hash, digest, signature)
 	if err != nil {
 		if errors.Is(err, rsa.ErrVerification) {
 			err = nil
 		}
+
 		return false, err
 	}
+
 	return true, nil
 }
 
@@ -152,13 +158,16 @@ func verifyPublicKeyRSAPSS(digest []byte, signature []byte, hash crypto.Hash, ke
 	if key.Raw(rsaKey) != nil {
 		return false, ErrKeyTypeMismatch
 	}
+
 	err := rsa.VerifyPSS(rsaKey, hash, digest, signature, nil)
 	if err != nil {
 		if errors.Is(err, rsa.ErrVerification) {
 			err = nil
 		}
+
 		return false, err
 	}
+
 	return true, nil
 }
 
@@ -175,6 +184,7 @@ func verifyPublicKeyEdDSA(mesage []byte, signature []byte, key jwk.Key) (bool, e
 	if key.KeyType() != jwa.OKP {
 		return false, ErrKeyTypeMismatch
 	}
+
 	okpKey, ok := key.(jwk.OKPPublicKey)
 	if !ok {
 		return false, ErrKeyTypeMismatch
@@ -186,6 +196,7 @@ func verifyPublicKeyEdDSA(mesage []byte, signature []byte, key jwk.Key) (bool, e
 		if okpKey.Raw(&ed25519Key) != nil {
 			return false, ErrKeyTypeMismatch
 		}
+
 		return ed25519.Verify(ed25519Key, mesage, signature), nil
 
 	default:

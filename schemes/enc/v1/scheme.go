@@ -26,36 +26,36 @@ const (
 	// SchemeName is the name of the encryption scheme.
 	SchemeName = "dapr.io/enc/v1"
 
-	// Size of each segment in the encrypted message.
+	// SegmentSize is the size of each segment in the encrypted message.
 	// Each segment is exactly 64KB in length, except the last one which could be shorter.
 	SegmentSize = 64 << 10
 
-	// Overhead of each segment in bytes.
+	// SegmentOverhead is the overhead of each segment in bytes.
 	// This is equivalent to the size of the authentication tag for AES-GCM and ChaCha20-Poly1305.
 	SegmentOverhead = 16
 
-	// Length of the nonce prefix.
+	// NoncePrefixLength is the length of the nonce prefix.
 	NoncePrefixLength = 7
 )
 
 var (
-	// Error returned when trying to decrypt a document whose manifest does not contain a key name, and the caller did not provide an explicit key name.
+	// ErrDecryptionKeyMissing is returned when trying to decrypt a document whose manifest does not contain a key name, and the caller did not provide an explicit key name.
 	ErrDecryptionKeyMissing = errors.New("document's manifest does not contain a key name, and no key name was provided")
 
-	// Error returned when the signature of the document could not be validated.
+	// ErrDecryptionSignature is returned when the signature of the document could not be validated.
 	ErrDecryptionSignature = errors.New("failed to validate the document's signature")
 
-	// Error returned when the deryption fails.
+	// ErrDecryptionFailed is returned when the deryption fails.
 	// Most commonly this happens when a segment has been tampered with.
 	ErrDecryptionFailed = errors.New("failed to decrypt segment")
 )
 
 type (
-	// Signature of the method that wraps keys.
+	// WrapKeyFn is the signature of the method that wraps keys.
 	// This does not accept a context, which needs to be provided by the caller of the Encrypt method inside the lambda.
 	WrapKeyFn = func(plaintextKey []byte, algorithm string, keyName string, nonce []byte) (wrappedKey []byte, tag []byte, err error)
 
-	// Signature of the method that unwraps keys.
+	// UnwrapKeyFn is the signature of the method that unwraps keys.
 	// This does not accept a context, which needs to be provided by the caller of the Decrypt method inside the lambda.
 	UnwrapKeyFn = func(wrappedKey []byte, algorithm string, keyName string, nonce []byte, tag []byte) (plaintextKey []byte, err error)
 )
@@ -94,6 +94,7 @@ var BufPool = sync.Pool{
 		// Return a pointer here
 		// See https://github.com/dominikh/go-tools/issues/1336 for explanation
 		b := make([]byte, bufSize)
+
 		return &b
 	},
 }
@@ -105,19 +106,24 @@ func Encrypt(in io.Reader, opts EncryptOptions) (io.Reader, error) {
 	if in == nil {
 		return nil, errors.New("in stream is nil")
 	}
+
 	if opts.WrapKeyFn == nil {
 		return nil, errors.New("option WrapKeyFn is required")
 	}
+
 	if opts.KeyName == "" {
 		return nil, errors.New("option KeyName is required")
 	}
+
 	if opts.Algorithm == "" {
 		return nil, errors.New("option Algorithm is required")
 	}
+
 	keyWrapAlgorithm, err := opts.Algorithm.Validate()
 	if err != nil {
 		return nil, fmt.Errorf("option Algorithm is not valid: %w", err)
 	}
+
 	cipher := CipherAESGCM
 	if opts.Cipher != nil {
 		cipher, err = opts.Cipher.Validate()
@@ -146,6 +152,7 @@ func Encrypt(in io.Reader, opts EncryptOptions) (io.Reader, error) {
 	} else if keyName == "" {
 		keyName = opts.KeyName
 	}
+
 	manifest, err := json.Marshal(&Manifest{
 		KeyName:              keyName,
 		KeyWrappingAlgorithm: keyWrapAlgorithm,
@@ -156,6 +163,7 @@ func Encrypt(in io.Reader, opts EncryptOptions) (io.Reader, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode JSON manifest: %w", err)
 	}
+
 	header, err := fk.SignHeader(manifest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign header: %w", err)
@@ -164,6 +172,7 @@ func Encrypt(in io.Reader, opts EncryptOptions) (io.Reader, error) {
 	// Start a background goroutine to perform the encryption, and return the stream to the caller
 	// From now on, errors are returned as errors on the stream
 	outR, outW := io.Pipe()
+
 	go func() {
 		// Write the header
 		if !writeOrClosePipe(outW, header) {
@@ -184,6 +193,7 @@ func Decrypt(in io.Reader, opts DecryptOptions) (io.Reader, error) {
 	if in == nil {
 		return nil, errors.New("in stream is nil")
 	}
+
 	if opts.UnwrapKeyFn == nil {
 		return nil, errors.New("option UnwrapKeyFn is required")
 	}
@@ -196,6 +206,7 @@ func Decrypt(in io.Reader, opts DecryptOptions) (io.Reader, error) {
 
 	// Parse the manifest to get the key name and validate it
 	var manifestObj Manifest
+
 	err = json.Unmarshal(manifest, &manifestObj)
 	if err != nil || manifestObj.Validate() != nil {
 		// Do not return the exact error to avoid disclosing too much information
@@ -247,6 +258,7 @@ func Decrypt(in io.Reader, opts DecryptOptions) (io.Reader, error) {
 func processSegments(in io.Reader, out *io.PipeWriter, processFn processSegmentFn, segmentSize int) {
 	// Get a buffer from the pool
 	buf := BufPool.Get().(*[]byte)
+
 	defer func() {
 		BufPool.Put(buf)
 	}()
@@ -312,6 +324,7 @@ func processSegments(in io.Reader, out *io.PipeWriter, processFn processSegmentF
 				_ = out.CloseWithError(io.ErrUnexpectedEOF)
 				return
 			}
+
 			break
 		}
 
@@ -328,6 +341,7 @@ func processSegments(in io.Reader, out *io.PipeWriter, processFn processSegmentF
 			_ = out.CloseWithError(errors.New("input stream is too large"))
 			return
 		}
+
 		segment++
 	}
 
@@ -338,6 +352,7 @@ func processSegments(in io.Reader, out *io.PipeWriter, processFn processSegmentF
 func readHeader(in *io.Reader) (manifest []byte, mac []byte, err error) {
 	// Get a buffer from the pool
 	buf := BufPool.Get().(*[]byte)
+
 	defer func() {
 		BufPool.Put(buf)
 	}()
@@ -353,13 +368,11 @@ func readHeader(in *io.Reader) (manifest []byte, mac []byte, err error) {
 	)
 	for newlines < 3 && err == nil {
 		// Even though the maximum size for the header is 1 segment (64KB + 16 bytes), read 512 bytes at a time at most, since most headers are much smaller than that
-		ul = n + 512
-		if ul > SegmentSize {
-			ul = SegmentSize
-		}
+		ul = min(n+512, SegmentSize)
 		if n == ul {
 			break
 		}
+
 		nn, err = (*in).Read((*buf)[n:SegmentSize])
 		if nn <= 0 {
 			continue
@@ -373,7 +386,9 @@ func readHeader(in *io.Reader) (manifest []byte, mac []byte, err error) {
 			if i <= lastNewline {
 				return nil, nil, errors.New("invalid format")
 			}
+
 			line = (*buf)[lastNewline:i]
+
 			switch newlines {
 			case 0:
 				// First line must be the scheme name
@@ -387,9 +402,11 @@ func readHeader(in *io.Reader) (manifest []byte, mac []byte, err error) {
 				// Third line is the MAC
 				mac = line
 			}
+
 			newlines++
 			lastNewline = i + 1
 		}
+
 		n += nn
 	}
 
@@ -397,9 +414,11 @@ func readHeader(in *io.Reader) (manifest []byte, mac []byte, err error) {
 	if newlines < 1 {
 		return nil, nil, errors.New("scheme name not found")
 	}
+
 	if len(manifest) == 0 {
 		return nil, nil, errors.New("manifest not found")
 	}
+
 	if len(mac) == 0 {
 		return nil, nil, errors.New("message authentication code not found")
 	}
@@ -421,5 +440,6 @@ func writeOrClosePipe(w *io.PipeWriter, b []byte) bool {
 		_ = w.CloseWithError(fmt.Errorf("failed to write to the stream: %w", err))
 		return false
 	}
+
 	return true
 }

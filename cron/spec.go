@@ -14,7 +14,6 @@ You can check the original license at:
 		https://github.com/robfig/cron/blob/master/LICENSE
 */
 
-//nolint
 package cron
 
 import "time"
@@ -87,11 +86,13 @@ func (s *SpecSchedule) Next(t time.Time) time.Time {
 	// Note that schedules without a time zone specified (time.Local) are treated
 	// as local to the time provided.
 	origLocation := t.Location()
+
 	loc := s.Location
-	if loc == time.Local {
+	if loc == time.Local { //nolint:gosmopolitan
 		loc = t.Location()
 	}
-	if s.Location != time.Local {
+
+	if s.Location != time.Local { //nolint:gosmopolitan
 		t = t.In(s.Location)
 	}
 
@@ -111,13 +112,14 @@ WRAP:
 
 	// Find the first applicable month.
 	// If it's this month, then do nothing.
-	for 1<<uint(t.Month())&s.Month == 0 {
+	for 1<<uint(t.Month())&s.Month == 0 { //nolint:gosec
 		// If we have to add a month, reset the other parts to 0.
 		if !added {
 			added = true
 			// Otherwise, set the date at the beginning (since the current time is irrelevant).
 			t = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, loc)
 		}
+
 		t = t.AddDate(0, 1, 0)
 
 		// Wrapped around.
@@ -136,6 +138,7 @@ WRAP:
 			added = true
 			t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
 		}
+
 		t = t.AddDate(0, 0, 1)
 		// Notice if the hour is no longer midnight due to DST.
 		// Add an hour if it's 23, subtract an hour if it's 1.
@@ -152,11 +155,12 @@ WRAP:
 		}
 	}
 
-	for 1<<uint(t.Hour())&s.Hour == 0 {
+	for 1<<uint(t.Hour())&s.Hour == 0 { //nolint:gosec
 		if !added {
 			added = true
 			t = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, loc)
 		}
+
 		t = t.Add(1 * time.Hour)
 
 		if t.Hour() == 0 {
@@ -164,11 +168,12 @@ WRAP:
 		}
 	}
 
-	for 1<<uint(t.Minute())&s.Minute == 0 {
+	for 1<<uint(t.Minute())&s.Minute == 0 { //nolint:gosec
 		if !added {
 			added = true
 			t = t.Truncate(time.Minute)
 		}
+
 		t = t.Add(1 * time.Minute)
 
 		if t.Minute() == 0 {
@@ -176,11 +181,12 @@ WRAP:
 		}
 	}
 
-	for 1<<uint(t.Second())&s.Second == 0 {
+	for 1<<uint(t.Second())&s.Second == 0 { //nolint:gosec
 		if !added {
 			added = true
 			t = t.Truncate(time.Second)
 		}
+
 		t = t.Add(1 * time.Second)
 
 		if t.Second() == 0 {
@@ -195,11 +201,12 @@ WRAP:
 // restrictions are satisfied by the given time.
 func dayMatches(s *SpecSchedule, t time.Time) bool {
 	var (
-		domMatch bool = 1<<uint(t.Day())&s.Dom > 0
-		dowMatch bool = 1<<uint(t.Weekday())&s.Dow > 0
+		domMatch = 1<<uint(t.Day())&s.Dom > 0     //nolint:gosec
+		dowMatch = 1<<uint(t.Weekday())&s.Dow > 0 //nolint:gosec
 	)
 	if s.Dom&starBit > 0 || s.Dow&starBit > 0 {
 		return domMatch && dowMatch
 	}
+
 	return domMatch || dowMatch
 }

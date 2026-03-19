@@ -26,14 +26,17 @@ func (d *Dir) switchTo(newDir string) (*string, error) {
 	// Remove any stale temp link
 	_ = os.Remove(tmpLink)
 
-	if err := os.Symlink(newDir, tmpLink); err != nil {
+	err := os.Symlink(newDir, tmpLink)
+	if err != nil {
 		return nil, err
 	}
+
 	d.log.Debugf("Symlink %s -> %s", tmpLink, newDir)
 
 	// Atomically replace the target symlink (or create it if missing)
 	// On POSIX, rename on the same filesystem is atomic.
-	if err := os.Rename(tmpLink, d.target); err != nil {
+	err = os.Rename(tmpLink, d.target)
+	if err != nil {
 		// Clean up temp link if rename fails
 		_ = os.Remove(tmpLink)
 		return nil, err

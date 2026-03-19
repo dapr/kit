@@ -59,6 +59,7 @@ func (p *queue[K, T]) Insert(r T, replace bool) {
 			item.value = r
 			heap.Fix(p.heap, item.index)
 		}
+
 		return
 	}
 
@@ -84,6 +85,7 @@ func (p *queue[K, T]) Pop() (T, bool) {
 	}
 
 	delete(p.items, item.value.Key())
+
 	return item.value, true
 }
 
@@ -159,5 +161,6 @@ func (pq *queueHeap[K, T]) Pop() any {
 	old[n-1] = nil  // Avoid memory leak
 	item.index = -1 // For safety
 	*pq = old[0 : n-1]
+
 	return item
 }

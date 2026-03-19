@@ -35,24 +35,29 @@ func New[T any]() Slice[T] {
 func (s *slice[T]) Append(items ...T) int {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
 	s.data = append(s.data, items...)
+
 	return len(s.data)
 }
 
 func (s *slice[T]) Len() int {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
+
 	return len(s.data)
 }
 
 func (s *slice[T]) Slice() []T {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
+
 	return s.data
 }
 
 func (s *slice[T]) Store(items ...T) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
 	s.data = items
 }

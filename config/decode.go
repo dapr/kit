@@ -23,9 +23,9 @@ import (
 )
 
 var (
-	typeDuration      = reflect.TypeOf(time.Duration(5))             //nolint: gochecknoglobals
-	typeTime          = reflect.TypeOf(time.Time{})                  //nolint: gochecknoglobals
-	typeStringDecoder = reflect.TypeOf((*StringDecoder)(nil)).Elem() //nolint: gochecknoglobals
+	typeDuration      = reflect.TypeFor[time.Duration]() //nolint: gochecknoglobals
+	typeTime          = reflect.TypeFor[time.Time]()     //nolint: gochecknoglobals
+	typeStringDecoder = reflect.TypeFor[StringDecoder]() //nolint: gochecknoglobals
 )
 
 // StringDecoder is used as a way for custom types (or alias types) to
@@ -62,10 +62,12 @@ func decodeString(f reflect.Type, t reflect.Type, data any) (any, error) {
 	if t.Kind() == reflect.String && f.Kind() != reflect.String {
 		return fmt.Sprintf("%v", data), nil
 	}
+
 	if f.Kind() == reflect.Ptr {
 		f = f.Elem()
 		data = reflect.ValueOf(data).Elem().Interface()
 	}
+
 	if f.Kind() != reflect.String {
 		return data, nil
 	}
@@ -75,8 +77,10 @@ func decodeString(f reflect.Type, t reflect.Type, data any) (any, error) {
 		return nil, fmt.Errorf("expected string: got %T", data)
 	}
 
-	var result any
-	var decoder StringDecoder
+	var (
+		result  any
+		decoder StringDecoder
+	)
 
 	if t.Implements(typeStringDecoder) {
 		result = reflect.New(t.Elem()).Interface()
@@ -87,7 +91,8 @@ func decodeString(f reflect.Type, t reflect.Type, data any) (any, error) {
 	}
 
 	if decoder != nil {
-		if err := decoder.DecodeString(dataString); err != nil {
+		err := decoder.DecodeString(dataString)
+		if err != nil {
 			if t.Kind() == reflect.Ptr {
 				t = t.Elem()
 			}
@@ -102,7 +107,8 @@ func decodeString(f reflect.Type, t reflect.Type, data any) (any, error) {
 	case typeDuration:
 		// Check for simple integer values and treat them
 		// as milliseconds
-		if val, err := strconv.Atoi(dataString); err == nil {
+		val, err := strconv.Atoi(dataString)
+		if err == nil {
 			return time.Duration(val) * time.Millisecond, nil
 		}
 
@@ -116,6 +122,7 @@ func decodeString(f reflect.Type, t reflect.Type, data any) (any, error) {
 		if err == nil {
 			return t, nil
 		}
+
 		t, err = time.Parse(time.RFC3339, dataString)
 
 		return t, invalidError(err, "time", dataString)

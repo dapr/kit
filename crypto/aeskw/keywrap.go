@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package keywrap provides an AES-KW keywrap implementation as defined in RFC-3394.
+// Package aeskw provides an AES-KW keywrap implementation as defined in RFC-3394.
 package aeskw
 
 /*!
@@ -39,6 +39,7 @@ func Wrap(block cipher.Block, cek []byte) ([]byte, error) {
 	// Initialize variables
 	a := make([]byte, 8)
 	copy(a, defaultIV)
+
 	n := len(cek) / 8
 
 	// Calculate intermediate
@@ -65,11 +66,13 @@ func Wrap(block cipher.Block, cek []byte) ([]byte, error) {
 	// Output
 	c := make([]byte, (n+1)*8)
 	copy(c, a)
+
 	for i := 1; i <= n; i++ {
 		for j := range r[i-1] {
 			c[(i*8)+j] = r[i-1][j]
 		}
 	}
+
 	return c, nil
 }
 
@@ -85,6 +88,7 @@ func Unwrap(block cipher.Block, cipherText []byte) ([]byte, error) {
 		r[i] = make([]byte, 8)
 		copy(r[i], cipherText[(i+1)*8:])
 	}
+
 	copy(a, cipherText[:8])
 
 	// Compute intermediate values
@@ -108,14 +112,19 @@ func Unwrap(block cipher.Block, cipherText []byte) ([]byte, error) {
 
 	// Output
 	c := arrConcat(r...)
+
 	return c, nil
 }
 
 func arrConcat(arrays ...[]byte) []byte {
-	out := make([]byte, len(arrays[0]))
-	copy(out, arrays[0])
-	for _, array := range arrays[1:] {
-		out = append(out, array...) //nolint:makezero
+	var totalLen int
+	for _, array := range arrays {
+		totalLen += len(array)
+	}
+
+	out := make([]byte, 0, totalLen)
+	for _, array := range arrays {
+		out = append(out, array...)
 	}
 
 	return out
@@ -126,5 +135,6 @@ func arrXor(arrL []byte, arrR []byte) []byte {
 	for x := range arrL {
 		out[x] = arrL[x] ^ arrR[x]
 	}
+
 	return out
 }

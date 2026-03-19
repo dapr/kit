@@ -34,9 +34,11 @@ func PadPKCS7(buf []byte, size int) ([]byte, error) {
 	if size <= 1 || size >= 256 {
 		return nil, ErrInvalidPKCS7BlockSize
 	}
+
 	bufLen := len(buf)
 	padLen := size - bufLen%size
-	padding := bytes.Repeat([]byte{byte(padLen)}, padLen)
+	padding := bytes.Repeat([]byte{byte(padLen)}, padLen) //nolint:gosec
+
 	return append(buf, padding...), nil
 }
 
@@ -45,10 +47,12 @@ func UnpadPKCS7(buf []byte, size int) ([]byte, error) {
 	if size <= 1 || size >= 256 {
 		return nil, ErrInvalidPKCS7BlockSize
 	}
+
 	l := len(buf)
 	if l == 0 {
 		return []byte{}, nil
 	}
+
 	if l%size != 0 {
 		return nil, ErrInvalidPKCS7Padding
 	}
@@ -57,11 +61,13 @@ func UnpadPKCS7(buf []byte, size int) ([]byte, error) {
 	if padLen <= 0 || padLen > size {
 		return nil, ErrInvalidPKCS7Padding
 	}
-	padLenB := byte(padLen)
+
+	padLenB := byte(padLen) //nolint:gosec
 	for i := l - padLen; i < l; i++ {
 		if buf[i] != padLenB {
 			return nil, ErrInvalidPKCS7Padding
 		}
 	}
+
 	return buf[:l-padLen], nil
 }

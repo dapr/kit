@@ -49,6 +49,7 @@ type fileKey struct {
 func newFileKey(cipher Cipher) (fileKey, error) {
 	// Read 39 random bytes for the file key (256 bits) and nonce prefix (56 bits)
 	rnd := make([]byte, 39)
+
 	_, err := io.ReadFull(rand.Reader, rnd)
 	if err != nil {
 		return fileKey{}, fmt.Errorf("failed to generate file key: %w", err)
@@ -69,6 +70,7 @@ func importFileKey(fileKey, noncePrefix []byte, cipher Cipher) (fk fileKey, err 
 	if err != nil {
 		return fk, fmt.Errorf("failed to derive the header key: %w", err)
 	}
+
 	fk.payloadKey, err = fk.deriveKey(32, []byte("payload"), fk.noncePrefix)
 	if err != nil {
 		return fk, fmt.Errorf("failed to derive the payload key: %w", err)
@@ -117,10 +119,12 @@ func (k fileKey) SignHeader(manifest []byte) ([]byte, error) {
 func (k fileKey) VerifyHeaderSignature(manifest []byte, macB64 []byte) error {
 	// Decode the base64-encoded MAC
 	mac := make([]byte, base64.StdEncoding.DecodedLen(len(macB64)))
+
 	n, err := base64.StdEncoding.Decode(mac, macB64)
 	if err != nil {
 		return fmt.Errorf("failed to decode header's signature: %w", err)
 	}
+
 	mac = mac[:n]
 
 	// Message to sign
@@ -139,26 +143,6 @@ func (k fileKey) VerifyHeaderSignature(manifest []byte, macB64 []byte) error {
 
 	// All good
 	return nil
-}
-
-// Returns the header's message (which will be signed)
-func (k fileKey) headerMessage(manifest []byte) []byte {
-	return bytes.Join([][]byte{
-		[]byte(SchemeName),
-		manifest,
-		{}, // End with a newline
-	}, []byte{'\n'})
-}
-
-// Compute the signature of the header
-func (k fileKey) computeHeaderSignature(msg []byte) ([]byte, error) {
-	h := hmac.New(sha256.New, k.headerKey)
-	_, err := h.Write(msg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to write into HMAC: %w", err)
-	}
-	mac := h.Sum(nil)
-	return mac, nil
 }
 
 // Type for both EncryptSegment and DecryptSegment.
@@ -188,6 +172,7 @@ func (k fileKey) EncryptSegment(out io.Writer, data []byte, num uint32, last boo
 	if err != nil {
 		return fmt.Errorf("error writing encrypted segment to output stream: %w", err)
 	}
+
 	return nil
 }
 
@@ -218,7 +203,31 @@ func (k fileKey) DecryptSegment(out io.Writer, data []byte, num uint32, last boo
 	if err != nil {
 		return fmt.Errorf("error writing decrypted segment to output stream: %w", err)
 	}
+
 	return nil
+}
+
+// Returns the header's message (which will be signed)
+func (k fileKey) headerMessage(manifest []byte) []byte {
+	return bytes.Join([][]byte{
+		[]byte(SchemeName),
+		manifest,
+		{}, // End with a newline
+	}, []byte{'\n'})
+}
+
+// Compute the signature of the header
+func (k fileKey) computeHeaderSignature(msg []byte) ([]byte, error) {
+	h := hmac.New(sha256.New, k.headerKey)
+
+	_, err := h.Write(msg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write into HMAC: %w", err)
+	}
+
+	mac := h.Sum(nil)
+
+	return mac, nil
 }
 
 // Computes the nonce for a segment.
@@ -226,11 +235,13 @@ func (k fileKey) nonceForSegment(num uint32, last bool) []byte {
 	nonce := make([]byte, 12)
 	copy(nonce[0:NoncePrefixLength], k.noncePrefix)
 	binary.BigEndian.PutUint32(nonce[NoncePrefixLength:(NoncePrefixLength+4)], num)
+
 	if last {
 		nonce[(NoncePrefixLength + 4)] = 0x1
 	} else {
 		nonce[(NoncePrefixLength + 4)] = 0x0
 	}
+
 	return nonce
 }
 
@@ -239,10 +250,12 @@ func (k fileKey) getCipher() (aead cipher.AEAD, err error) {
 	switch k.cipher {
 	case CipherAESGCM:
 		var block cipher.Block
+
 		block, err = aes.NewCipher(k.payloadKey)
 		if err != nil {
 			return nil, err
 		}
+
 		aead, err = cipher.NewGCM(block)
 
 	case CipherChaCha20Poly1305:
@@ -260,9 +273,11 @@ func (k fileKey) getCipher() (aead cipher.AEAD, err error) {
 func (k fileKey) deriveKey(size int, info []byte, salt []byte) ([]byte, error) {
 	hkdf := hkdf.New(sha256.New, k.fileKey, salt, info)
 	key := make([]byte, size)
+
 	_, err := io.ReadFull(hkdf, key)
 	if err != nil {
 		return nil, fmt.Errorf("error from HKDF function: %w", err)
 	}
+
 	return key, nil
 }

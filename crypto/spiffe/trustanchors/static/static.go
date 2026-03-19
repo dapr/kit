@@ -47,8 +47,10 @@ func From(opts Options) (trustanchors.Interface, error) {
 	emptyTD := spiffeid.TrustDomain{}
 
 	var jwtBundle *jwtbundle.Bundle
+
 	if opts.Jwks != nil {
 		var err error
+
 		jwtBundle, err = jwtbundle.Parse(emptyTD, opts.Jwks)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create JWT bundle: %w", err)
@@ -71,6 +73,7 @@ func From(opts Options) (trustanchors.Interface, error) {
 func (s *static) CurrentTrustAnchors(context.Context) ([]byte, error) {
 	bundle := make([]byte, len(s.anchors))
 	copy(bundle, s.anchors)
+
 	return bundle, nil
 }
 
@@ -78,8 +81,10 @@ func (s *static) Run(ctx context.Context) error {
 	if !s.running.CompareAndSwap(false, true) {
 		return errors.New("trust anchors source is already running")
 	}
+
 	<-ctx.Done()
 	close(s.closeCh)
+
 	return nil
 }
 

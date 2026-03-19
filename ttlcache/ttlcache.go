@@ -72,6 +72,7 @@ func NewCache[V any](opts CacheOptions) *Cache[V] {
 		stopCh: make(chan struct{}),
 	}
 	c.startBackgroundCleanup(opts.CleanupInterval)
+
 	return c
 }
 
@@ -82,6 +83,7 @@ func (c *Cache[V]) Get(key string) (v V, ok bool) {
 	if !ok || !val.exp.After(c.clock.Now()) {
 		return v, false
 	}
+
 	return val.val, true
 }
 
@@ -120,6 +122,7 @@ func (c *Cache[V]) Cleanup() {
 		if v.exp.Before(now) {
 			keys = append(keys, k)
 		}
+
 		return true
 	})
 
@@ -143,11 +146,13 @@ func (c *Cache[V]) Reset() {
 
 func (c *Cache[V]) startBackgroundCleanup(d time.Duration) {
 	c.runningCh = make(chan struct{})
+
 	go func() {
 		defer close(c.runningCh)
 
 		t := c.clock.NewTicker(d)
 		defer t.Stop()
+
 		for {
 			select {
 			case <-c.stopCh:
@@ -165,6 +170,7 @@ func (c *Cache[V]) Stop() {
 	if c.stopped.CompareAndSwap(false, true) {
 		close(c.stopCh)
 	}
+
 	<-c.runningCh
 }
 
