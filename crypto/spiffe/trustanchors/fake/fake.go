@@ -20,12 +20,9 @@ import (
 	"github.com/spiffe/go-spiffe/v2/bundle/jwtbundle"
 	"github.com/spiffe/go-spiffe/v2/bundle/x509bundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
-
-	"github.com/dapr/kit/crypto/spiffe/trustanchors"
 )
 
 type Fake struct {
-	trustanchors.Interface
 	bundle *x509bundle.Bundle
 }
 
