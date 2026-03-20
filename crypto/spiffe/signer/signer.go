@@ -91,6 +91,10 @@ func (s *Signer) Verify(digest, sig, certChainDER []byte) error {
 // is trusted by the current trust anchors. The trust domain is extracted from
 // the leaf certificate's SPIFFE ID (URI SAN).
 func (s *Signer) VerifyCertChainOfTrust(certChainDER []byte) error {
+	if s.trustAnchors == nil {
+		return errors.New("chain-of-trust verification not available: no trust anchors configured")
+	}
+
 	certs, err := x509.ParseCertificates(certChainDER)
 	if err != nil {
 		return fmt.Errorf("failed to parse certificate chain: %w", err)

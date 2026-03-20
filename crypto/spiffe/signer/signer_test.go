@@ -26,6 +26,7 @@ import (
 	"errors"
 	"math/big"
 	"net/url"
+	"slices"
 	"testing"
 	"time"
 
@@ -175,9 +176,12 @@ func TestNew(t *testing.T) {
 	t.Run("nil trustAnchors for sign-only", func(t *testing.T) {
 		t.Parallel()
 		certDER, cert, priv := generateEd25519Cert(t)
-		_ = certDER
 		s := New(newSVIDSource(cert, priv), nil)
 		require.NotNil(t, s)
+
+		err := s.VerifyCertChainOfTrust(certDER)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "no trust anchors configured")
 	})
 
 	t.Run("both present", func(t *testing.T) {
@@ -327,7 +331,7 @@ func TestVerifyCertChainOfTrust_CAChain(t *testing.T) {
 	caDER, ca, caKey := generateCA(t)
 	leafDER, _, _ := generateLeafSignedByCA(t, ca, caKey)
 
-	chainDER := append(leafDER, caDER...)
+	chainDER := slices.Concat(leafDER, caDER)
 	ta := fake.New(ca)
 	s := New(nil, ta)
 
@@ -359,7 +363,7 @@ func TestVerifyCertChainOfTrust_IntermediateChain(t *testing.T) {
 	// Create leaf signed by intermediate.
 	leafDER, _, _ := generateLeafSignedByCA(t, intermCA, intermPriv)
 
-	chainDER := append(leafDER, intermDER...)
+	chainDER := slices.Concat(leafDER, intermDER)
 	ta := fake.New(rootCA)
 	s := New(nil, ta)
 
@@ -371,7 +375,7 @@ func TestVerifyCertChainOfTrust_WrongTrustAnchor(t *testing.T) {
 	t.Parallel()
 	caDER, ca, caKey := generateCA(t)
 	leafDER, _, _ := generateLeafSignedByCA(t, ca, caKey)
-	chainDER := append(leafDER, caDER...)
+	chainDER := slices.Concat(leafDER, caDER)
 
 	// Different CA as trust anchor.
 	_, wrongCA, _ := generateCA(t)
