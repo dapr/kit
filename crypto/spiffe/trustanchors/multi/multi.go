@@ -81,6 +81,4 @@ func (m *multi) GetJWTBundleForTrustDomain(td spiffeid.TrustDomain) (*jwtbundle.
 	return nil, ErrTrustDomainNotFound
 }
 
-func (m *multi) Watch(context.Context, chan<- []byte) {
-	return
-}
+func (m *multi) Watch(context.Context, chan<- []byte) {}
