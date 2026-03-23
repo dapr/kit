@@ -16,7 +16,9 @@ package signals
 import (
 	"context"
 	"errors"
+	"net"
 	"os"
+	"time"
 )
 
 var shutdownSignals = []os.Signal{os.Interrupt}
@@ -74,7 +76,15 @@ func OnHUP(ctx context.Context) <-chan context.Context {
 						cancel(ctx.Err())
 						return
 					}
-					log.Warnf("Error accepting reload pipe connection, retrying: %v", err)
+					// If the listener is permanently closed, exit rather
+					// than spinning in a tight retry loop.
+					if errors.Is(err, net.ErrClosed) {
+						log.Errorf("Reload pipe listener closed unexpectedly: %v", err)
+						cancel(errors.New("reload pipe listener closed"))
+						return
+					}
+					log.Warnf("Error accepting reload pipe connection, retrying in 1s: %v", err)
+					time.Sleep(time.Second)
 					continue
 				}
 				conn.Close()
