@@ -38,7 +38,8 @@ func SignalReload(pid int) error {
 		return fmt.Errorf("failed to find process %d: %w", pid, err)
 	}
 
-	if err := proc.Signal(syscall.SIGHUP); err != nil {
+	err = proc.Signal(syscall.SIGHUP)
+	if err != nil {
 		return fmt.Errorf("failed to send SIGHUP to process %d: %w", pid, err)
 	}
 
