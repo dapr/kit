@@ -22,7 +22,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
@@ -77,9 +76,11 @@ func (s *Signer) Sign(digest []byte) ([]byte, []byte, error) {
 	return sig, certChainDER, nil
 }
 
-// Verify verifies a cryptographic signature against the given digest using the
-// public key from the provided DER-encoded certificate chain.
-func (s *Signer) Verify(digest, sig, certChainDER []byte) error {
+// VerifySignature verifies a cryptographic signature against the given digest
+// using the public key from the provided DER-encoded certificate chain. This
+// only checks the cryptographic signature; use VerifyCertChainOfTrust to
+// validate the certificate chain against trust anchors.
+func (s *Signer) VerifySignature(digest, sig, certChainDER []byte) error {
 	leaf, err := parseLeafCert(certChainDER)
 	if err != nil {
 		return err
@@ -89,8 +90,10 @@ func (s *Signer) Verify(digest, sig, certChainDER []byte) error {
 
 // VerifyCertChainOfTrust verifies that the given DER-encoded certificate chain
 // is trusted by the current trust anchors. The trust domain is extracted from
-// the leaf certificate's SPIFFE ID (URI SAN).
-func (s *Signer) VerifyCertChainOfTrust(certChainDER []byte) error {
+// the leaf certificate's SPIFFE ID (URI SAN). The signingTime is used as the
+// verification time, allowing validation of certificates that were valid at the
+// time of signing even if they have since expired.
+func (s *Signer) VerifyCertChainOfTrust(certChainDER []byte, signingTime time.Time) error {
 	if s.trustAnchors == nil {
 		return errors.New("chain-of-trust verification not available: no trust anchors configured")
 	}
@@ -134,11 +137,7 @@ func (s *Signer) VerifyCertChainOfTrust(certChainDER []byte) error {
 		Roots:         roots,
 		Intermediates: intermediates,
 		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
-		// Use the leaf's NotAfter minus one minute as the verification time.
-		// This avoids failures from expired short-lived SVIDs and from
-		// backdated NotBefore (sentry backdates SVIDs for clock-skew
-		// tolerance, which can place NotBefore before the CA's NotBefore).
-		CurrentTime: leaf.NotAfter.Add(-time.Minute),
+		CurrentTime:   signingTime,
 	})
 	if err != nil {
 		return fmt.Errorf("certificate chain-of-trust verification failed: %w", err)
@@ -153,17 +152,7 @@ func signWithKey(key crypto.Signer, digest []byte) ([]byte, error) {
 	case ed25519.PrivateKey:
 		return ed25519.Sign(k, digest), nil
 	case *ecdsa.PrivateKey:
-		r, s, err := ecdsa.Sign(rand.Reader, k, digest)
-		if err != nil {
-			return nil, err
-		}
-		byteLen := (k.Curve.Params().BitSize + 7) / 8
-		sig := make([]byte, 2*byteLen)
-		rBytes := r.Bytes()
-		sBytes := s.Bytes()
-		copy(sig[byteLen-len(rBytes):byteLen], rBytes)
-		copy(sig[2*byteLen-len(sBytes):], sBytes)
-		return sig, nil
+		return ecdsa.SignASN1(rand.Reader, k, digest)
 	case *rsa.PrivateKey:
 		return rsa.SignPKCS1v15(rand.Reader, k, crypto.SHA256, digest)
 	default:
@@ -180,13 +169,7 @@ func verifyWithKey(pubKey crypto.PublicKey, digest, sig []byte) error {
 		}
 		return nil
 	case *ecdsa.PublicKey:
-		byteLen := (k.Curve.Params().BitSize + 7) / 8
-		if len(sig) != 2*byteLen {
-			return fmt.Errorf("invalid ECDSA signature length: got %d, want %d", len(sig), 2*byteLen)
-		}
-		r := new(big.Int).SetBytes(sig[:byteLen])
-		s := new(big.Int).SetBytes(sig[byteLen:])
-		if !ecdsa.Verify(k, digest, r, s) {
+		if !ecdsa.VerifyASN1(k, digest, sig) {
 			return errors.New("ecdsa signature verification failed")
 		}
 		return nil

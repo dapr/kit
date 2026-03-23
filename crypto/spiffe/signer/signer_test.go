@@ -179,7 +179,7 @@ func TestNew(t *testing.T) {
 		s := New(newSVIDSource(cert, priv), nil)
 		require.NotNil(t, s)
 
-		err := s.VerifyCertChainOfTrust(certDER)
+		err := s.VerifyCertChainOfTrust(certDER, time.Now())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "no trust anchors configured")
 	})
@@ -232,7 +232,7 @@ func TestSignAndVerify_Ed25519(t *testing.T) {
 	require.NotEmpty(t, sig)
 	require.NotEmpty(t, certChain)
 
-	err = s.Verify(digest, sig, certChain)
+	err = s.VerifySignature(digest, sig, certChain)
 	require.NoError(t, err)
 }
 
@@ -245,7 +245,7 @@ func TestSignAndVerify_ECDSA(t *testing.T) {
 	sig, certChain, err := s.Sign(digest)
 	require.NoError(t, err)
 
-	err = s.Verify(digest, sig, certChain)
+	err = s.VerifySignature(digest, sig, certChain)
 	require.NoError(t, err)
 }
 
@@ -258,7 +258,7 @@ func TestSignAndVerify_RSA(t *testing.T) {
 	sig, certChain, err := s.Sign(digest)
 	require.NoError(t, err)
 
-	err = s.Verify(digest, sig, certChain)
+	err = s.VerifySignature(digest, sig, certChain)
 	require.NoError(t, err)
 }
 
@@ -270,7 +270,7 @@ func TestVerify_TamperedDigest(t *testing.T) {
 	sig, certChain, err := s.Sign(testDigest("original"))
 	require.NoError(t, err)
 
-	err = s.Verify(testDigest("tampered"), sig, certChain)
+	err = s.VerifySignature(testDigest("tampered"), sig, certChain)
 	require.Error(t, err)
 }
 
@@ -286,14 +286,14 @@ func TestVerify_TamperedSignature(t *testing.T) {
 	// Flip a byte in the signature.
 	sig[0] ^= 0xff
 
-	err = s.Verify(digest, sig, certChain)
+	err = s.VerifySignature(digest, sig, certChain)
 	require.Error(t, err)
 }
 
 func TestVerify_InvalidCertChain(t *testing.T) {
 	t.Parallel()
 	s := New(nil, fake.New())
-	err := s.Verify(testDigest("digest"), []byte("sig"), []byte("not-a-cert"))
+	err := s.VerifySignature(testDigest("digest"), []byte("sig"), []byte("not-a-cert"))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to parse")
 }
@@ -302,7 +302,7 @@ func TestVerify_EmptyCertChain(t *testing.T) {
 	t.Parallel()
 	s := New(nil, fake.New())
 	// Valid DER but empty is not possible; just use nil.
-	err := s.Verify(testDigest("digest"), []byte("sig"), nil)
+	err := s.VerifySignature(testDigest("digest"), []byte("sig"), nil)
 	require.Error(t, err)
 }
 
@@ -322,7 +322,7 @@ func TestVerifyCertChainOfTrust_SelfSigned(t *testing.T) {
 	ta := fake.New(cert)
 	s := New(nil, ta)
 
-	err := s.VerifyCertChainOfTrust(certDER)
+	err := s.VerifyCertChainOfTrust(certDER, time.Now())
 	require.NoError(t, err)
 }
 
@@ -335,7 +335,7 @@ func TestVerifyCertChainOfTrust_CAChain(t *testing.T) {
 	ta := fake.New(ca)
 	s := New(nil, ta)
 
-	err := s.VerifyCertChainOfTrust(chainDER)
+	err := s.VerifyCertChainOfTrust(chainDER, time.Now())
 	require.NoError(t, err)
 }
 
@@ -367,7 +367,7 @@ func TestVerifyCertChainOfTrust_IntermediateChain(t *testing.T) {
 	ta := fake.New(rootCA)
 	s := New(nil, ta)
 
-	err = s.VerifyCertChainOfTrust(chainDER)
+	err = s.VerifyCertChainOfTrust(chainDER, time.Now())
 	require.NoError(t, err)
 }
 
@@ -382,7 +382,7 @@ func TestVerifyCertChainOfTrust_WrongTrustAnchor(t *testing.T) {
 	ta := fake.New(wrongCA)
 	s := New(nil, ta)
 
-	err := s.VerifyCertChainOfTrust(chainDER)
+	err := s.VerifyCertChainOfTrust(chainDER, time.Now())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "chain-of-trust verification failed")
 }
@@ -392,7 +392,7 @@ func TestVerifyCertChainOfTrust_EmptyChain(t *testing.T) {
 	ta := fake.New()
 	s := New(nil, ta)
 
-	err := s.VerifyCertChainOfTrust(nil)
+	err := s.VerifyCertChainOfTrust(nil, time.Now())
 	require.Error(t, err)
 }
 
@@ -401,7 +401,7 @@ func TestVerifyCertChainOfTrust_InvalidDER(t *testing.T) {
 	ta := fake.New()
 	s := New(nil, ta)
 
-	err := s.VerifyCertChainOfTrust([]byte("not-a-cert"))
+	err := s.VerifyCertChainOfTrust([]byte("not-a-cert"), time.Now())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to parse")
 }
@@ -446,10 +446,10 @@ func TestSignAndVerify_RoundTrip_AllKeyTypes(t *testing.T) {
 			sig, certChain, err := s.Sign(digest)
 			require.NoError(t, err)
 
-			err = s.Verify(digest, sig, certChain)
+			err = s.VerifySignature(digest, sig, certChain)
 			require.NoError(t, err)
 
-			err = s.VerifyCertChainOfTrust(certChain)
+			err = s.VerifyCertChainOfTrust(certChain, time.Now())
 			require.NoError(t, err)
 		})
 	}
