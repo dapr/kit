@@ -3,6 +3,7 @@ module github.com/dapr/kit
 go 1.26.0
 
 require (
+	github.com/Microsoft/go-winio v0.6.2
 	github.com/alphadose/haxmap v1.3.1
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/fsnotify/fsnotify v1.7.0
