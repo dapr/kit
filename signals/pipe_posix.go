@@ -2,7 +2,7 @@
 // +build !windows
 
 /*
-Copyright 2023 The Dapr Authors
+Copyright 2026 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -20,14 +20,16 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"syscall"
 )
 
-// ReloadPipeName returns the named pipe path that would be used on Windows.
-// On POSIX systems this is not used (SIGHUP is used instead), but is provided
-// so that cross-platform code compiles.
-func ReloadPipeName(int) string {
-	return ""
+// ReloadPipeName returns the named pipe path used by a dapr process with the
+// given PID to listen for reload signals on Windows. On POSIX systems this is
+// not used (SIGHUP is used instead), but returns the same value as the Windows
+// implementation so that cross-platform code can compute the expected name.
+func ReloadPipeName(pid int) string {
+	return `\\.\pipe\dapr-reload-` + strconv.Itoa(pid)
 }
 
 // listenPipe is not used on POSIX systems (SIGHUP is used instead), but is

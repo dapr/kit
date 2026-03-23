@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Dapr Authors
+Copyright 2026 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -30,10 +30,11 @@ func ReloadPipeName(pid int) string {
 }
 
 // listenPipe creates a Windows named pipe listener at the given path.
-// The pipe is secured so that only administrators and SYSTEM can connect.
+// The pipe is secured so that the creating user (Creator Owner),
+// Built-in Administrators, and Local System have full access.
 func listenPipe(name string) (net.Listener, error) {
 	return winio.ListenPipe(name, &winio.PipeConfig{
-		// BA = Built-in Administrators, SY = Local System, CO = Creator Owner.
+		// CO = Creator Owner, BA = Built-in Administrators, SY = Local System.
 		SecurityDescriptor: "D:P(A;;GA;;;CO)(A;;GA;;;BA)(A;;GA;;;SY)",
 	})
 }

@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Dapr Authors
+Copyright 2026 The Dapr Authors
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -16,7 +16,6 @@ package signals
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 )
 
@@ -66,17 +65,21 @@ func OnHUP(ctx context.Context) <-chan context.Context {
 
 			// Wait for a connection on the named pipe. A connection (and
 			// immediate close) is the reload trigger, equivalent to SIGHUP.
-			conn, err := listener.Accept()
-			if err != nil {
-				if ctx.Err() != nil {
-					cancel(ctx.Err())
-					return
+			// Retry on transient Accept errors without canceling the
+			// current context to avoid unintended restart loops.
+			for {
+				conn, err := listener.Accept()
+				if err != nil {
+					if ctx.Err() != nil {
+						cancel(ctx.Err())
+						return
+					}
+					log.Warnf("Error accepting reload pipe connection, retrying: %v", err)
+					continue
 				}
-				log.Warnf("Error accepting reload pipe connection: %v", err)
-				cancel(fmt.Errorf("pipe accept error: %w", err))
-				continue
+				conn.Close()
+				break
 			}
-			conn.Close()
 
 			log.Info("Received reload signal via named pipe; restarting")
 			cancel(errors.New("received reload signal via named pipe"))
