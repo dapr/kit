@@ -52,6 +52,7 @@ func TestGetIntWithRangeWrongValues(t *testing.T) {
 	}
 
 	defaultValue := 3 * time.Second
+
 	for _, tt := range testValues {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("MY_ENV", tt.envVarVal)

@@ -27,19 +27,23 @@ type AtomicValue[T constraints.Integer] struct {
 func (a *AtomicValue[T]) Load() T {
 	a.lock.RLock()
 	defer a.lock.RUnlock()
+
 	return a.value
 }
 
 func (a *AtomicValue[T]) Store(v T) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
+
 	a.value = v
 }
 
 func (a *AtomicValue[T]) Add(v T) T {
 	a.lock.Lock()
 	defer a.lock.Unlock()
+
 	a.value += v
+
 	return a.value
 }
 
@@ -70,6 +74,7 @@ func (a *atomicMap[K, T]) Get(key K) (*AtomicValue[T], bool) {
 	if !ok {
 		return nil, false
 	}
+
 	return item, true
 }
 
@@ -77,6 +82,7 @@ func (a *atomicMap[K, T]) GetOrCreate(key K, createT T) *AtomicValue[T] {
 	a.lock.RLock()
 	item, ok := a.items[key]
 	a.lock.RUnlock()
+
 	if !ok {
 		a.lock.Lock()
 		// Double-check the key exists to avoid race condition
@@ -87,6 +93,7 @@ func (a *atomicMap[K, T]) GetOrCreate(key K, createT T) *AtomicValue[T] {
 		}
 		a.lock.Unlock()
 	}
+
 	return item
 }
 
@@ -99,6 +106,7 @@ func (a *atomicMap[K, T]) Delete(key K) {
 func (a *atomicMap[K, T]) ForEach(fn func(key K, value *AtomicValue[T])) {
 	a.lock.RLock()
 	defer a.lock.RUnlock()
+
 	for k, v := range a.items {
 		fn(k, v)
 	}
@@ -107,5 +115,6 @@ func (a *atomicMap[K, T]) ForEach(fn func(key K, value *AtomicValue[T])) {
 func (a *atomicMap[K, T]) Clear() {
 	a.lock.Lock()
 	defer a.lock.Unlock()
+
 	clear(a.items)
 }

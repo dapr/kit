@@ -26,6 +26,14 @@ Copyright 2009 The Go Authors. All rights reserved.
 License: BSD (https://github.com/golang/go/blob/go1.18.3/LICENSE)
 */
 
+// TeeReadCloser is an io.TeeReader that also implements the io.Closer interface to close the readable stream.
+type TeeReadCloser struct {
+	r    io.Reader
+	w    io.Writer
+	eof  bool
+	lock sync.Mutex
+}
+
 // NewTeeReadCloser returns a stream that is like io.TeeReader but that can be closed.
 // When the returned stream is closed, it closes the readable stream too, if it implements io.Closer.
 func NewTeeReadCloser(r io.Reader, w io.Writer) *TeeReadCloser {
@@ -33,14 +41,6 @@ func NewTeeReadCloser(r io.Reader, w io.Writer) *TeeReadCloser {
 		r: r,
 		w: w,
 	}
-}
-
-// TeeReadCloser is an io.TeeReader that also implements the io.Closer interface to close the readable stream.
-type TeeReadCloser struct {
-	r    io.Reader
-	w    io.Writer
-	eof  bool
-	lock sync.Mutex
 }
 
 // Close implements io.Closer.
@@ -53,9 +53,11 @@ func (t *TeeReadCloser) Close() error {
 	if r, ok := t.r.(io.Closer); ok {
 		errR = r.Close()
 	}
+
 	if w, ok := t.w.(io.Closer); ok {
 		errW = w.Close()
 	}
+
 	t.r = nil
 	t.w = nil
 
@@ -66,6 +68,7 @@ func (t *TeeReadCloser) Close() error {
 	} else if errW != nil {
 		return fmt.Errorf("failed to close w stream with error='%v'", errW)
 	}
+
 	return nil
 }
 
@@ -79,6 +82,7 @@ func (t *TeeReadCloser) Stop() (err error) {
 	if w, ok := t.w.(io.Closer); ok {
 		err = w.Close()
 	}
+
 	t.w = nil
 
 	return err
@@ -92,6 +96,7 @@ func (t *TeeReadCloser) Read(p []byte) (n int, err error) {
 	if t.r == nil || t.w == nil {
 		return 0, io.ErrClosedPipe
 	}
+
 	if t.eof {
 		return 0, io.EOF
 	}
@@ -100,11 +105,14 @@ func (t *TeeReadCloser) Read(p []byte) (n int, err error) {
 	if errors.Is(err, io.EOF) {
 		t.eof = true
 	}
+
 	if n > 0 {
 		//nolint:govet
-		if n, err := t.w.Write(p[:n]); err != nil {
+		n, err := t.w.Write(p[:n])
+		if err != nil {
 			return n, err
 		}
 	}
+
 	return n, err
 }

@@ -64,9 +64,11 @@ func TestRange(t *testing.T) {
 		if len(c.err) != 0 && (err == nil || !strings.Contains(err.Error(), c.err)) {
 			t.Errorf("%s => expected %v, got %v", c.expr, c.err, err)
 		}
+
 		if len(c.err) == 0 && err != nil {
 			t.Errorf("%s => unexpected error %v", c.expr, err)
 		}
+
 		if actual != c.expected {
 			t.Errorf("%s => expected %d, got %d", c.expr, c.expected, actual)
 		}
@@ -147,6 +149,7 @@ func TestParseScheduleErrors(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), c.err) {
 			t.Errorf("%s => expected %v, got %v", c.expr, c.err, err)
 		}
+
 		if actual != nil {
 			t.Errorf("expected nil schedule on error, got %v", actual)
 		}
@@ -160,19 +163,19 @@ func TestParseSchedule(t *testing.T) {
 		expr     string
 		expected Schedule
 	}{
-		{secondParser, "0 5 * * * *", every5min(time.Local)},
-		{standardParser, "5 * * * *", every5min(time.Local)},
+		{secondParser, "0 5 * * * *", every5min(time.Local)}, //nolint:gosmopolitan
+		{standardParser, "5 * * * *", every5min(time.Local)}, //nolint:gosmopolitan
 		{secondParser, "CRON_TZ=UTC  0 5 * * * *", every5min(time.UTC)},
 		{standardParser, "CRON_TZ=UTC  5 * * * *", every5min(time.UTC)},
 		{secondParser, "CRON_TZ=Asia/Tokyo 0 5 * * * *", every5min(tokyo)},
 		{secondParser, "@every 5m", ConstantDelaySchedule{5 * time.Minute}},
 		{secondParser, "@every 5ms", ConstantDelaySchedule{5 * time.Millisecond}},
 		{secondParser, "@every 5ns", ConstantDelaySchedule{5 * time.Nanosecond}},
-		{secondParser, "@midnight", midnight(time.Local)},
+		{secondParser, "@midnight", midnight(time.Local)}, //nolint:gosmopolitan
 		{secondParser, "TZ=UTC  @midnight", midnight(time.UTC)},
 		{secondParser, "TZ=Asia/Tokyo @midnight", midnight(tokyo)},
-		{secondParser, "@yearly", annual(time.Local)},
-		{secondParser, "@annually", annual(time.Local)},
+		{secondParser, "@yearly", annual(time.Local)},   //nolint:gosmopolitan
+		{secondParser, "@annually", annual(time.Local)}, //nolint:gosmopolitan
 		{
 			parser: secondParser,
 			expr:   "* 5 * * * *",
@@ -183,7 +186,7 @@ func TestParseSchedule(t *testing.T) {
 				Dom:      all(dom),
 				Month:    all(months),
 				Dow:      all(dow),
-				Location: time.Local,
+				Location: time.Local, //nolint:gosmopolitan
 			},
 		},
 	}
@@ -193,6 +196,7 @@ func TestParseSchedule(t *testing.T) {
 		if err != nil {
 			t.Errorf("%s => unexpected error %v", c.expr, err)
 		}
+
 		if !reflect.DeepEqual(actual, c.expected) {
 			t.Errorf("%s => expected %b, got %b", c.expr, c.expected, actual)
 		}
@@ -205,9 +209,9 @@ func TestOptionalSecondSchedule(t *testing.T) {
 		expr     string
 		expected Schedule
 	}{
-		{"0 5 * * * *", every5min(time.Local)},
-		{"5 5 * * * *", every5min5s(time.Local)},
-		{"5 * * * *", every5min(time.Local)},
+		{"0 5 * * * *", every5min(time.Local)},   //nolint:gosmopolitan
+		{"5 5 * * * *", every5min5s(time.Local)}, //nolint:gosmopolitan
+		{"5 * * * *", every5min(time.Local)},     //nolint:gosmopolitan
 	}
 
 	for _, c := range entries {
@@ -215,6 +219,7 @@ func TestOptionalSecondSchedule(t *testing.T) {
 		if err != nil {
 			t.Errorf("%s => unexpected error %v", c.expr, err)
 		}
+
 		if !reflect.DeepEqual(actual, c.expected) {
 			t.Errorf("%s => expected %b, got %b", c.expr, c.expected, actual)
 		}
@@ -278,6 +283,7 @@ func TestNormalizeFields(t *testing.T) {
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
+
 			if !reflect.DeepEqual(actual, test.expected) {
 				t.Errorf("expected %v, got %v", test.expected, actual)
 			}
@@ -323,6 +329,7 @@ func TestNormalizeFields_Errors(t *testing.T) {
 			if err == nil {
 				t.Errorf("expected an error, got none. results: %v", actual)
 			}
+
 			if !strings.Contains(err.Error(), test.err) {
 				t.Errorf("expected error %q, got %q", test.err, err.Error())
 			}
@@ -338,7 +345,7 @@ func TestStandardSpecSchedule(t *testing.T) {
 	}{
 		{
 			expr:     "5 * * * *",
-			expected: &SpecSchedule{1 << seconds.min, 1 << 5, all(hours), all(dom), all(months), all(dow), time.Local},
+			expected: &SpecSchedule{1 << seconds.min, 1 << 5, all(hours), all(dom), all(months), all(dow), time.Local}, //nolint:gosmopolitan
 		},
 		{
 			expr:     "@every 5m",
@@ -359,9 +366,11 @@ func TestStandardSpecSchedule(t *testing.T) {
 		if len(c.err) != 0 && (err == nil || !strings.Contains(err.Error(), c.err)) {
 			t.Errorf("%s => expected %v, got %v", c.expr, c.err, err)
 		}
+
 		if len(c.err) == 0 && err != nil {
 			t.Errorf("%s => unexpected error %v", c.expr, err)
 		}
+
 		if !reflect.DeepEqual(actual, c.expected) {
 			t.Errorf("%s => expected %b, got %b", c.expr, c.expected, actual)
 		}
@@ -370,6 +379,7 @@ func TestStandardSpecSchedule(t *testing.T) {
 
 func TestNoDescriptorParser(t *testing.T) {
 	parser := NewParser(Minute | Hour)
+
 	_, err := parser.Parse("@every 1m")
 	if err == nil {
 		t.Error("expected an error, got none")

@@ -73,9 +73,11 @@ func TestEncodePrivateKey(t *testing.T) {
 				if err == nil {
 					t.Fatal("expected error, got nil")
 				}
+
 				if tt.errSubstr != "" && !strings.Contains(err.Error(), tt.errSubstr) {
 					t.Fatalf("expected error containing %q, got %q", tt.errSubstr, err.Error())
 				}
+
 				return
 			}
 
@@ -111,6 +113,7 @@ func keysEqual(t *testing.T, original any, decoded crypto.Signer) bool {
 			t.Errorf("decoded key type %T, want *ecdsa.PrivateKey", decoded)
 			return false
 		}
+
 		return orig.Equal(d)
 	case *rsa.PrivateKey:
 		d, ok := decoded.(*rsa.PrivateKey)
@@ -118,6 +121,7 @@ func keysEqual(t *testing.T, original any, decoded crypto.Signer) bool {
 			t.Errorf("decoded key type %T, want *rsa.PrivateKey", decoded)
 			return false
 		}
+
 		return orig.Equal(d)
 	case ed25519.PrivateKey:
 		d, ok := decoded.(ed25519.PrivateKey)
@@ -125,6 +129,7 @@ func keysEqual(t *testing.T, original any, decoded crypto.Signer) bool {
 			t.Errorf("decoded key type %T, want ed25519.PrivateKey", decoded)
 			return false
 		}
+
 		return orig.Equal(d)
 	default:
 		t.Errorf("unknown key type %T", original)

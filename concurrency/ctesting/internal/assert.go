@@ -39,11 +39,13 @@ func Assert(t *testing.T) Interface {
 func (a *assertT) Errorf(format string, args ...any) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
+
 	a.errs = append(a.errs, fmt.Errorf(format, args...))
 }
 
 func (a *assertT) Errors() []error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
+
 	return a.errs
 }

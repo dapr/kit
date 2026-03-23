@@ -78,9 +78,11 @@ func TestActivation(t *testing.T) {
 			t.Error(err)
 			continue
 		}
+
 		actual := sched.Next(getTime(test.time).Add(-1 * time.Second))
+
 		expected := getTime(test.time)
-		if test.expected && expected != actual || !test.expected && expected == actual {
+		if test.expected && !expected.Equal(actual) || !test.expected && expected.Equal(actual) {
 			t.Errorf("Fail evaluating %s on %s: (expected) %s != %s (actual)",
 				test.spec, test.time, expected, actual)
 		}
@@ -207,7 +209,9 @@ func TestNext(t *testing.T) {
 			t.Error(err)
 			continue
 		}
+
 		actual := sched.Next(getTime(c.time))
+
 		expected := getTime(c.expected)
 		if !actual.Equal(expected) {
 			t.Errorf("%s, \"%s\": (expected) %v != %v (actual)", c.time, c.spec, expected, actual)
@@ -235,13 +239,16 @@ func getTime(value string) time.Time {
 		return time.Time{}
 	}
 
-	location := time.Local
+	location := time.Local //nolint:gosmopolitan
+
 	if strings.HasPrefix(value, "TZ=") {
 		parts := strings.Fields(value)
+
 		loc, err := time.LoadLocation(parts[0][len("TZ="):])
 		if err != nil {
 			panic("could not parse location:" + err.Error())
 		}
+
 		location = loc
 		value = parts[1]
 	}
@@ -251,13 +258,17 @@ func getTime(value string) time.Time {
 		"Mon Jan 2 15:04:05 2006",
 	}
 	for _, layout := range layouts {
-		if t, err := time.ParseInLocation(layout, value, location); err == nil {
+		t, err := time.ParseInLocation(layout, value, location)
+		if err == nil {
 			return t
 		}
 	}
-	if t, err := time.ParseInLocation("2006-01-02T15:04:05-0700", value, location); err == nil {
+
+	t, err := time.ParseInLocation("2006-01-02T15:04:05-0700", value, location)
+	if err == nil {
 		return t
 	}
+
 	panic("could not parse time value " + value)
 }
 
@@ -280,7 +291,9 @@ func TestNextWithTz(t *testing.T) {
 			t.Error(err)
 			continue
 		}
+
 		actual := sched.Next(getTimeTZ(c.time))
+
 		expected := getTimeTZ(c.expected)
 		if !actual.Equal(expected) {
 			t.Errorf("%s, \"%s\": (expected) %v != %v (actual)", c.time, c.spec, expected, actual)
@@ -292,6 +305,7 @@ func getTimeTZ(value string) time.Time {
 	if value == "" {
 		return time.Time{}
 	}
+
 	t, err := time.Parse("Mon Jan 2 15:04 2006", value)
 	if err != nil {
 		t, err = time.Parse("Mon Jan 2 15:04:05 2006", value)
@@ -309,6 +323,7 @@ func getTimeTZ(value string) time.Time {
 // https://github.com/robfig/cron/issues/144
 func TestSlash0NoHang(t *testing.T) {
 	schedule := "TZ=America/New_York 15/0 * * * *"
+
 	_, err := ParseStandard(schedule)
 	if err == nil {
 		t.Error("expected an error on 0 increment")

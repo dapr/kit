@@ -40,8 +40,10 @@ func TestNewMutex_Add_Delete(t *testing.T) {
 	})
 
 	t.Run("Concurrently lock and unlock mutexes", func(t *testing.T) {
-		var counter atomic.Int64
-		var wg sync.WaitGroup
+		var (
+			counter atomic.Int64
+			wg      sync.WaitGroup
+		)
 
 		numGoroutines := 10
 		wg.Add(numGoroutines)
@@ -50,11 +52,13 @@ func TestNewMutex_Add_Delete(t *testing.T) {
 		for range numGoroutines {
 			go func() {
 				defer wg.Done()
+
 				mm.Lock("key1")
 				counter.Add(1)
 				mm.Unlock("key1")
 			}()
 		}
+
 		wg.Wait()
 
 		require.Equal(t, int64(10), counter.Load())
@@ -68,8 +72,10 @@ func TestNewMutex_Add_Delete(t *testing.T) {
 	})
 
 	t.Run("Concurrently RLock and RUnlock mutexes", func(t *testing.T) {
-		var counter atomic.Int64
-		var wg sync.WaitGroup
+		var (
+			counter atomic.Int64
+			wg      sync.WaitGroup
+		)
 
 		numGoroutines := 10
 		wg.Add(numGoroutines * 2)
@@ -78,6 +84,7 @@ func TestNewMutex_Add_Delete(t *testing.T) {
 		for range numGoroutines {
 			go func() {
 				defer wg.Done()
+
 				mm.RLock("key1")
 				counter.Add(1)
 			}()
@@ -90,6 +97,7 @@ func TestNewMutex_Add_Delete(t *testing.T) {
 		for range numGoroutines {
 			go func() {
 				defer wg.Done()
+
 				mm.RUnlock("key1")
 			}()
 		}

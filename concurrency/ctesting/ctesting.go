@@ -46,9 +46,11 @@ func Assert(t *testing.T, runners ...RunnerFn) {
 	for _, runner := range runners {
 		go func(rfn RunnerFn) {
 			rfn(ctx, tt)
+
 			if errs := tt.Errors(); len(errs) > 0 {
 				cancel(errors.Join(errs...))
 			}
+
 			doneCh <- struct{}{}
 		}(runner)
 	}
@@ -82,6 +84,7 @@ func AssertCleanup(t *testing.T, runners ...concurrency.Runner) {
 
 	t.Cleanup(func() {
 		cancel(nil)
+
 		for range runners {
 			select {
 			case err := <-errCh:

@@ -18,8 +18,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/dapr/kit/ptr"
 )
 
 func Test_Buffered(t *testing.T) {
@@ -35,37 +33,38 @@ func Test_Buffered(t *testing.T) {
 	assert.Len(t, b.buf, 3)
 	assert.Equal(t, 0, b.Len())
 
-	b.AppendBack(ptr.Of(1))
+	b.AppendBack(new(1))
 	assert.Len(t, b.buf, 3)
 	assert.Equal(t, 1, b.Len())
 
-	b.AppendBack(ptr.Of(2))
+	b.AppendBack(new(2))
 	assert.Len(t, b.buf, 3)
 	assert.Equal(t, 2, b.Len())
 
-	b.AppendBack(ptr.Of(3))
+	b.AppendBack(new(3))
 	assert.Len(t, b.buf, 3)
 	assert.Equal(t, 3, b.Len())
 
 	// Triggers grow: 3 -> 6
-	b.AppendBack(ptr.Of(4))
+	b.AppendBack(new(4))
 	assert.Len(t, b.buf, 6)
 	assert.Equal(t, 4, b.Len())
 
 	for i := 5; i < 7; i++ {
-		b.AppendBack(ptr.Of(i))
+		b.AppendBack(new(i))
 		assert.Len(t, b.buf, 6)
 		assert.Equal(t, i, b.Len())
 	}
 
 	// Triggers grow: 6 -> 12
-	b.AppendBack(ptr.Of(7))
+	b.AppendBack(new(7))
 	assert.Len(t, b.buf, 12)
 	assert.Equal(t, 7, b.Len())
 
 	for i := 8; i < 10; i++ {
-		b.AppendBack(ptr.Of(i))
+		b.AppendBack(new(i))
 	}
+
 	assert.Len(t, b.buf, 12)
 	assert.Equal(t, 9, b.Len())
 
@@ -104,15 +103,17 @@ func Test_Buffered(t *testing.T) {
 
 func Test_BufferedRange(t *testing.T) {
 	b := NewBuffered[int](3)
-	b.AppendBack(ptr.Of(0))
-	b.AppendBack(ptr.Of(1))
-	b.AppendBack(ptr.Of(2))
-	b.AppendBack(ptr.Of(3))
+	b.AppendBack(new(0))
+	b.AppendBack(new(1))
+	b.AppendBack(new(2))
+	b.AppendBack(new(3))
 
 	var i int
+
 	b.Range(func(v *int) bool {
 		assert.Equal(t, i, *v)
 		i++
+
 		return true
 	})
 	assert.Equal(t, 4, i)
@@ -120,9 +121,11 @@ func Test_BufferedRange(t *testing.T) {
 	assert.Equal(t, 0, *b.Front())
 
 	i = 0
+
 	b.Range(func(v *int) bool {
 		assert.Equal(t, i, *v)
 		i++
+
 		return i != 2
 	})
 	assert.Equal(t, 2, i)
@@ -135,8 +138,9 @@ func Test_BufferedShrinkNeverBelowMinCap(t *testing.T) {
 
 	// Fill to capacity then drain
 	for i := range 8 {
-		b.AppendBack(ptr.Of(i))
+		b.AppendBack(new(i))
 	}
+
 	assert.Len(t, b.buf, 8)
 
 	for range 7 {
@@ -159,7 +163,7 @@ func Test_BufferedWraparound(t *testing.T) {
 
 	// Fill 4 elements
 	for i := range 4 {
-		b.AppendBack(ptr.Of(i))
+		b.AppendBack(new(i))
 	}
 	// Remove 2 from front -> head moves forward
 	b.RemoveFront()
@@ -169,13 +173,16 @@ func Test_BufferedWraparound(t *testing.T) {
 
 	// Add 4 more -> wraps around, triggers grow
 	for i := 4; i < 8; i++ {
-		b.AppendBack(ptr.Of(i))
+		b.AppendBack(new(i))
 	}
+
 	assert.Equal(t, 6, b.Len())
 
 	// Verify order is preserved
 	expected := []int{2, 3, 4, 5, 6, 7}
+
 	var got []int
+
 	b.Range(func(v *int) bool {
 		got = append(got, *v)
 		return true
@@ -186,6 +193,7 @@ func Test_BufferedWraparound(t *testing.T) {
 	for range 5 {
 		b.RemoveFront()
 	}
+
 	assert.Equal(t, 1, b.Len())
 	assert.Equal(t, 7, *b.Front())
 }

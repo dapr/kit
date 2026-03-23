@@ -114,6 +114,7 @@ func (c *RunnerCloserManager) AddCloser(closers ...any) error {
 	defer c.mngr.lock.Unlock()
 
 	var errs []error
+
 	for _, cl := range closers {
 		switch v := cl.(type) {
 		case io.Closer:
@@ -139,7 +140,7 @@ func (c *RunnerCloserManager) AddCloser(closers ...any) error {
 	return errors.Join(errs...)
 }
 
-// Add implements RunnerManager.Run.
+// Run implements RunnerManager.Run.
 func (c *RunnerCloserManager) Run(ctx context.Context) error {
 	if !c.running.CompareAndSwap(false, true) {
 		return ErrManagerAlreadyStarted
@@ -156,11 +157,13 @@ func (c *RunnerCloserManager) Run(ctx context.Context) error {
 			case <-ctx.Done():
 			case <-c.closeCh:
 			}
+
 			return nil
 		})
 	}
 
 	errCh := make(chan error, len(c.closers))
+
 	go func() {
 		errCh <- c.mngr.Run(ctx)
 	}()
@@ -169,6 +172,7 @@ func (c *RunnerCloserManager) Run(ctx context.Context) error {
 
 	c.mngr.lock.Lock()
 	defer c.mngr.lock.Unlock()
+
 	c.closing.Store(true)
 
 	errs := make([]error, len(c.closers)+1)
@@ -187,6 +191,7 @@ func (c *RunnerCloserManager) Run(ctx context.Context) error {
 		if i == len(c.closers) {
 			close(c.closeFatalShutdown)
 		}
+
 		errs[i] = <-errCh
 	}
 
@@ -204,7 +209,9 @@ func (c *RunnerCloserManager) Close() error {
 	if c.running.CompareAndSwap(false, true) {
 		close(c.stopped)
 	}
+
 	c.WaitUntilShutdown()
+
 	return c.retErr
 }
 

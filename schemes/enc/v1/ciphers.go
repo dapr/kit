@@ -33,6 +33,18 @@ const (
 	cipherNumChaCha20Poly1305 = 2
 )
 
+// NewCipherFromID returns a Cipher from its ID.
+func NewCipherFromID(id int) (Cipher, error) {
+	switch id {
+	case cipherNumAESGCM:
+		return CipherAESGCM, nil
+	case cipherNumChaCha20Poly1305:
+		return CipherChaCha20Poly1305, nil
+	default:
+		return "", fmt.Errorf("cipher ID %d is not supported", id)
+	}
+}
+
 // Validate the passed cipher and resolves aliases.
 func (c Cipher) Validate() (Cipher, error) {
 	switch c {
@@ -57,19 +69,7 @@ func (c Cipher) ID() int {
 	}
 }
 
-// NewCipherFromID returns a Cipher from its ID.
-func NewCipherFromID(id int) (Cipher, error) {
-	switch id {
-	case cipherNumAESGCM:
-		return CipherAESGCM, nil
-	case cipherNumChaCha20Poly1305:
-		return CipherChaCha20Poly1305, nil
-	default:
-		return "", fmt.Errorf("cipher ID %d is not supported", id)
-	}
-}
-
-// MarhsalJSON implements json.Marshaler.
+// MarshalJSON implements json.Marshaler.
 func (c Cipher) MarshalJSON() ([]byte, error) {
 	return []byte(strconv.Itoa(c.ID())), nil
 }
@@ -90,6 +90,8 @@ func (c *Cipher) UnmarshalJSON(dataB []byte) error {
 	if err != nil {
 		return err
 	}
+
 	*c = newC
+
 	return nil
 }

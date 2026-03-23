@@ -35,16 +35,21 @@ func (d *Duration) MarshalJSON() ([]byte, error) {
 
 func (d *Duration) UnmarshalJSON(b []byte) error {
 	var v any
-	if err := json.Unmarshal(b, &v); err != nil {
+
+	err := json.Unmarshal(b, &v)
+	if err != nil {
 		return err
 	}
+
 	switch value := v.(type) {
 	case float64:
 		d.Duration = time.Duration(value)
 		return nil
 	case string:
 		var err error
+
 		d.Duration, err = time.ParseDuration(value)
+
 		return err
 	default:
 		return errors.New("invalid duration")
@@ -62,22 +67,27 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 //			Result:   result,
 //	})
 func toTimeDurationHookFunc() mapstructure.DecodeHookFunc {
+	typeDuration := reflect.TypeFor[Duration]()
+	typeTimeDuration := reflect.TypeFor[time.Duration]()
+
 	return func(
 		f reflect.Type,
 		t reflect.Type,
 		data any,
 	) (any, error) {
-		if t != reflect.TypeOf(Duration{}) && t != reflect.TypeOf(time.Duration(0)) {
+		if t != typeDuration && t != typeTimeDuration {
 			return data, nil
 		}
 
 		switch f.Kind() {
-		case reflect.TypeOf(time.Duration(0)).Kind():
+		case typeTimeDuration.Kind():
 			return data.(time.Duration), nil
 		case reflect.String:
 			var val time.Duration
+
 			if data.(string) != "" {
 				var err error
+
 				val, err = time.ParseDuration(data.(string))
 				if err != nil {
 					// If we can't parse the duration, try parsing it as int64 seconds
@@ -85,24 +95,29 @@ func toTimeDurationHookFunc() mapstructure.DecodeHookFunc {
 					if errParse != nil {
 						return nil, errors.Join(err, errParse)
 					}
+
 					val = time.Duration(seconds * int64(time.Second))
 				}
 			}
-			if t != reflect.TypeOf(Duration{}) {
+
+			if t != typeDuration {
 				return val, nil
 			}
+
 			return Duration{Duration: val}, nil
 		case reflect.Float64:
 			val := time.Duration(data.(float64))
-			if t != reflect.TypeOf(Duration{}) {
+			if t != typeDuration {
 				return val, nil
 			}
+
 			return Duration{Duration: val}, nil
 		case reflect.Int64:
 			val := time.Duration(data.(int64))
-			if t != reflect.TypeOf(Duration{}) {
+			if t != typeDuration {
 				return val, nil
 			}
+
 			return Duration{Duration: val}, nil
 		default:
 			return data, nil
@@ -129,21 +144,26 @@ func (d *Duration) ToISOString() string {
 		res += strconv.FormatInt(seconds/86400, 10) + "D"
 		seconds %= 86400
 	}
+
 	if seconds == 0 {
 		// Short-circuit if there's nothing left (we had whole days only)
 		return res
 	}
+
 	res += "T"
 	if seconds >= 3600 {
 		res += strconv.FormatInt(seconds/3600, 10) + "H"
 		seconds %= 3600
 	}
+
 	if seconds >= 60 {
 		res += strconv.FormatInt(seconds/60, 10) + "M"
 		seconds %= 60
 	}
+
 	if seconds > 0 {
 		res += strconv.FormatInt(seconds, 10) + "S"
 	}
+
 	return res
 }

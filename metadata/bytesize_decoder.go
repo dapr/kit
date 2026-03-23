@@ -52,8 +52,8 @@ func (q *ByteSize) GetBytes() (int64, error) {
 }
 
 func toByteSizeHookFunc() mapstructure.DecodeHookFunc {
-	bytesizeType := reflect.TypeOf(ByteSize{})
-	bytesizePtrType := reflect.TypeOf(&ByteSize{})
+	bytesizeType := reflect.TypeFor[ByteSize]()
+	bytesizePtrType := reflect.TypeFor[*ByteSize]()
 
 	return func(
 		f reflect.Type,
@@ -61,6 +61,7 @@ func toByteSizeHookFunc() mapstructure.DecodeHookFunc {
 		data any,
 	) (any, error) {
 		var isPtr bool
+
 		switch t {
 		case bytesizeType:
 			// Nop
@@ -88,6 +89,7 @@ func toByteSizeHookFunc() mapstructure.DecodeHookFunc {
 		if isPtr {
 			return &res, nil
 		}
+
 		return res, nil
 	}
 }

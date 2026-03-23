@@ -1,5 +1,4 @@
 //go:build !windows
-// +build !windows
 
 /*
 Copyright 2023 The Dapr Authors
@@ -34,10 +33,13 @@ func TestContext(t *testing.T) {
 
 	t.Run("SIGINT should cancel context", func(t *testing.T) {
 		defer signal.Reset()
+
 		onlyOneSignalHandler = make(chan struct{})
 
 		ctx := Context()
+
 		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGINT))
+
 		select {
 		case <-ctx.Done():
 		case <-time.After(1 * time.Second):
@@ -47,10 +49,13 @@ func TestContext(t *testing.T) {
 
 	t.Run("SIGTERM should cancel context", func(t *testing.T) {
 		defer signal.Reset()
+
 		onlyOneSignalHandler = make(chan struct{})
 
 		ctx := Context()
+
 		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGTERM))
+
 		select {
 		case <-ctx.Done():
 		case <-time.After(1 * time.Second):
@@ -60,10 +65,13 @@ func TestContext(t *testing.T) {
 
 	t.Run("context cause should contain signal information", func(t *testing.T) {
 		defer signal.Reset()
+
 		onlyOneSignalHandler = make(chan struct{})
 
 		ctx := Context()
+
 		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGINT))
+
 		select {
 		case <-ctx.Done():
 			cause := context.Cause(ctx)
@@ -84,6 +92,7 @@ func TestOnHUP(t *testing.T) {
 
 		ctx := <-OnHUP(t.Context())
 		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGHUP))
+
 		select {
 		case <-ctx.Done():
 		case <-time.After(1 * time.Second):
@@ -96,6 +105,7 @@ func TestOnHUP(t *testing.T) {
 
 		ctx := <-OnHUP(t.Context())
 		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGHUP))
+
 		select {
 		case <-ctx.Done():
 			cause := context.Cause(ctx)
@@ -190,7 +200,7 @@ func TestOnHUP(t *testing.T) {
 
 		mainCtx, cancel := context.WithCancel(t.Context())
 		hupCh := OnHUP(mainCtx)
-		_ = <-hupCh // consume first context
+		<-hupCh // consume first context
 		cancel()
 
 		select {

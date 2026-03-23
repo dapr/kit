@@ -29,6 +29,7 @@ func TestMetadataDecode(t *testing.T) {
 			MyEmbedded        string `mapstructure:"embedded"`
 			MyEmbeddedAliased string `mapstructure:"embalias" mapstructurealiases:"embalias2"`
 		}
+
 		type testMetadata struct {
 			TestEmbedded `mapstructure:",squash"`
 
@@ -52,6 +53,7 @@ func TestMetadataDecode(t *testing.T) {
 		}
 
 		var m testMetadata
+
 		m.MyRegularDurationDefaultValueUnset = time.Hour
 		m.MyRegularDurationDefaultValueEmpty = time.Hour
 
@@ -94,8 +96,8 @@ func TestMetadataDecode(t *testing.T) {
 		assert.Equal(t, []time.Duration{}, *m.MyDurationArrayPointerEmpty)
 		assert.Equal(t, "hello", m.AliasedFieldA)
 		assert.Equal(t, "ciao", m.AliasedFieldB)
-		assert.Equal(t, "hi", m.TestEmbedded.MyEmbedded)
-		assert.Equal(t, "ciao", m.TestEmbedded.MyEmbeddedAliased)
+		assert.Equal(t, "hi", m.MyEmbedded)
+		assert.Equal(t, "ciao", m.MyEmbeddedAliased)
 	})
 
 	t.Run("Test metadata decode hook for truthy values", func(t *testing.T) {
@@ -371,7 +373,8 @@ func TestResolveAliases(t *testing.T) {
 			},
 			result: &struct {
 				Embedded `mapstructure:",squash"`
-				Bonjour  string `mapstructure:"bonjour"`
+
+				Bonjour string `mapstructure:"bonjour"`
 			}{},
 			wantMd: map[string]string{
 				"bonjour": "monde",
@@ -421,21 +424,21 @@ func TestGetMetadataPropertyWithMatchedKey(t *testing.T) {
 	t.Run("Non-existing key", func(t *testing.T) {
 		key, val, ok := GetMetadataPropertyWithMatchedKey(props, "key4")
 		assert.False(t, ok)
-		assert.Equal(t, "", key)
-		assert.Equal(t, "", val)
+		assert.Empty(t, key)
+		assert.Empty(t, val)
 	})
 
 	t.Run("Empty properties", func(t *testing.T) {
 		key, val, ok := GetMetadataPropertyWithMatchedKey(nil, "key1")
 		assert.False(t, ok)
-		assert.Equal(t, "", key)
-		assert.Equal(t, "", val)
+		assert.Empty(t, key)
+		assert.Empty(t, val)
 	})
 
 	t.Run("Value is empty", func(t *testing.T) {
 		key, val, ok := GetMetadataPropertyWithMatchedKey(props, "EmptyKey")
 		assert.True(t, ok)
 		assert.Equal(t, "EmptyKey", key)
-		assert.Equal(t, "", val)
+		assert.Empty(t, val)
 	})
 }

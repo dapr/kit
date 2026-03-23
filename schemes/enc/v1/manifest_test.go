@@ -131,6 +131,7 @@ func TestManifestJSON(t *testing.T) {
 
 			// Unmarshal
 			var dec Manifest
+
 			err = json.Unmarshal(enc, &dec)
 			require.NoError(t, err)
 			assert.Equal(t, m.KeyWrappingAlgorithm, dec.KeyWrappingAlgorithm)

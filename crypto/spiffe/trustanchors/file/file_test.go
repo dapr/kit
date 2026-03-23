@@ -37,10 +37,12 @@ func TestFile_Run(t *testing.T) {
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
+
 		f.initFileWatchInterval = time.Millisecond
 
 		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- f.Run(ctx)
 		}()
@@ -80,10 +82,12 @@ func TestFile_Run(t *testing.T) {
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
+
 		f.initFileWatchInterval = time.Millisecond
 
 		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- f.Run(ctx)
 		}()
@@ -108,9 +112,11 @@ func TestFile_Run(t *testing.T) {
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
+
 		f.initFileWatchInterval = time.Millisecond
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- f.Run(t.Context())
 		}()
@@ -133,9 +139,11 @@ func TestFile_Run(t *testing.T) {
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
+
 		f.initFileWatchInterval = time.Millisecond
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- f.Run(t.Context())
 		}()
@@ -160,9 +168,11 @@ func TestFile_Run(t *testing.T) {
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
+
 		f.initFileWatchInterval = time.Millisecond
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- f.Run(t.Context())
 		}()
@@ -186,9 +196,11 @@ func TestFile_Run(t *testing.T) {
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
+
 		f.initFileWatchInterval = time.Millisecond
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- f.Run(t.Context())
 		}()
@@ -217,9 +229,11 @@ func TestFile_Run(t *testing.T) {
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
+
 		f.initFileWatchInterval = time.Millisecond
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- f.Run(t.Context())
 		}()
@@ -248,9 +262,11 @@ func TestFile_Run(t *testing.T) {
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
+
 		f.initFileWatchInterval = time.Millisecond
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- f.Run(t.Context())
 		}()
@@ -279,9 +295,11 @@ func TestFile_Run(t *testing.T) {
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
+
 		f.initFileWatchInterval = time.Millisecond
 
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- f.Run(t.Context())
 		}()
@@ -319,11 +337,14 @@ func TestFile_GetX509BundleForTrustDomain(t *testing.T) {
 
 		errCh := make(chan error)
 		ctx, cancel := context.WithCancel(t.Context())
+
 		go func() {
 			errCh <- ta.Run(ctx)
 		}()
+
 		t.Cleanup(func() {
 			cancel()
+
 			select {
 			case err := <-errCh:
 				require.NoError(t, err)
@@ -364,16 +385,20 @@ func TestFile_Watch(t *testing.T) {
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
+
 		f.initFileWatchInterval = time.Millisecond
 
 		errCh := make(chan error)
 		ctx, cancel := context.WithCancel(t.Context())
+
 		go func() {
 			errCh <- f.Run(ctx)
 		}()
+
 		time.Sleep(time.Millisecond * 10) // adding a small delay to ensure f.Run has finished and running
 
 		watchDone := make(chan struct{})
+
 		go func() {
 			ta.Watch(t.Context(), make(chan []byte))
 			close(watchDone)
@@ -406,17 +431,21 @@ func TestFile_Watch(t *testing.T) {
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
+
 		f.initFileWatchInterval = time.Millisecond
 
 		errCh := make(chan error)
 		ctx1, cancel1 := context.WithCancel(t.Context())
+
 		go func() {
 			errCh <- f.Run(ctx1)
 		}()
+
 		time.Sleep(time.Millisecond * 10) // adding a small delay to ensure f.Run has finished and running
 
 		watchDone := make(chan struct{})
 		ctx2, cancel2 := context.WithCancel(t.Context())
+
 		go func() {
 			ta.Watch(ctx2, make(chan []byte))
 			close(watchDone)
@@ -453,13 +482,16 @@ func TestFile_Watch(t *testing.T) {
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
+
 		f.initFileWatchInterval = time.Millisecond
 
 		errCh := make(chan error)
 		ctx, cancel := context.WithCancel(t.Context())
+
 		go func() {
 			errCh <- f.Run(ctx)
 		}()
+
 		time.Sleep(time.Millisecond * 10) // adding a small delay to ensure f.Run has finished and running
 
 		select {
@@ -470,6 +502,7 @@ func TestFile_Watch(t *testing.T) {
 
 		watchDone1, watchDone2 := make(chan struct{}), make(chan struct{})
 		tCh1, tCh2 := make(chan []byte), make(chan []byte)
+
 		go func() {
 			ta.Watch(t.Context(), tCh1)
 			close(watchDone1)
@@ -536,10 +569,12 @@ func TestFile_CurrentTrustAnchors(t *testing.T) {
 		})
 		f, ok := ta.(*file)
 		require.True(t, ok)
+
 		f.initFileWatchInterval = time.Millisecond
 
 		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- f.Run(ctx)
 		}()

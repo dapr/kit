@@ -40,13 +40,16 @@ func (m *Manifest) Validate() (err error) {
 	if err != nil {
 		return fmt.Errorf("key wrapping algorithm is invalid: %w", err)
 	}
+
 	if len(m.WFK) == 0 {
 		return errors.New("wrapped file key is empty")
 	}
+
 	m.Cipher, err = m.Cipher.Validate()
 	if err != nil {
 		return fmt.Errorf("cipher is invalid: %w", err)
 	}
+
 	if len(m.NoncePrefix) != NoncePrefixLength {
 		return errors.New("nonce prefix is invalid")
 	}

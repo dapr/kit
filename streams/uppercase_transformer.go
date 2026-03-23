@@ -26,6 +26,7 @@ import (
 // UppercaseTransformer uppercases all characters in the stream, by calling strings.ToUpper() on them.
 func UppercaseTransformer(r io.Reader) io.Reader {
 	br := bufio.NewReader(r)
+
 	return transform.NewTransformer(func() ([]byte, error) {
 		c, _, err := br.ReadRune()
 		if err != nil {
@@ -40,7 +41,7 @@ func UppercaseTransformer(r io.Reader) io.Reader {
 func RuneToUppercase(c rune) []byte {
 	// Optimize for ASCII characters
 	if c < utf8.RuneSelf {
-		b := byte(c)
+		b := byte(c) //nolint:gosec
 		if 'a' <= b && b <= 'z' {
 			return []byte{b - 0x20}
 		}

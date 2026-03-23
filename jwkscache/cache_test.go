@@ -129,6 +129,7 @@ func TestJWKSCache(t *testing.T) {
 
 		ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
 		defer cancel()
+
 		err := cache.initCache(ctx)
 		require.NoError(t, err)
 
@@ -142,11 +143,13 @@ func TestJWKSCache(t *testing.T) {
 
 	t.Run("start and wait for init", func(t *testing.T) {
 		cache := NewJWKSCache(testJWKS1, log)
+
 		ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
 		defer cancel()
 
 		// Start in background
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- cache.Start(ctx)
 		}()
@@ -179,6 +182,7 @@ func TestJWKSCache(t *testing.T) {
 
 		// Start in background
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- cache.Start(ctx)
 		}()
@@ -218,6 +222,7 @@ func TestJWKSCache(t *testing.T) {
 
 		// Start in background
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- cache.Start(ctx)
 		}()

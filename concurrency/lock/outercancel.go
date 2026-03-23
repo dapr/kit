@@ -89,70 +89,6 @@ func (o *OuterCancel) Run(ctx context.Context) {
 	}
 }
 
-func (o *OuterCancel) handleHold(h *hold) {
-	if h.rctx != nil {
-		select {
-		case o.lock <- struct{}{}:
-		case <-h.rctx.Done():
-			h.respCh <- &holdresp{err: h.rctx.Err()}
-			return
-		}
-	} else {
-		o.lock <- struct{}{}
-	}
-
-	o.rcancelLock.Lock()
-
-	if h.writeLock {
-		for _, cancel := range o.rcancels {
-			go cancel()
-		}
-		o.rcancelx = 0
-		o.rcancelLock.Unlock()
-		o.wg.Wait()
-
-		h.respCh <- &holdresp{cancel: func() { <-o.lock }}
-
-		return
-	}
-
-	o.wg.Add(1)
-	var done bool
-	doneCh := make(chan bool)
-	rctx, cancel := context.WithCancelCause(h.rctx)
-	i := o.rcancelx
-
-	rcancel := func() {
-		o.rcancelLock.Lock()
-		if !done {
-			close(doneCh)
-			cancel(o.cancelErr)
-			delete(o.rcancels, i)
-			o.wg.Done()
-			done = true
-		}
-		o.rcancelLock.Unlock()
-	}
-
-	rcancelGrace := func() {
-		select {
-		case <-time.After(o.gracefulTimeout):
-		case <-o.closeCh:
-		case <-doneCh:
-		}
-		rcancel()
-	}
-
-	o.rcancels[i] = rcancelGrace
-	o.rcancelx++
-
-	o.rcancelLock.Unlock()
-
-	h.respCh <- &holdresp{rctx: rctx, cancel: rcancel}
-
-	<-o.lock
-}
-
 func (o *OuterCancel) Lock() context.CancelFunc {
 	h := hold{
 		writeLock: true,
@@ -196,4 +132,73 @@ func (o *OuterCancel) RLock(ctx context.Context) (context.Context, context.Cance
 	case resp := <-h.respCh:
 		return resp.rctx, resp.cancel, resp.err
 	}
+}
+
+func (o *OuterCancel) handleHold(h *hold) {
+	if h.rctx != nil {
+		select {
+		case o.lock <- struct{}{}:
+		case <-h.rctx.Done():
+			h.respCh <- &holdresp{err: h.rctx.Err()}
+			return
+		}
+	} else {
+		o.lock <- struct{}{}
+	}
+
+	o.rcancelLock.Lock()
+
+	if h.writeLock {
+		for _, cancel := range o.rcancels {
+			go cancel()
+		}
+
+		o.rcancelx = 0
+		o.rcancelLock.Unlock()
+		o.wg.Wait()
+
+		h.respCh <- &holdresp{cancel: func() { <-o.lock }}
+
+		return
+	}
+
+	o.wg.Add(1)
+
+	var done bool
+
+	doneCh := make(chan bool)
+	rctx, cancel := context.WithCancelCause(h.rctx)
+	i := o.rcancelx
+
+	rcancel := func() {
+		o.rcancelLock.Lock()
+		if !done {
+			close(doneCh)
+			cancel(o.cancelErr)
+			delete(o.rcancels, i)
+			o.wg.Done()
+
+			done = true
+		}
+		o.rcancelLock.Unlock()
+	}
+
+	rcancelGrace := func() {
+		select {
+		case <-time.After(o.gracefulTimeout):
+		case <-o.closeCh:
+		case <-doneCh:
+		}
+
+		rcancel()
+	}
+
+	o.rcancels[i] = rcancelGrace
+	o.rcancelx++
+
+	o.rcancelLock.Unlock()
+
+	h.respCh <- &holdresp{rctx: rctx, cancel: rcancel}
+
+	<-o.lock
 }

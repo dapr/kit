@@ -39,11 +39,13 @@ func NewMap[T comparable]() Map[T] {
 
 func (a *fifoMap[T]) Lock(key T) {
 	a.lock.Lock()
+
 	m, ok := a.items[key]
 	if !ok {
 		m = &mapItem{mutex: New()}
 		a.items[key] = m
 	}
+
 	m.ilen++
 	a.lock.Unlock()
 
@@ -53,10 +55,12 @@ func (a *fifoMap[T]) Lock(key T) {
 func (a *fifoMap[T]) Unlock(key T) {
 	a.lock.Lock()
 	m := a.items[key]
+
 	m.ilen--
 	if m.ilen == 0 {
 		delete(a.items, key)
 	}
+
 	a.lock.Unlock()
 	m.mutex.Unlock()
 }

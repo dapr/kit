@@ -75,6 +75,7 @@ func TestDurationToISOString(t *testing.T) {
 		if name == "" {
 			name = tt.want
 		}
+
 		t.Run(name, func(t *testing.T) {
 			d := Duration{
 				Duration: tt.duration,

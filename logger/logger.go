@@ -16,6 +16,7 @@ package logger
 import (
 	"context"
 	"io"
+	"maps"
 	"strings"
 	"sync"
 )
@@ -150,10 +151,8 @@ func getLoggers() map[string]Logger {
 	globalLoggersLock.RLock()
 	defer globalLoggersLock.RUnlock()
 
-	l := map[string]Logger{}
-	for k, v := range globalLoggers {
-		l[k] = v
-	}
+	l := make(map[string]Logger, len(globalLoggers))
+	maps.Copy(l, globalLoggers)
 
 	return l
 }
@@ -164,7 +163,7 @@ func NewContext(ctx context.Context, logger Logger) context.Context {
 	return context.WithValue(ctx, logContextKey, logger)
 }
 
-// FromContextOrDiscard returns a Logger from ctx.  If no Logger is found, this
+// FromContextOrDefault returns a Logger from ctx.  If no Logger is found, this
 // returns a Logger that discards all log messages.
 func FromContextOrDefault(ctx context.Context) Logger {
 	if v, ok := ctx.Value(logContextKey).(Logger); ok {

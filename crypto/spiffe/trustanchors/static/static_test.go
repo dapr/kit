@@ -87,6 +87,7 @@ func TestStatic_GetX509BundleForTrustDomain(t *testing.T) {
 		root := append(pki.RootCertPEM, []byte("garbage data")...)
 		ta, err := From(Options{Anchors: root})
 		require.NoError(t, err)
+
 		s, ok := ta.(*static)
 		require.True(t, ok)
 
@@ -115,11 +116,13 @@ func TestStatic_Run(t *testing.T) {
 		pki := test.GenPKI(t, test.PKIOptions{})
 		ta, err := From(Options{Anchors: pki.RootCertPEM})
 		require.NoError(t, err)
+
 		s, ok := ta.(*static)
 		require.True(t, ok)
 
 		ctx, cancel := context.WithCancel(t.Context())
 		errCh := make(chan error)
+
 		go func() {
 			errCh <- s.Run(ctx)
 		}()

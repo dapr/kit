@@ -27,6 +27,7 @@ func Test_Pool(t *testing.T) {
 
 	t.Run("a pool with no context will always be done", func(t *testing.T) {
 		t.Parallel()
+
 		pool := NewPool()
 		select {
 		case <-pool.Done():
@@ -39,6 +40,7 @@ func Test_Pool(t *testing.T) {
 		t.Parallel()
 		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
+
 		pool := NewPool(ctx)
 		select {
 		case <-pool.Done():
@@ -51,8 +53,10 @@ func Test_Pool(t *testing.T) {
 		t.Parallel()
 		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
+
 		pool := NewPool(ctx)
 		pool.Add(t.Context())
+
 		select {
 		case <-pool.Done():
 		case <-time.After(time.Second):
@@ -62,8 +66,11 @@ func Test_Pool(t *testing.T) {
 
 	t.Run("pool with multiple contexts should return once all contexts have been cancelled", func(t *testing.T) {
 		t.Parallel()
-		var ctx [50]context.Context
-		var cancel [50]context.CancelFunc
+
+		var (
+			ctx    [50]context.Context
+			cancel [50]context.CancelFunc
+		)
 
 		ctxPool := make([]context.Context, 0, 50)
 
@@ -71,6 +78,7 @@ func Test_Pool(t *testing.T) {
 			ctx[i], cancel[i] = context.WithCancel(t.Context())
 			ctxPool = append(ctxPool, ctx[i])
 		}
+
 		pool := NewPool(ctxPool...)
 
 		//nolint:gosec
@@ -86,6 +94,7 @@ func Test_Pool(t *testing.T) {
 				t.Error("expected context to not be cancelled")
 			case <-time.After(time.Millisecond):
 			}
+
 			cancel[i]()
 		}
 
@@ -106,11 +115,13 @@ func Test_Pool(t *testing.T) {
 
 		cancel1()
 		cancel2()
+
 		select {
 		case <-pool.Done():
 		case <-time.After(time.Second):
 			t.Error("expected context pool to be cancelled")
 		}
+
 		pool.Add(t.Context())
 		assert.Equal(t, 2, pool.Size())
 	})
@@ -125,6 +136,7 @@ func Test_Pool(t *testing.T) {
 		pool.Cancel()
 		pool.Add(t.Context())
 		assert.Equal(t, 0, pool.Size())
+
 		select {
 		case <-pool.Done():
 		case <-time.After(time.Second):
@@ -149,6 +161,7 @@ func Test_Pool(t *testing.T) {
 			t.Error("expected context pool to not be cancelled")
 		case <-time.After(10 * time.Millisecond):
 		}
+
 		cancel2()
 	})
 }

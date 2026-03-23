@@ -50,6 +50,7 @@ func TestPkcs7(t *testing.T) {
 		padded, err := PadPKCS7(longStr, blockSize)
 		require.NoError(t, err)
 		assert.Equal(t, expected, padded)
+
 		if bytes.Equal(padded, expected) == false {
 			panic(fmt.Sprintf(`Padding wrong - expected "%x" but got "%x"`, expected, padded))
 		}

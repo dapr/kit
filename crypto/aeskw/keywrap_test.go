@@ -93,6 +93,7 @@ func TestWrapRfc3394Vectors(t *testing.T) {
 		if !assert.NoError(t, err, "Wrap should not throw error with valid input") { //nolint:testifylint
 			continue
 		}
+
 		if !assert.Equal(t, exp, actual, "Wrap Mismatch: Actual wrapped ciphertext should equal expected for test case '%s'", v.Case) {
 			continue
 		}
@@ -101,6 +102,7 @@ func TestWrapRfc3394Vectors(t *testing.T) {
 		if !assert.NoError(t, err, "Unwrap should not throw error with valid input") { //nolint:testifylint
 			continue
 		}
+
 		if !assert.Equal(t, data, actualUnwrapped, "Unwrap Mismatch: Actual unwrapped ciphertext should equal the original data for test case '%s'", v.Case) {
 			continue
 		}
@@ -112,5 +114,6 @@ func mustHexDecode(s string) (b []byte) {
 	if err != nil {
 		panic(err)
 	}
+
 	return b
 }

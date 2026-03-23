@@ -18,13 +18,16 @@ func verify(t *testing.T, r *Ring[int], nn int, sum int) {
 	// iteration
 	n = 0
 	s := 0
+
 	r.Do(func(p int) {
 		n++
 		s += p
 	})
+
 	if n != nn {
 		t.Errorf("number of forward iterations == %d; expected %d", n, nn)
 	}
+
 	if sum >= 0 && s != sum {
 		t.Errorf("forward ring sum = %d; expected %d", s, sum)
 	}
@@ -40,8 +43,10 @@ func verify(t *testing.T, r *Ring[int], nn int, sum int) {
 			if p != nil && p != q.prev {
 				t.Errorf("prev = %p, expected q.prev = %p\n", p, q.prev)
 			}
+
 			p = q
 		}
+
 		if p != r.prev {
 			t.Errorf("prev = %p, expected r.prev = %p\n", p, r.prev)
 		}
@@ -51,6 +56,7 @@ func verify(t *testing.T, r *Ring[int], nn int, sum int) {
 	if r.Next() != r.next {
 		t.Errorf("r.Next() != r.next")
 	}
+
 	if r.Prev() != r.prev {
 		t.Errorf("r.Prev() != r.prev")
 	}
@@ -59,18 +65,23 @@ func verify(t *testing.T, r *Ring[int], nn int, sum int) {
 	if r.Move(0) != r {
 		t.Errorf("r.Move(0) != r")
 	}
+
 	if r.Move(nn) != r {
 		t.Errorf("r.Move(%d) != r", nn)
 	}
+
 	if r.Move(-nn) != r {
 		t.Errorf("r.Move(%d) != r", -nn)
 	}
+
 	for i := range 10 {
 		ni := nn + i
+
 		mi := ni % nn
 		if r.Move(ni) != r.Move(mi) {
 			t.Errorf("r.Move(%d) != r.Move(%d)", ni, mi)
 		}
+
 		if r.Move(-ni) != r.Move(-mi) {
 			t.Errorf("r.Move(%d) != r.Move(%d)", -ni, -mi)
 		}
@@ -104,6 +115,7 @@ func makeN(n int) *Ring[int] {
 		r.Value = i
 		r = r.Next()
 	}
+
 	return r
 }
 
@@ -114,6 +126,7 @@ func TestNew(t *testing.T) {
 		r := New[int](i)
 		verify(t, r, i, -1)
 	}
+
 	for i := range 10 {
 		r := makeN(i)
 		verify(t, r, i, sumN(i))
@@ -122,15 +135,19 @@ func TestNew(t *testing.T) {
 
 func TestLink1(t *testing.T) {
 	r1a := makeN(1)
+
 	var r1b Ring[int]
+
 	r2a := r1a.Link(&r1b)
 	verify(t, r2a, 2, 1)
+
 	if r2a != r1a {
 		t.Errorf("a) 2-element link failed")
 	}
 
 	r2b := r2a.Link(r2a.Next())
 	verify(t, r2b, 2, 1)
+
 	if r2b != r2a.Next() {
 		t.Errorf("b) 2-element link failed")
 	}
@@ -142,6 +159,7 @@ func TestLink1(t *testing.T) {
 
 func TestLink2(t *testing.T) {
 	var r0 *Ring[int]
+
 	r1a := &Ring[int]{Value: 42}
 	r1b := &Ring[int]{Value: 77}
 	r10 := makeN(10)
@@ -161,6 +179,7 @@ func TestLink2(t *testing.T) {
 
 func TestLink3(t *testing.T) {
 	var r Ring[int]
+
 	n := 1
 	for i := 1; i < 10; i++ {
 		n += i

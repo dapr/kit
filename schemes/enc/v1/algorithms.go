@@ -19,7 +19,7 @@ import (
 	"strconv"
 )
 
-// Algorithm used to wrap the file key.
+// KeyAlgorithm used to wrap the file key.
 //
 //nolint:recvcheck
 type KeyAlgorithm string
@@ -41,6 +41,24 @@ const (
 	keyAlgorithmNumAES256CBC  = 4
 	keyAlgorithmNumRSAOAEP256 = 5
 )
+
+// NewKeyAlgorithmFromID returns a KeyAlgorithm from its ID.
+func NewKeyAlgorithmFromID(id int) (KeyAlgorithm, error) {
+	switch id {
+	case keyAlgorithmNumAES256KW:
+		return KeyAlgorithmAES256KW, nil
+	case keyAlgorithmNumAES128CBC:
+		return KeyAlgorithmAES128CBC, nil
+	case keyAlgorithmNumAES192CBC:
+		return KeyAlgorithmAES192CBC, nil
+	case keyAlgorithmNumAES256CBC:
+		return KeyAlgorithmAES256CBC, nil
+	case keyAlgorithmNumRSAOAEP256:
+		return KeyAlgorithmRSAOAEP256, nil
+	default:
+		return "", fmt.Errorf("algorithm ID %d is not supported", id)
+	}
+}
 
 // Validate the passed algorithm and resolves aliases.
 func (a KeyAlgorithm) Validate() (KeyAlgorithm, error) {
@@ -82,25 +100,7 @@ func (a KeyAlgorithm) ID() int {
 	}
 }
 
-// NewKeyAlgorithmFromID returns a KeyAlgorithm from its ID.
-func NewKeyAlgorithmFromID(id int) (KeyAlgorithm, error) {
-	switch id {
-	case keyAlgorithmNumAES256KW:
-		return KeyAlgorithmAES256KW, nil
-	case keyAlgorithmNumAES128CBC:
-		return KeyAlgorithmAES128CBC, nil
-	case keyAlgorithmNumAES192CBC:
-		return KeyAlgorithmAES192CBC, nil
-	case keyAlgorithmNumAES256CBC:
-		return KeyAlgorithmAES256CBC, nil
-	case keyAlgorithmNumRSAOAEP256:
-		return KeyAlgorithmRSAOAEP256, nil
-	default:
-		return "", fmt.Errorf("algorithm ID %d is not supported", id)
-	}
-}
-
-// MarhsalJSON implements json.Marshaler.
+// MarshalJSON implements json.Marshaler.
 func (a KeyAlgorithm) MarshalJSON() ([]byte, error) {
 	return []byte(strconv.Itoa(a.ID())), nil
 }
@@ -121,6 +121,8 @@ func (a *KeyAlgorithm) UnmarshalJSON(dataB []byte) error {
 	if err != nil {
 		return err
 	}
+
 	*a = newA
+
 	return nil
 }

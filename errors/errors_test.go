@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"slices"
 	"testing"
 
 	"golang.org/x/tools/go/packages"
@@ -51,7 +52,8 @@ func TestError_HTTPStatusCode(t *testing.T) {
 		Build()
 
 	err, ok := kitErr.(*Error)
-	require.True(t, ok, httpStatusCode, err.HTTPStatusCode())
+	require.True(t, ok)
+	require.Equal(t, httpStatusCode, err.HTTPStatusCode())
 }
 
 func TestError_GrpcStatusCode(t *testing.T) {
@@ -67,7 +69,8 @@ func TestError_GrpcStatusCode(t *testing.T) {
 		Build()
 
 	err, ok := kitErr.(*Error)
-	require.True(t, ok, grpcStatusCode, err.GrpcStatusCode())
+	require.True(t, ok)
+	require.Equal(t, grpcStatusCode, err.GrpcStatusCode())
 }
 
 func TestError_AddDetails(t *testing.T) {
@@ -114,6 +117,7 @@ func TestError_Error(t *testing.T) {
 		message  string
 		grpcCode grpcCodes.Code
 	}
+
 	tests := []struct {
 		name    string
 		builder *ErrorBuilder
@@ -214,11 +218,13 @@ func helperSlicesEqual(a, b []proto.Message) bool {
 	if len(a) != len(b) {
 		return false
 	}
+
 	for i := range a {
 		if !reflect.DeepEqual(a[i], b[i]) {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -674,6 +680,7 @@ func TestError_JSONErrorValue(t *testing.T) {
 
 			// Use map[string]interface{} to handle order diff in the slices
 			var gotMap, wantMap map[string]any
+
 			_ = json.Unmarshal(got, &gotMap)
 			_ = json.Unmarshal(test.want, &wantMap)
 
@@ -768,6 +775,7 @@ func TestError_GRPCStatus(t *testing.T) {
 							Description: "test_description",
 						},
 					)
+
 				return s
 			}(),
 		},
@@ -868,6 +876,7 @@ func TestEnsureAllErrDetailsCovered(t *testing.T) {
 
 	// Load the package
 	cfg := &packages.Config{Mode: packages.NeedTypes | packages.NeedTypesInfo}
+
 	pkgs, err := packages.Load(cfg, packagePath)
 	if err != nil {
 		t.Error(err)
@@ -881,6 +890,7 @@ func TestEnsureAllErrDetailsCovered(t *testing.T) {
 	_, filename, _, _ := runtime.Caller(0)
 	// path where convertErrorDetails function lives
 	filePath := filepath.Join(filepath.Dir(filename), "errors.go")
+
 	mySwitchTypes, err := extractTypesFromSwitch(filePath, "convertErrorDetails")
 	if err != nil {
 		t.Errorf("err extracting type from switch: %v", err)
@@ -918,6 +928,7 @@ func TestEnsureAllErrDetailsCovered(t *testing.T) {
 // to the ones google supports.
 func extractTypesFromSwitch(filePath, funcName string) ([]string, error) {
 	fileSet := token.NewFileSet()
+
 	var err error
 
 	parsedFile, err := parser.ParseFile(fileSet, filePath, nil, parser.ParseComments)
@@ -927,6 +938,7 @@ func extractTypesFromSwitch(filePath, funcName string) ([]string, error) {
 
 	// Find the function
 	var foundFunc *ast.FuncDecl
+
 	for _, decl := range parsedFile.Decls {
 		if funcDecl, ok := decl.(*ast.FuncDecl); ok && funcDecl.Name.Name == funcName {
 			foundFunc = funcDecl
@@ -968,6 +980,7 @@ func extractTypesFromSwitch(filePath, funcName string) ([]string, error) {
 				}
 			}
 		}
+
 		return true
 	})
 
@@ -976,12 +989,7 @@ func extractTypesFromSwitch(filePath, funcName string) ([]string, error) {
 
 // containsType checks if the slice of types contains a specific type
 func containsType(types []string, target string) bool {
-	for _, t := range types {
-		if t == target {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(types, target)
 }
 
 func TestFromError(t *testing.T) {
@@ -1004,12 +1012,14 @@ func TestFromError(t *testing.T) {
 	}
 
 	var nonKitError error
+
 	result, ok = FromError(nonKitError)
 	if result != nil || ok {
 		t.Errorf("Expected result to be nil and ok to be false, got result: %#v, ok: %t", result, ok)
 	}
 
 	wrapped := fmt.Errorf("wrapped: %w", kitErr)
+
 	result, ok = FromError(wrapped)
 	if !ok || !reflect.DeepEqual(result, kitErr) {
 		t.Errorf("Expected result to be %#v and ok to be true, got result: %#v, ok: %t", kitErr, result, ok)

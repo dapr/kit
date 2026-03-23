@@ -39,9 +39,11 @@ func getTestLogger(buf io.Writer) *daprLogger {
 
 func TestEnableJSON(t *testing.T) {
 	var buf bytes.Buffer
+
 	testLogger := getTestLogger(&buf)
 
 	expectedHost, _ := os.Hostname()
+
 	testLogger.EnableJSONOutput(true)
 	_, okJSON := testLogger.logger.Logger.Formatter.(*logrus.JSONFormatter)
 	assert.True(t, okJSON)
@@ -138,6 +140,7 @@ func TestJSONLoggerFields(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var buf bytes.Buffer
+
 			testLogger := getTestLogger(&buf)
 			testLogger.EnableJSONOutput(true)
 			testLogger.SetAppID(tt.appID)
@@ -148,6 +151,7 @@ func TestJSONLoggerFields(t *testing.T) {
 			tt.fn(testLogger, tt.message)
 
 			b, _ := buf.ReadBytes('\n')
+
 			var o map[string]any
 			require.NoError(t, json.Unmarshal(b, &o))
 
@@ -235,6 +239,7 @@ func TestOutputLevel(t *testing.T) {
 		t.Run(string(tt.outputLevel), func(t *testing.T) {
 			for l, want := range tt.expectedOutputLevels {
 				var buf bytes.Buffer
+
 				testLogger := getTestLogger(&buf)
 				testLogger.SetOutputLevel(tt.outputLevel)
 
@@ -265,6 +270,7 @@ func TestOutputLevel(t *testing.T) {
 
 func TestWithTypeFields(t *testing.T) {
 	var buf bytes.Buffer
+
 	testLogger := getTestLogger(&buf)
 	testLogger.EnableJSONOutput(true)
 	testLogger.SetAppID("dapr_app")
@@ -276,6 +282,7 @@ func TestWithTypeFields(t *testing.T) {
 	loggerWithRequestType.Info("call user app")
 
 	b, _ := buf.ReadBytes('\n')
+
 	var o map[string]any
 	require.NoError(t, json.Unmarshal(b, &o))
 
@@ -285,6 +292,7 @@ func TestWithTypeFields(t *testing.T) {
 	testLogger.Info("testLogger with log LogType")
 
 	b, _ = buf.ReadBytes('\n')
+
 	clear(o)
 	require.NoError(t, json.Unmarshal(b, &o))
 
@@ -294,6 +302,7 @@ func TestWithTypeFields(t *testing.T) {
 func TestWithFields(t *testing.T) {
 	t.Run("json", func(t *testing.T) {
 		var buf bytes.Buffer
+
 		testLogger := getTestLogger(&buf)
 		testLogger.EnableJSONOutput(true)
 		testLogger.SetAppID("dapr_app")
@@ -308,6 +317,7 @@ func TestWithFields(t *testing.T) {
 		}).Info("🙃")
 
 		b, _ := buf.ReadBytes('\n')
+
 		clear(o)
 		require.NoError(t, json.Unmarshal(b, &o))
 
@@ -321,6 +331,7 @@ func TestWithFields(t *testing.T) {
 		}).Info("🐶")
 
 		b, _ = buf.ReadBytes('\n')
+
 		clear(o)
 		require.NoError(t, json.Unmarshal(b, &o))
 
@@ -335,6 +346,7 @@ func TestWithFields(t *testing.T) {
 		testLogger.Info("🤔")
 
 		b, _ = buf.ReadBytes('\n')
+
 		clear(o)
 		require.NoError(t, json.Unmarshal(b, &o))
 
@@ -345,6 +357,7 @@ func TestWithFields(t *testing.T) {
 
 	t.Run("text", func(t *testing.T) {
 		var buf bytes.Buffer
+
 		testLogger := getTestLogger(&buf)
 		testLogger.EnableJSONOutput(false)
 		testLogger.SetAppID("dapr_app")

@@ -36,8 +36,10 @@ func Test_Context(t *testing.T) {
 		"Lock with Context Timeout": {
 			action: func(l *Context) error {
 				l.Lock(t.Context())
+
 				ctx, cancel := context.WithTimeout(t.Context(), time.Millisecond*50)
 				defer cancel()
+
 				return l.Lock(ctx)
 			},
 			expectError: true,
@@ -51,8 +53,10 @@ func Test_Context(t *testing.T) {
 		"RLock with Context Timeout": {
 			action: func(l *Context) error {
 				l.Lock(t.Context())
+
 				ctx, cancel := context.WithTimeout(t.Context(), time.Millisecond*50)
 				defer cancel()
+
 				return l.RLock(ctx)
 			},
 			expectError: true,
@@ -66,6 +70,7 @@ func Test_Context(t *testing.T) {
 			l := NewContext()
 
 			done := make(chan error)
+
 			go func() {
 				done <- test.action(l)
 			}()
