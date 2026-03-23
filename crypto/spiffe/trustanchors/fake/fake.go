@@ -28,10 +28,12 @@ type Fake struct {
 
 func New(authorities ...*x509.Certificate) *Fake {
 	td := spiffeid.TrustDomain{}
+
 	bundle := x509bundle.New(td)
 	for _, a := range authorities {
 		bundle.AddX509Authority(a)
 	}
+
 	return &Fake{bundle: bundle}
 }
 

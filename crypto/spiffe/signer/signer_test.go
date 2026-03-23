@@ -48,6 +48,7 @@ func (s *staticSVIDSource) GetX509SVID() (*x509svid.SVID, error) {
 
 func generateEd25519Cert(t *testing.T) ([]byte, *x509.Certificate, ed25519.PrivateKey) {
 	t.Helper()
+
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
@@ -63,11 +64,13 @@ func generateEd25519Cert(t *testing.T) ([]byte, *x509.Certificate, ed25519.Priva
 	require.NoError(t, err)
 	cert, err := x509.ParseCertificate(certDER)
 	require.NoError(t, err)
+
 	return certDER, cert, priv
 }
 
 func generateECDSACert(t *testing.T) ([]byte, *x509.Certificate, *ecdsa.PrivateKey) {
 	t.Helper()
+
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
 
@@ -83,11 +86,13 @@ func generateECDSACert(t *testing.T) ([]byte, *x509.Certificate, *ecdsa.PrivateK
 	require.NoError(t, err)
 	cert, err := x509.ParseCertificate(certDER)
 	require.NoError(t, err)
+
 	return certDER, cert, priv
 }
 
 func generateRSACert(t *testing.T) ([]byte, *x509.Certificate, *rsa.PrivateKey) {
 	t.Helper()
+
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
 
@@ -103,11 +108,13 @@ func generateRSACert(t *testing.T) ([]byte, *x509.Certificate, *rsa.PrivateKey) 
 	require.NoError(t, err)
 	cert, err := x509.ParseCertificate(certDER)
 	require.NoError(t, err)
+
 	return certDER, cert, priv
 }
 
 func generateCA(t *testing.T) ([]byte, *x509.Certificate, ed25519.PrivateKey) {
 	t.Helper()
+
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
@@ -125,11 +132,13 @@ func generateCA(t *testing.T) ([]byte, *x509.Certificate, ed25519.PrivateKey) {
 	require.NoError(t, err)
 	ca, err := x509.ParseCertificate(caDER)
 	require.NoError(t, err)
+
 	return caDER, ca, priv
 }
 
 func generateLeafSignedByCA(t *testing.T, ca *x509.Certificate, caKey ed25519.PrivateKey) ([]byte, *x509.Certificate, ed25519.PrivateKey) {
 	t.Helper()
+
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
@@ -145,6 +154,7 @@ func generateLeafSignedByCA(t *testing.T, ca *x509.Certificate, caKey ed25519.Pr
 	require.NoError(t, err)
 	leaf, err := x509.ParseCertificate(leafDER)
 	require.NoError(t, err)
+
 	return leafDER, leaf, priv
 }
 
@@ -157,6 +167,7 @@ func testDigest(input string) []byte {
 
 func newSVIDSource(cert *x509.Certificate, key crypto.Signer) *staticSVIDSource {
 	id, _ := x509svid.IDFromCert(cert)
+
 	return &staticSVIDSource{svid: &x509svid.SVID{
 		ID:           id,
 		Certificates: []*x509.Certificate{cert},
@@ -169,6 +180,7 @@ func TestNew(t *testing.T) {
 
 	t.Run("nil svidSource for verify-only", func(t *testing.T) {
 		t.Parallel()
+
 		s := New(nil, fake.New())
 		require.NotNil(t, s)
 	})
@@ -194,6 +206,7 @@ func TestNew(t *testing.T) {
 
 func TestSign_NilSVIDSource(t *testing.T) {
 	t.Parallel()
+
 	s := New(nil, fake.New())
 	_, _, err := s.Sign(testDigest("hello"))
 	require.Error(t, err)
@@ -202,6 +215,7 @@ func TestSign_NilSVIDSource(t *testing.T) {
 
 func TestSign_SVIDSourceError(t *testing.T) {
 	t.Parallel()
+
 	source := &staticSVIDSource{err: errors.New("svid unavailable")}
 	s := New(source, nil)
 	_, _, err := s.Sign(testDigest("hello"))
@@ -211,6 +225,7 @@ func TestSign_SVIDSourceError(t *testing.T) {
 
 func TestSign_NoCertificates(t *testing.T) {
 	t.Parallel()
+
 	source := &staticSVIDSource{svid: &x509svid.SVID{
 		Certificates: nil,
 		PrivateKey:   ed25519.NewKeyFromSeed(make([]byte, 32)),
@@ -292,6 +307,7 @@ func TestVerify_TamperedSignature(t *testing.T) {
 
 func TestVerify_InvalidCertChain(t *testing.T) {
 	t.Parallel()
+
 	s := New(nil, fake.New())
 	err := s.VerifySignature(testDigest("digest"), []byte("sig"), []byte("not-a-cert"))
 	require.Error(t, err)
@@ -300,6 +316,7 @@ func TestVerify_InvalidCertChain(t *testing.T) {
 
 func TestVerify_EmptyCertChain(t *testing.T) {
 	t.Parallel()
+
 	s := New(nil, fake.New())
 	// Valid DER but empty is not possible; just use nil.
 	err := s.VerifySignature(testDigest("digest"), []byte("sig"), nil)
@@ -346,6 +363,7 @@ func TestVerifyCertChainOfTrust_IntermediateChain(t *testing.T) {
 	// Create intermediate CA signed by root.
 	intermPub, intermPriv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
+
 	intermTemplate := &x509.Certificate{
 		SerialNumber:          big.NewInt(2),
 		Subject:               pkix.Name{CommonName: "Intermediate CA"},
@@ -389,6 +407,7 @@ func TestVerifyCertChainOfTrust_WrongTrustAnchor(t *testing.T) {
 
 func TestVerifyCertChainOfTrust_EmptyChain(t *testing.T) {
 	t.Parallel()
+
 	ta := fake.New()
 	s := New(nil, ta)
 
@@ -398,6 +417,7 @@ func TestVerifyCertChainOfTrust_EmptyChain(t *testing.T) {
 
 func TestVerifyCertChainOfTrust_InvalidDER(t *testing.T) {
 	t.Parallel()
+
 	ta := fake.New()
 	s := New(nil, ta)
 

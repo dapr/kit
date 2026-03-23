@@ -54,6 +54,7 @@ func (s *Signer) Sign(digest []byte) ([]byte, []byte, error) {
 	if s.svidSource == nil {
 		return nil, nil, errors.New("signing not available: no SVID source configured")
 	}
+
 	svid, err := s.svidSource.GetX509SVID()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get X.509 SVID: %w", err)
@@ -85,6 +86,7 @@ func (s *Signer) VerifySignature(digest, sig, certChainDER []byte) error {
 	if err != nil {
 		return err
 	}
+
 	return verifyWithKey(leaf.PublicKey, digest, sig)
 }
 
@@ -102,6 +104,7 @@ func (s *Signer) VerifyCertChainOfTrust(certChainDER []byte, signingTime time.Ti
 	if err != nil {
 		return fmt.Errorf("failed to parse certificate chain: %w", err)
 	}
+
 	if len(certs) == 0 {
 		return errors.New("certificate chain is empty")
 	}
@@ -167,11 +170,13 @@ func verifyWithKey(pubKey crypto.PublicKey, digest, sig []byte) error {
 		if !ed25519.Verify(k, digest, sig) {
 			return errors.New("ed25519 signature verification failed")
 		}
+
 		return nil
 	case *ecdsa.PublicKey:
 		if !ecdsa.VerifyASN1(k, digest, sig) {
 			return errors.New("ecdsa signature verification failed")
 		}
+
 		return nil
 	case *rsa.PublicKey:
 		return rsa.VerifyPKCS1v15(k, crypto.SHA256, digest, sig)
@@ -186,8 +191,10 @@ func parseLeafCert(chainDER []byte) (*x509.Certificate, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse certificate chain: %w", err)
 	}
+
 	if len(certs) == 0 {
 		return nil, errors.New("certificate chain is empty")
 	}
+
 	return certs[0], nil
 }
