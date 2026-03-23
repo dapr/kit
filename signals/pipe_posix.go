@@ -1,5 +1,4 @@
 //go:build !windows
-// +build !windows
 
 /*
 Copyright 2026 The Dapr Authors
@@ -18,7 +17,6 @@ package signals
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"strconv"
 	"syscall"
@@ -32,12 +30,6 @@ func ReloadPipeName(pid int) string {
 	return `\\.\pipe\dapr-reload-` + strconv.Itoa(pid)
 }
 
-// listenPipe is not used on POSIX systems (SIGHUP is used instead), but is
-// provided for compilation completeness.
-func listenPipe(string) (net.Listener, error) {
-	return nil, fmt.Errorf("named pipe listener is not supported on this platform")
-}
-
 // SignalReload sends SIGHUP to the process with the given PID on POSIX
 // systems, triggering a runtime reload.
 func SignalReload(pid int) error {
@@ -45,5 +37,6 @@ func SignalReload(pid int) error {
 	if err != nil {
 		return fmt.Errorf("failed to find process %d: %w", pid, err)
 	}
+
 	return proc.Signal(syscall.SIGHUP)
 }
