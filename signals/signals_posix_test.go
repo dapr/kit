@@ -195,6 +195,25 @@ func TestOnHUP(t *testing.T) {
 		}
 	})
 
+	t.Run("SignalReload should cancel context via SIGHUP", func(t *testing.T) {
+		defer signal.Reset()
+
+		hupCh := OnHUP(t.Context())
+		ctx := <-hupCh
+
+		require.NoError(t, SignalReload(syscall.Getpid()))
+
+		select {
+		case <-ctx.Done():
+			cause := context.Cause(ctx)
+			require.Error(t, cause)
+			assert.Contains(t, cause.Error(), "SIGHUP",
+				"cause should contain SIGHUP, got: %s", cause.Error())
+		case <-time.After(1 * time.Second):
+			t.Error("context should be cancelled in time")
+		}
+	})
+
 	t.Run("channel should be closed when main context is cancelled", func(t *testing.T) {
 		defer signal.Reset()
 
