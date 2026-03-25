@@ -14,6 +14,9 @@ limitations under the License.
 package logger
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,6 +29,7 @@ func TestOptions(t *testing.T) {
 		assert.Equal(t, defaultJSONOutput, o.JSONFormatEnabled)
 		assert.Equal(t, undefinedAppID, o.appID)
 		assert.Equal(t, defaultOutputLevel, o.OutputLevel)
+		assert.Equal(t, "", o.OutputFile)
 	})
 
 	t.Run("set dapr ID", func(t *testing.T) {
@@ -40,9 +44,13 @@ func TestOptions(t *testing.T) {
 		o := DefaultOptions()
 
 		logLevelAsserted := false
+		logFileAsserted := false
 		testStringVarFn := func(p *string, name string, value string, usage string) {
 			if name == "log-level" && value == defaultOutputLevel {
 				logLevelAsserted = true
+			}
+			if name == "log-file" && value == "" {
+				logFileAsserted = true
 			}
 		}
 
@@ -57,6 +65,7 @@ func TestOptions(t *testing.T) {
 
 		// assert
 		assert.True(t, logLevelAsserted)
+		assert.True(t, logFileAsserted)
 		assert.True(t, logAsJSONAsserted)
 	})
 }
@@ -91,4 +100,29 @@ func TestApplyOptionsToLoggers(t *testing.T) {
 			toLogrusLevel(DebugLevel),
 			(l.(*daprLogger)).logger.Logger.GetLevel())
 	}
+}
+
+func TestApplyOptionsToLoggersFileOutput(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "dapr.log")
+
+	testOptions := Options{
+		OutputLevel: "debug",
+		OutputFile:  logPath,
+	}
+
+	l := NewLogger("testLoggerFileOutput")
+	require.NoError(t, ApplyOptionsToLoggers(&testOptions))
+
+	dl, ok := l.(*daprLogger)
+	require.True(t, ok)
+	fileOut, ok := dl.logger.Logger.Out.(*os.File)
+	require.True(t, ok)
+	assert.Equal(t, logPath, fileOut.Name())
+
+	msg := "log-file-test-message"
+	l.Info(msg)
+
+	b, err := os.ReadFile(logPath)
+	require.NoError(t, err)
+	assert.True(t, strings.Contains(string(b), msg))
 }

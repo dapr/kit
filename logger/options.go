@@ -33,6 +33,9 @@ type Options struct {
 
 	// OutputLevel is the level of logging
 	OutputLevel string
+
+	// OutputFile is the destination file path for logs.
+	OutputFile string
 }
 
 // SetOutputLevel sets the log output level.
@@ -62,6 +65,11 @@ func (o *Options) AttachCmdFlags(
 			"log-level",
 			defaultOutputLevel,
 			"Options are debug, info, warn, error, or fatal (default info)")
+		stringVar(
+			&o.OutputFile,
+			"log-file",
+			"",
+			"Path to a file where logs will be written")
 	}
 
 	if boolVar != nil {
@@ -79,6 +87,7 @@ func DefaultOptions() Options {
 		JSONFormatEnabled: defaultJSONOutput,
 		appID:             undefinedAppID,
 		OutputLevel:       defaultOutputLevel,
+		OutputFile:        "",
 	}
 }
 
