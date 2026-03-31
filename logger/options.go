@@ -15,6 +15,7 @@ package logger
 
 import (
 	"fmt"
+	"os"
 )
 
 const (
@@ -113,5 +114,14 @@ func ApplyOptionsToLoggers(options *Options) error {
 		v.SetOutputLevel(daprLogLevel)
 	}
 
+	if options.OutputFile != "" {
+		file, err := os.OpenFile(options.OutputFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
+		if err != nil {
+			return fmt.Errorf("failed to open log file %q: %w", options.OutputFile, err)
+		}
+		for _, v := range internalLoggers {
+			v.SetOutput(file)
+		}
+	}
 	return nil
 }
