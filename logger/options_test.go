@@ -119,6 +119,13 @@ func TestApplyOptionsToLoggersFileOutput(t *testing.T) {
 	fileOut, ok := dl.logger.Logger.Out.(*os.File)
 	require.True(t, ok)
 	assert.Equal(t, logPath, fileOut.Name())
+	t.Cleanup(func() {
+		for _, logger := range getLoggers() {
+			logger.SetOutput(os.Stdout)
+		}
+
+		require.NoError(t, fileOut.Close())
+	})
 
 	msg := "log-file-test-message"
 	l.Info(msg)
