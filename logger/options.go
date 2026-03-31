@@ -119,9 +119,11 @@ func ApplyOptionsToLoggers(options *Options) error {
 		if err != nil {
 			return fmt.Errorf("failed to open log file %q: %w", options.OutputFile, err)
 		}
+
 		for _, v := range internalLoggers {
 			v.SetOutput(file)
 		}
 	}
+
 	return nil
 }

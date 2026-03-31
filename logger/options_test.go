@@ -16,7 +16,6 @@ package logger
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,7 +28,7 @@ func TestOptions(t *testing.T) {
 		assert.Equal(t, defaultJSONOutput, o.JSONFormatEnabled)
 		assert.Equal(t, undefinedAppID, o.appID)
 		assert.Equal(t, defaultOutputLevel, o.OutputLevel)
-		assert.Equal(t, "", o.OutputFile)
+		assert.Empty(t, o.OutputFile)
 	})
 
 	t.Run("set dapr ID", func(t *testing.T) {
@@ -49,6 +48,7 @@ func TestOptions(t *testing.T) {
 			if name == "log-level" && value == defaultOutputLevel {
 				logLevelAsserted = true
 			}
+
 			if name == "log-file" && value == "" {
 				logFileAsserted = true
 			}
@@ -111,6 +111,7 @@ func TestApplyOptionsToLoggersFileOutput(t *testing.T) {
 	}
 
 	l := NewLogger("testLoggerFileOutput")
+
 	require.NoError(t, ApplyOptionsToLoggers(&testOptions))
 
 	dl, ok := l.(*daprLogger)
@@ -124,5 +125,5 @@ func TestApplyOptionsToLoggersFileOutput(t *testing.T) {
 
 	b, err := os.ReadFile(logPath)
 	require.NoError(t, err)
-	assert.True(t, strings.Contains(string(b), msg))
+	assert.Contains(t, string(b), msg)
 }
