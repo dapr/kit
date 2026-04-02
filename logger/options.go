@@ -15,13 +15,21 @@ package logger
 
 import (
 	"fmt"
+	"io"
 	"os"
+	"sync"
 )
 
 const (
 	defaultJSONOutput  = false
 	defaultOutputLevel = "info"
 	undefinedAppID     = ""
+)
+
+var (
+	// logOutputMu protects logOutputFile from concurrent access.
+	logOutputMu   sync.Mutex
+	logOutputFile *os.File
 )
 
 // Options defines the sets of options for Dapr logging.
@@ -114,15 +122,38 @@ func ApplyOptionsToLoggers(options *Options) error {
 		v.SetOutputLevel(daprLogLevel)
 	}
 
-	if options.OutputFile != "" {
-		file, err := os.OpenFile(options.OutputFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
-		if err != nil {
-			return fmt.Errorf("failed to open log file %q: %w", options.OutputFile, err)
-		}
+	if err := setLogOutput(options.OutputFile, internalLoggers); err != nil {
+		return err
+	}
 
-		for _, v := range internalLoggers {
-			v.SetOutput(file)
+	return nil
+}
+
+// setLogOutput configures log output destination. If path is non-empty, logs
+// are written to the file at that path. If empty, output reverts to stdout.
+// Any previously opened log file is closed before opening a new one.
+func setLogOutput(path string, loggers map[string]Logger) error {
+	logOutputMu.Lock()
+	defer logOutputMu.Unlock()
+
+	// Close any previously opened log file.
+	if logOutputFile != nil {
+		logOutputFile.Close()
+		logOutputFile = nil
+	}
+
+	var out io.Writer = os.Stdout
+	if path != "" {
+		file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		if err != nil {
+			return fmt.Errorf("failed to open log file %q: %w", path, err)
 		}
+		logOutputFile = file
+		out = file
+	}
+
+	for _, v := range loggers {
+		v.SetOutput(out)
 	}
 
 	return nil

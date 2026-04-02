@@ -120,11 +120,10 @@ func TestApplyOptionsToLoggersFileOutput(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, logPath, fileOut.Name())
 	t.Cleanup(func() {
-		for _, logger := range getLoggers() {
-			logger.SetOutput(os.Stdout)
-		}
-
-		require.NoError(t, fileOut.Close())
+		// Revert to stdout, which also closes the log file.
+		require.NoError(t, ApplyOptionsToLoggers(&Options{
+			OutputLevel: "info",
+		}))
 	})
 
 	msg := "log-file-test-message"
@@ -133,4 +132,41 @@ func TestApplyOptionsToLoggersFileOutput(t *testing.T) {
 	b, err := os.ReadFile(logPath)
 	require.NoError(t, err)
 	assert.Contains(t, string(b), msg)
+}
+
+func TestApplyOptionsToLoggersFileOutputReapply(t *testing.T) {
+	dir := t.TempDir()
+	logPath1 := filepath.Join(dir, "dapr1.log")
+	logPath2 := filepath.Join(dir, "dapr2.log")
+
+	l := NewLogger("testLoggerReapply")
+
+	// Apply first file output.
+	require.NoError(t, ApplyOptionsToLoggers(&Options{
+		OutputLevel: "debug",
+		OutputFile:  logPath1,
+	}))
+	l.Info("message-one")
+
+	// Re-apply with a different file — should close the first.
+	require.NoError(t, ApplyOptionsToLoggers(&Options{
+		OutputLevel: "debug",
+		OutputFile:  logPath2,
+	}))
+	l.Info("message-two")
+
+	t.Cleanup(func() {
+		require.NoError(t, ApplyOptionsToLoggers(&Options{
+			OutputLevel: "info",
+		}))
+	})
+
+	b1, err := os.ReadFile(logPath1)
+	require.NoError(t, err)
+	assert.Contains(t, string(b1), "message-one")
+	assert.NotContains(t, string(b1), "message-two")
+
+	b2, err := os.ReadFile(logPath2)
+	require.NoError(t, err)
+	assert.Contains(t, string(b2), "message-two")
 }
