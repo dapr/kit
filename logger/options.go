@@ -122,7 +122,8 @@ func ApplyOptionsToLoggers(options *Options) error {
 		v.SetOutputLevel(daprLogLevel)
 	}
 
-	if err := setLogOutput(options.OutputFile, internalLoggers); err != nil {
+	err := setLogOutput(options.OutputFile, internalLoggers)
+	if err != nil {
 		return err
 	}
 
@@ -143,13 +144,18 @@ func setLogOutput(path string, loggers map[string]Logger) error {
 	}
 
 	var out io.Writer = os.Stdout
+
 	if path != "" {
 		file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 		if err != nil {
 			return fmt.Errorf("failed to open log file %q: %w", path, err)
 		}
+
 		logOutputFile = file
-		out = file
+	}
+
+	if logOutputFile != nil {
+		out = logOutputFile
 	}
 
 	for _, v := range loggers {
