@@ -15,12 +15,21 @@ package logger
 
 import (
 	"fmt"
+	"io"
+	"os"
+	"sync"
 )
 
 const (
 	defaultJSONOutput  = false
 	defaultOutputLevel = "info"
 	undefinedAppID     = ""
+)
+
+var (
+	// logOutputMu protects logOutputFile from concurrent access.
+	logOutputMu   sync.Mutex
+	logOutputFile *os.File
 )
 
 // Options defines the sets of options for Dapr logging.
@@ -33,6 +42,9 @@ type Options struct {
 
 	// OutputLevel is the level of logging
 	OutputLevel string
+
+	// OutputFile is the destination file path for logs.
+	OutputFile string
 }
 
 // SetOutputLevel sets the log output level.
@@ -62,6 +74,11 @@ func (o *Options) AttachCmdFlags(
 			"log-level",
 			defaultOutputLevel,
 			"Options are debug, info, warn, error, or fatal (default info)")
+		stringVar(
+			&o.OutputFile,
+			"log-file",
+			"",
+			"Path to a file where logs will be written")
 	}
 
 	if boolVar != nil {
@@ -79,6 +96,7 @@ func DefaultOptions() Options {
 		JSONFormatEnabled: defaultJSONOutput,
 		appID:             undefinedAppID,
 		OutputLevel:       defaultOutputLevel,
+		OutputFile:        "",
 	}
 }
 
@@ -103,6 +121,50 @@ func ApplyOptionsToLoggers(options *Options) error {
 	for _, v := range internalLoggers {
 		v.SetOutputLevel(daprLogLevel)
 	}
+
+	err := setLogOutput(options.OutputFile, internalLoggers)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// setLogOutput configures log output destination. If path is non-empty, logs
+// are written to the file at that path. If empty, output reverts to stdout.
+// The new file is opened before closing the previous one so that loggers are
+// never left pointing at a closed file descriptor.
+func setLogOutput(path string, loggers map[string]Logger) error {
+	logOutputMu.Lock()
+	defer logOutputMu.Unlock()
+
+	var (
+		out     io.Writer = os.Stdout
+		newFile *os.File
+	)
+
+	if path != "" {
+		var err error
+
+		newFile, err = os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		if err != nil {
+			return fmt.Errorf("failed to open log file %q: %w", path, err)
+		}
+
+		out = newFile
+	}
+
+	// Switch all loggers to the new output before closing the old file.
+	for _, v := range loggers {
+		v.SetOutput(out)
+	}
+
+	// Close the previous log file after loggers have been redirected.
+	if logOutputFile != nil {
+		logOutputFile.Close()
+	}
+
+	logOutputFile = newFile
 
 	return nil
 }
