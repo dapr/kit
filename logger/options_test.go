@@ -113,18 +113,18 @@ func TestApplyOptionsToLoggersFileOutput(t *testing.T) {
 	l := NewLogger("testLoggerFileOutput")
 
 	require.NoError(t, ApplyOptionsToLoggers(&testOptions))
-
-	dl, ok := l.(*daprLogger)
-	require.True(t, ok)
-	fileOut, ok := dl.logger.Logger.Out.(*os.File)
-	require.True(t, ok)
-	assert.Equal(t, logPath, fileOut.Name())
 	t.Cleanup(func() {
 		// Revert to stdout, which also closes the log file.
 		require.NoError(t, ApplyOptionsToLoggers(&Options{
 			OutputLevel: "info",
 		}))
 	})
+
+	dl, ok := l.(*daprLogger)
+	require.True(t, ok)
+	fileOut, ok := dl.logger.Logger.Out.(*os.File)
+	require.True(t, ok)
+	assert.Equal(t, logPath, fileOut.Name())
 
 	msg := "log-file-test-message"
 	l.Info(msg)
@@ -141,6 +141,12 @@ func TestApplyOptionsToLoggersFileOutputReapply(t *testing.T) {
 
 	l := NewLogger("testLoggerReapply")
 
+	t.Cleanup(func() {
+		require.NoError(t, ApplyOptionsToLoggers(&Options{
+			OutputLevel: "info",
+		}))
+	})
+
 	// Apply first file output.
 	require.NoError(t, ApplyOptionsToLoggers(&Options{
 		OutputLevel: "debug",
@@ -154,12 +160,6 @@ func TestApplyOptionsToLoggersFileOutputReapply(t *testing.T) {
 		OutputFile:  logPath2,
 	}))
 	l.Info("message-two")
-
-	t.Cleanup(func() {
-		require.NoError(t, ApplyOptionsToLoggers(&Options{
-			OutputLevel: "info",
-		}))
-	})
 
 	b1, err := os.ReadFile(logPath1)
 	require.NoError(t, err)

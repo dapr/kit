@@ -132,35 +132,39 @@ func ApplyOptionsToLoggers(options *Options) error {
 
 // setLogOutput configures log output destination. If path is non-empty, logs
 // are written to the file at that path. If empty, output reverts to stdout.
-// Any previously opened log file is closed before opening a new one.
+// The new file is opened before closing the previous one so that loggers are
+// never left pointing at a closed file descriptor.
 func setLogOutput(path string, loggers map[string]Logger) error {
 	logOutputMu.Lock()
 	defer logOutputMu.Unlock()
 
-	// Close any previously opened log file.
-	if logOutputFile != nil {
-		logOutputFile.Close()
-		logOutputFile = nil
-	}
-
-	var out io.Writer = os.Stdout
+	var (
+		out     io.Writer = os.Stdout
+		newFile *os.File
+	)
 
 	if path != "" {
-		file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		var err error
+
+		newFile, err = os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 		if err != nil {
 			return fmt.Errorf("failed to open log file %q: %w", path, err)
 		}
 
-		logOutputFile = file
+		out = newFile
 	}
 
-	if logOutputFile != nil {
-		out = logOutputFile
-	}
-
+	// Switch all loggers to the new output before closing the old file.
 	for _, v := range loggers {
 		v.SetOutput(out)
 	}
+
+	// Close the previous log file after loggers have been redirected.
+	if logOutputFile != nil {
+		logOutputFile.Close()
+	}
+
+	logOutputFile = newFile
 
 	return nil
 }
