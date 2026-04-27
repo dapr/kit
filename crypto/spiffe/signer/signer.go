@@ -74,34 +74,8 @@ func (s *Signer) CertChainDER() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return certChainDER, nil
-}
-
-// currentSVIDChain fetches the current SVID and returns it alongside the
-// concatenated DER-encoded certificate chain (leaf first, intermediates
-// concatenated). The op label is interpolated into the "<op> not
-// available" error so callers see a context-appropriate message when the
-// signer was configured without an SVID source.
-func (s *Signer) currentSVIDChain(op string) (*x509svid.SVID, []byte, error) {
-	if s.svidSource == nil {
-		return nil, nil, fmt.Errorf("%s not available: no SVID source configured", op)
-	}
-
-	svid, err := s.svidSource.GetX509SVID()
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get X.509 SVID: %w", err)
-	}
-
-	if len(svid.Certificates) == 0 {
-		return nil, nil, errors.New("SVID has no certificates")
-	}
-
-	var certChainDER []byte
-	for _, cert := range svid.Certificates {
-		certChainDER = append(certChainDER, cert.Raw...)
-	}
-
-	return svid, certChainDER, nil
 }
 
 // VerifySignature verifies a cryptographic signature against the given digest
@@ -174,6 +148,33 @@ func (s *Signer) VerifyCertChainOfTrust(certChainDER []byte, signingTime time.Ti
 	}
 
 	return nil
+}
+
+// currentSVIDChain fetches the current SVID and returns it alongside the
+// concatenated DER-encoded certificate chain (leaf first, intermediates
+// concatenated). The op label is interpolated into the "<op> not
+// available" error so callers see a context-appropriate message when the
+// signer was configured without an SVID source.
+func (s *Signer) currentSVIDChain(op string) (*x509svid.SVID, []byte, error) {
+	if s.svidSource == nil {
+		return nil, nil, fmt.Errorf("%s not available: no SVID source configured", op)
+	}
+
+	svid, err := s.svidSource.GetX509SVID()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get X.509 SVID: %w", err)
+	}
+
+	if len(svid.Certificates) == 0 {
+		return nil, nil, errors.New("SVID has no certificates")
+	}
+
+	var certChainDER []byte
+	for _, cert := range svid.Certificates {
+		certChainDER = append(certChainDER, cert.Raw...)
+	}
+
+	return svid, certChainDER, nil
 }
 
 // signWithKey signs the given digest with the private key.

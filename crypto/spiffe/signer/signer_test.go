@@ -373,8 +373,10 @@ func TestCertChainDER_MatchesSignChain(t *testing.T) {
 
 	signChain := func(t *testing.T) []byte {
 		t.Helper()
+
 		_, chain, err := s.Sign(testDigest("any"))
 		require.NoError(t, err)
+
 		return chain
 	}
 
