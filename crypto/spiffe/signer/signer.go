@@ -77,6 +77,33 @@ func (s *Signer) Sign(digest []byte) ([]byte, []byte, error) {
 	return sig, certChainDER, nil
 }
 
+// CertChainDER returns the DER-encoded certificate chain (leaf +
+// intermediates concatenated) of the current SVID, without performing a
+// signing operation. Callers that need to reference their own certificate
+// before signing (e.g. to commit a cert digest into a signed payload)
+// should use this rather than signing a throwaway digest.
+func (s *Signer) CertChainDER() ([]byte, error) {
+	if s.svidSource == nil {
+		return nil, errors.New("signing not available: no SVID source configured")
+	}
+
+	svid, err := s.svidSource.GetX509SVID()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get X.509 SVID: %w", err)
+	}
+
+	if len(svid.Certificates) == 0 {
+		return nil, errors.New("SVID has no certificates")
+	}
+
+	var certChainDER []byte
+	for _, cert := range svid.Certificates {
+		certChainDER = append(certChainDER, cert.Raw...)
+	}
+
+	return certChainDER, nil
+}
+
 // VerifySignature verifies a cryptographic signature against the given digest
 // using the public key from the provided DER-encoded certificate chain. This
 // only checks the cryptographic signature; use VerifyCertChainOfTrust to
