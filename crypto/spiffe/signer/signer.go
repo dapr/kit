@@ -51,22 +51,9 @@ func New(svidSource x509svid.Source, trustAnchors trustanchors.Interface) *Signe
 // Returns the signature bytes and the DER-encoded certificate chain (leaf +
 // intermediates concatenated).
 func (s *Signer) Sign(digest []byte) ([]byte, []byte, error) {
-	if s.svidSource == nil {
-		return nil, nil, errors.New("signing not available: no SVID source configured")
-	}
-
-	svid, err := s.svidSource.GetX509SVID()
+	svid, certChainDER, err := s.currentSVIDChain("signing")
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get X.509 SVID: %w", err)
-	}
-
-	if len(svid.Certificates) == 0 {
-		return nil, nil, errors.New("SVID has no certificates")
-	}
-
-	var certChainDER []byte
-	for _, cert := range svid.Certificates {
-		certChainDER = append(certChainDER, cert.Raw...)
+		return nil, nil, err
 	}
 
 	sig, err := signWithKey(svid.PrivateKey, digest)
@@ -83,17 +70,30 @@ func (s *Signer) Sign(digest []byte) ([]byte, []byte, error) {
 // before signing (e.g. to commit a cert digest into a signed payload)
 // should use this rather than signing a throwaway digest.
 func (s *Signer) CertChainDER() ([]byte, error) {
+	_, certChainDER, err := s.currentSVIDChain("certificate chain")
+	if err != nil {
+		return nil, err
+	}
+	return certChainDER, nil
+}
+
+// currentSVIDChain fetches the current SVID and returns it alongside the
+// concatenated DER-encoded certificate chain (leaf first, intermediates
+// concatenated). The op label is interpolated into the "<op> not
+// available" error so callers see a context-appropriate message when the
+// signer was configured without an SVID source.
+func (s *Signer) currentSVIDChain(op string) (*x509svid.SVID, []byte, error) {
 	if s.svidSource == nil {
-		return nil, errors.New("signing not available: no SVID source configured")
+		return nil, nil, fmt.Errorf("%s not available: no SVID source configured", op)
 	}
 
 	svid, err := s.svidSource.GetX509SVID()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get X.509 SVID: %w", err)
+		return nil, nil, fmt.Errorf("failed to get X.509 SVID: %w", err)
 	}
 
 	if len(svid.Certificates) == 0 {
-		return nil, errors.New("SVID has no certificates")
+		return nil, nil, errors.New("SVID has no certificates")
 	}
 
 	var certChainDER []byte
@@ -101,7 +101,7 @@ func (s *Signer) CertChainDER() ([]byte, error) {
 		certChainDER = append(certChainDER, cert.Raw...)
 	}
 
-	return certChainDER, nil
+	return svid, certChainDER, nil
 }
 
 // VerifySignature verifies a cryptographic signature against the given digest

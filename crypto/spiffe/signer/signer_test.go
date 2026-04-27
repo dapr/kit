@@ -333,6 +333,57 @@ func TestSign_ReturnsCertChainDER(t *testing.T) {
 	assert.Equal(t, certDER, certChain)
 }
 
+func TestCertChainDER_NilSVIDSource(t *testing.T) {
+	t.Parallel()
+
+	s := New(nil, fake.New())
+	_, err := s.CertChainDER()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "certificate chain not available")
+	assert.Contains(t, err.Error(), "no SVID source configured")
+}
+
+func TestCertChainDER_SVIDSourceError(t *testing.T) {
+	t.Parallel()
+
+	source := &staticSVIDSource{err: errors.New("svid unavailable")}
+	s := New(source, nil)
+	_, err := s.CertChainDER()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "svid unavailable")
+}
+
+func TestCertChainDER_NoCertificates(t *testing.T) {
+	t.Parallel()
+
+	source := &staticSVIDSource{svid: &x509svid.SVID{
+		Certificates: nil,
+		PrivateKey:   ed25519.NewKeyFromSeed(make([]byte, 32)),
+	}}
+	s := New(source, nil)
+	_, err := s.CertChainDER()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "no certificates")
+}
+
+func TestCertChainDER_MatchesSignChain(t *testing.T) {
+	t.Parallel()
+	_, cert, priv := generateEd25519Cert(t)
+	s := New(newSVIDSource(cert, priv), nil)
+
+	signChain := func(t *testing.T) []byte {
+		t.Helper()
+		_, chain, err := s.Sign(testDigest("any"))
+		require.NoError(t, err)
+		return chain
+	}
+
+	got, err := s.CertChainDER()
+	require.NoError(t, err)
+	assert.Equal(t, signChain(t), got,
+		"CertChainDER must produce the same chain bytes Sign returns")
+}
+
 func TestVerifyCertChainOfTrust_SelfSigned(t *testing.T) {
 	t.Parallel()
 	certDER, cert, _ := generateEd25519Cert(t)
