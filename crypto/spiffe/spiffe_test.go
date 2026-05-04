@@ -15,6 +15,8 @@ package spiffe
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rsa"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -127,6 +129,61 @@ func Test_fetchIdentity_perAudienceParseError_includesAudience(t *testing.T) {
 	_, err := s.fetchIdentity(t.Context())
 	require.Error(t, err)
 	require.Contains(t, err.Error(), fmt.Sprintf("audience %q", "bad-aud"))
+}
+
+func Test_fetchIdentity_keyAlgorithm(t *testing.T) {
+	pki := test.GenPKI(t, test.PKIOptions{
+		LeafID: spiffeid.RequireFromString("spiffe://example.com/foo/bar"),
+	})
+
+	rsaAlg := KeyAlgorithmRSA
+	edAlg := KeyAlgorithmEd25519
+
+	tests := map[string]struct {
+		alg    *KeyAlgorithm
+		assert func(t *testing.T, key any)
+	}{
+		"nil defaults to Ed25519": {
+			alg: nil,
+			assert: func(t *testing.T, key any) {
+				assert.IsType(t, ed25519.PrivateKey{}, key)
+			},
+		},
+		"explicit Ed25519": {
+			alg: &edAlg,
+			assert: func(t *testing.T, key any) {
+				assert.IsType(t, ed25519.PrivateKey{}, key)
+			},
+		},
+		"RSA generates an RSA private key": {
+			alg: &rsaAlg,
+			assert: func(t *testing.T, key any) {
+				rsaKey, ok := key.(*rsa.PrivateKey)
+				require.True(t, ok, "expected *rsa.PrivateKey, got %T", key)
+				assert.Equal(t, rsaKeyBits, rsaKey.N.BitLen())
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			s := New(Options{
+				Log:          logger.NewLogger("test"),
+				KeyAlgorithm: tc.alg,
+				RequestSVIDFn: func(context.Context, []byte) (*SVIDResponse, error) {
+					return &SVIDResponse{
+						X509Certificates: []*x509.Certificate{pki.LeafCert},
+					}, nil
+				},
+			})
+
+			identity, err := s.fetchIdentity(t.Context())
+			require.NoError(t, err)
+			require.NotNil(t, identity)
+			require.NotNil(t, identity.X509SVID)
+			tc.assert(t, identity.X509SVID.PrivateKey)
+		})
+	}
 }
 
 func Test_Run(t *testing.T) {

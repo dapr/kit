@@ -15,8 +15,10 @@ package spiffe
 
 import (
 	"context"
+	"crypto"
 	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -38,6 +40,24 @@ const (
 	// renewalDivisor represents the divisor for calculating renewal time.
 	// A value of 2 means renewal at 50% of the validity period.
 	renewalDivisor = 2
+
+	// rsaKeyBits is the size, in bits, of generated RSA workload keys.
+	rsaKeyBits = 2048
+)
+
+// KeyAlgorithm selects the algorithm used to generate the workload's
+// private key when requesting an SVID.
+type KeyAlgorithm int
+
+const (
+	// KeyAlgorithmEd25519 generates an Ed25519 private key. This is the
+	// default when no algorithm is specified.
+	KeyAlgorithmEd25519 KeyAlgorithm = iota
+
+	// KeyAlgorithmRSA generates an RSA private key. Used by workloads whose
+	// certificates are consumed by systems that do not accept Ed25519, such
+	// as the Kubernetes API server when calling admission webhooks.
+	KeyAlgorithmRSA
 )
 
 // SVIDResponse represents the response from the SVID request function,
@@ -73,6 +93,10 @@ type Options struct {
 	WriteIdentityToFile *string
 
 	TrustAnchors trustanchors.Interface
+
+	// KeyAlgorithm selects the algorithm used for the workload's private
+	// key. When nil, defaults to Ed25519.
+	KeyAlgorithm *KeyAlgorithm
 }
 
 // SPIFFE is a readable/writeable store of SPIFFE SVID credentials.
@@ -87,6 +111,8 @@ type SPIFFE struct {
 
 	dir          *dir.Dir
 	trustAnchors trustanchors.Interface
+
+	keyAlgorithm KeyAlgorithm
 
 	log     logger.Logger
 	lock    sync.RWMutex
@@ -104,10 +130,16 @@ func New(opts Options) *SPIFFE {
 		})
 	}
 
+	keyAlg := KeyAlgorithmEd25519
+	if opts.KeyAlgorithm != nil {
+		keyAlg = *opts.KeyAlgorithm
+	}
+
 	return &SPIFFE{
 		requestSVIDFn: opts.RequestSVIDFn,
 		dir:           sdir,
 		trustAnchors:  opts.TrustAnchors,
+		keyAlgorithm:  keyAlg,
 		log:           opts.Log,
 		clock:         clock.RealClock{},
 		readyCh:       make(chan struct{}),
@@ -233,7 +265,7 @@ func (s *SPIFFE) runRotation(ctx context.Context) {
 
 // Returns both X.509 SVID and JWT SVID (if available).
 func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
-	_, key, err := ed25519.GenerateKey(rand.Reader)
+	key, err := generatePrivateKey(s.keyAlgorithm)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate private key: %w", err)
 	}
@@ -333,6 +365,24 @@ func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 	}
 
 	return identity, nil
+}
+
+// generatePrivateKey returns a freshly generated private key for the
+// configured algorithm.
+func generatePrivateKey(alg KeyAlgorithm) (crypto.Signer, error) {
+	switch alg {
+	case KeyAlgorithmRSA:
+		return rsa.GenerateKey(rand.Reader, rsaKeyBits)
+	case KeyAlgorithmEd25519:
+		_, key, err := ed25519.GenerateKey(rand.Reader)
+		if err != nil {
+			return nil, err
+		}
+
+		return key, nil
+	default:
+		return nil, fmt.Errorf("unsupported key algorithm: %d", alg)
+	}
 }
 
 // renewalTime is 50% through the certificate validity period.
