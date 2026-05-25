@@ -34,7 +34,7 @@ func ReloadPipeName(pid int) string {
 // The pipe is secured so that the current user, Built-in Administrators,
 // and Local System have full access.
 //
-// This now uses the user's actual SId ratehr than a CO SID.
+// This now uses the user's actual SID rather than a Creator Owner (CO) SID.
 func listenPipe(name string) (net.Listener, error) {
 	sd, err := buildPipeSecurityDescriptor()
 	if err != nil {
