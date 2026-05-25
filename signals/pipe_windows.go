@@ -16,6 +16,7 @@ package signals
 import (
 	"fmt"
 	"net"
+	"os/user"
 	"strconv"
 	"time"
 
@@ -30,13 +31,30 @@ func ReloadPipeName(pid int) string {
 }
 
 // listenPipe creates a Windows named pipe listener at the given path.
-// The pipe is secured so that the creating user (Creator Owner),
-// Built-in Administrators, and Local System have full access.
+// The pipe is secured so that the current user, Built-in Administrators,
+// and Local System have full access.
+//
+// This now uses the user's actual SId ratehr than a CO SID.
 func listenPipe(name string) (net.Listener, error) {
+	sd, err := buildPipeSecurityDescriptor()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build pipe security descriptor: %w", err)
+	}
 	return winio.ListenPipe(name, &winio.PipeConfig{
-		// CO = Creator Owner, BA = Built-in Administrators, SY = Local System.
-		SecurityDescriptor: "D:P(A;;GA;;;CO)(A;;GA;;;BA)(A;;GA;;;SY)",
+		SecurityDescriptor: sd,
 	})
+}
+
+// buildPipeSecurityDescriptor constructs an SDDL string granting full access to
+// the current user, Built-in Administrators, and Local System.
+// Note: inheritance is disabled.
+func buildPipeSecurityDescriptor() (string, error) {
+	u, err := user.Current()
+	if err != nil {
+		return "", fmt.Errorf("failed to look up current user: %w", err)
+	}
+	// Current User / Administrators / Local System
+	return fmt.Sprintf("D:P(A;;GA;;;%s)(A;;GA;;;BA)(A;;GA;;;SY)", u.Uid), nil
 }
 
 // SignalReload connects to the reload named pipe for the given PID, triggering
