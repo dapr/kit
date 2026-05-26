@@ -14,10 +14,12 @@ limitations under the License.
 package signals
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os/user"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Microsoft/go-winio"
@@ -53,8 +55,30 @@ func buildPipeSecurityDescriptor() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to look up current user: %w", err)
 	}
+	if err := validateWindowsSID(u.Uid); err != nil {
+		return "", fmt.Errorf("invalid current user SID %q: %w", u.Uid, err)
+	}
 	// Current User / Administrators / Local System
 	return fmt.Sprintf("D:P(A;;GA;;;%s)(A;;GA;;;BA)(A;;GA;;;SY)", u.Uid), nil
+}
+
+// validateWindowsSID returns a non-nil error if s is not a syntactically valid
+func validateWindowsSID(s string) error {
+	if s == "" {
+		return errors.New("empty SID")
+	}
+	if !strings.HasPrefix(s, "S-1-") {
+		return errors.New("not a Windows SID")
+	}
+	for _, part := range strings.Split(s[2:], "-") {
+		if part == "" {
+			return errors.New("malformed SID")
+		}
+		if _, err := strconv.ParseUint(part, 10, 64); err != nil {
+			return fmt.Errorf("malformed SID component %q", part)
+		}
+	}
+	return nil
 }
 
 // SignalReload connects to the reload named pipe for the given PID, triggering
