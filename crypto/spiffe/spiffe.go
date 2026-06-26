@@ -16,7 +16,9 @@ package spiffe
 import (
 	"context"
 	"crypto"
+	"crypto/ecdsa"
 	"crypto/ed25519"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -58,6 +60,11 @@ const (
 	// certificates are consumed by systems that do not accept Ed25519, such
 	// as the Kubernetes API server when calling admission webhooks.
 	KeyAlgorithmRSA
+
+	// KeyAlgorithmECDSA generates an ECDSA P-256 private key. Used by workloads
+	// whose certificates are consumed by systems that accept neither Ed25519
+	// nor RSA-only paths and require ECDSA, such as AWS IAM Roles Anywhere.
+	KeyAlgorithmECDSA
 )
 
 // SVIDResponse represents the response from the SVID request function,
@@ -373,6 +380,8 @@ func generatePrivateKey(alg KeyAlgorithm) (crypto.Signer, error) {
 	switch alg {
 	case KeyAlgorithmRSA:
 		return rsa.GenerateKey(rand.Reader, rsaKeyBits)
+	case KeyAlgorithmECDSA:
+		return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	case KeyAlgorithmEd25519:
 		_, key, err := ed25519.GenerateKey(rand.Reader)
 		if err != nil {

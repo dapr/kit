@@ -15,7 +15,9 @@ package spiffe
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"crypto/ed25519"
+	"crypto/elliptic"
 	"crypto/rsa"
 	"crypto/x509"
 	"errors"
@@ -138,6 +140,7 @@ func Test_fetchIdentity_keyAlgorithm(t *testing.T) {
 
 	rsaAlg := KeyAlgorithmRSA
 	edAlg := KeyAlgorithmEd25519
+	ecdsaAlg := KeyAlgorithmECDSA
 
 	tests := map[string]struct {
 		alg    *KeyAlgorithm
@@ -161,6 +164,14 @@ func Test_fetchIdentity_keyAlgorithm(t *testing.T) {
 				rsaKey, ok := key.(*rsa.PrivateKey)
 				require.True(t, ok, "expected *rsa.PrivateKey, got %T", key)
 				assert.Equal(t, rsaKeyBits, rsaKey.N.BitLen())
+			},
+		},
+		"ECDSA generates an ECDSA P-256 private key": {
+			alg: &ecdsaAlg,
+			assert: func(t *testing.T, key any) {
+				ecKey, ok := key.(*ecdsa.PrivateKey)
+				require.True(t, ok, "expected *ecdsa.PrivateKey, got %T", key)
+				assert.Equal(t, elliptic.P256(), ecKey.Curve)
 			},
 		},
 	}
