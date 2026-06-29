@@ -301,6 +301,95 @@ func Test_Run(t *testing.T) {
 		}
 	})
 
+	t.Run("Renew is a safe non-blocking no-op when not running and coalesces when the buffer is full", func(t *testing.T) {
+		s := New(Options{
+			Log: logger.NewLogger("test"),
+			RequestSVIDFn: func(context.Context, []byte) (*SVIDResponse, error) {
+				return nil, errors.New("should not be called")
+			},
+		})
+
+		// Calling Renew before Run (nothing draining renewCh) must not block
+		// or panic, even when called repeatedly.
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+
+			for range 5 {
+				s.Renew()
+			}
+		}()
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			assert.Fail(t, "Renew blocked")
+		}
+
+		// The triggers coalesced into a single pending request because the
+		// channel has a buffer of one: exactly one token is queued.
+		assert.Len(t, s.renewCh, 1)
+		<-s.renewCh
+		assert.Empty(t, s.renewCh)
+	})
+
+	t.Run("Renew should force an immediate re-fetch without advancing the clock", func(t *testing.T) {
+		pki := test.GenPKI(t, test.PKIOptions{
+			LeafID: spiffeid.RequireFromString("spiffe://example.com/foo/bar"),
+		})
+
+		var fetches atomic.Int32
+
+		s := New(Options{
+			Log: logger.NewLogger("test"),
+			RequestSVIDFn: func(context.Context, []byte) (*SVIDResponse, error) {
+				fetches.Add(1)
+
+				return &SVIDResponse{
+					X509Certificates: []*x509.Certificate{pki.LeafCert},
+				}, nil
+			},
+		})
+		now := time.Now()
+		clock := clocktesting.NewFakeClock(now)
+		s.clock = clock
+
+		ctx, cancel := context.WithCancel(t.Context())
+		errCh := make(chan error)
+
+		go func() {
+			errCh <- s.Run(ctx)
+		}()
+
+		// Wait until the rotation loop is parked on the renewal timer.
+		assert.Eventually(t, clock.HasWaiters, time.Second, time.Millisecond)
+		assert.Equal(t, int32(1), fetches.Load())
+
+		initialSVID := s.currentX509SVID
+
+		// Force an out-of-band renewal without stepping the clock to the
+		// scheduled renewal time.
+		s.Renew()
+
+		assert.EventuallyWithT(t, func(c *assert.CollectT) {
+			assert.Equal(c, int32(2), fetches.Load())
+		}, time.Second, time.Millisecond)
+
+		// The stored SVID was swapped for a freshly-fetched one.
+		s.lock.RLock()
+		assert.NotSame(t, initialSVID, s.currentX509SVID)
+		s.lock.RUnlock()
+
+		cancel()
+
+		select {
+		case err := <-errCh:
+			require.NoError(t, err)
+		case <-time.After(time.Second):
+			assert.Fail(t, "First Run should have returned and returned no error ")
+		}
+	})
+
 	t.Run("if renewal failed, should try again in 10 seconds", func(t *testing.T) {
 		pki := test.GenPKI(t, test.PKIOptions{
 			LeafID: spiffeid.RequireFromString("spiffe://example.com/foo/bar"),

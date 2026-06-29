@@ -126,6 +126,11 @@ type SPIFFE struct {
 	clock   clock.Clock
 	running atomic.Bool
 	readyCh chan struct{}
+
+	// renewCh wakes the rotation loop to perform an out-of-band identity
+	// renewal. It has a buffer of one so requests coalesce: at most one
+	// renewal can be pending at a time.
+	renewCh chan struct{}
 }
 
 func New(opts Options) *SPIFFE {
@@ -150,6 +155,23 @@ func New(opts Options) *SPIFFE {
 		log:           opts.Log,
 		clock:         clock.RealClock{},
 		readyCh:       make(chan struct{}),
+		renewCh:       make(chan struct{}, 1),
+	}
+}
+
+// Renew requests an immediate, out-of-band renewal of the workload identity
+// instead of waiting for the next scheduled (timer-based) rotation. It is
+// useful when the inputs to the configured RequestSVIDFn have changed (for
+// example the set of requested JWT audiences) and a freshly-signed identity is
+// needed right away.
+//
+// Renew is non-blocking and coalescing: if a renewal is already pending it
+// returns without queuing another. It is a no-op until Run is active and the
+// rotation loop is draining the trigger.
+func (s *SPIFFE) Renew() {
+	select {
+	case s.renewCh <- struct{}{}:
+	default:
 	}
 }
 
@@ -239,9 +261,7 @@ func (s *SPIFFE) runRotation(ctx context.Context) {
 				continue
 			}
 
-			s.logIdentityInfo("Renewing workload identity", cert, jwtSVID, nil)
-
-			identity, err := s.fetchIdentity(ctx)
+			newCert, newJWTSVID, err := s.renewIdentity(ctx, cert, jwtSVID)
 			if err != nil {
 				s.log.Errorf("Error renewing identity, trying again in 10 seconds: %s", err)
 
@@ -253,14 +273,22 @@ func (s *SPIFFE) runRotation(ctx context.Context) {
 				}
 			}
 
-			s.lock.Lock()
-			s.currentX509SVID = identity.X509SVID
-			s.currentBaseJWTSVID = identity.JWTSVID
-			s.currentPerAudJWTSVID = identity.PerAudienceJWTSVID
-			cert = identity.X509SVID.Certificates[0]
-			jwtSVID = identity.JWTSVID
-			s.lock.Unlock()
+			cert, jwtSVID = newCert, newJWTSVID
+			renewTime = calculateRenewalTime(time.Now(), cert, jwtSVID)
+			s.logIdentityInfo("Successfully renewed workload identity", cert, jwtSVID, renewTime)
 
+		case <-s.renewCh:
+			newCert, newJWTSVID, err := s.renewIdentity(ctx, cert, jwtSVID)
+			if err != nil {
+				// A forced renewal that fails simply logs and waits for the
+				// next trigger or scheduled rotation; we do not retry here as
+				// the existing identity remains valid until its renewTime.
+				s.log.Errorf("Error performing forced renewal of identity: %s", err)
+
+				continue
+			}
+
+			cert, jwtSVID = newCert, newJWTSVID
 			renewTime = calculateRenewalTime(time.Now(), cert, jwtSVID)
 			s.logIdentityInfo("Successfully renewed workload identity", cert, jwtSVID, renewTime)
 
@@ -268,6 +296,28 @@ func (s *SPIFFE) runRotation(ctx context.Context) {
 			return
 		}
 	}
+}
+
+// renewIdentity fetches a fresh identity and, on success, atomically swaps the
+// stored current SVIDs. It returns the new leaf certificate and JWT SVID so the
+// caller can recompute the renewal time. On error the stored identity is left
+// untouched. The cert and jwtSVID arguments are the currently-active values,
+// used only for logging the renewal attempt.
+func (s *SPIFFE) renewIdentity(ctx context.Context, cert *x509.Certificate, jwtSVID *jwtsvid.SVID) (*x509.Certificate, *jwtsvid.SVID, error) {
+	s.logIdentityInfo("Renewing workload identity", cert, jwtSVID, nil)
+
+	identity, err := s.fetchIdentity(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	s.lock.Lock()
+	s.currentX509SVID = identity.X509SVID
+	s.currentBaseJWTSVID = identity.JWTSVID
+	s.currentPerAudJWTSVID = identity.PerAudienceJWTSVID
+	s.lock.Unlock()
+
+	return identity.X509SVID.Certificates[0], identity.JWTSVID, nil
 }
 
 // Returns both X.509 SVID and JWT SVID (if available).
