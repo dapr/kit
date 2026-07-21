@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 )
 
 // ParseOption is a configuration option for creating a parser. Most options specify which
@@ -115,8 +116,12 @@ func (p Parser) Parse(spec string) (Schedule, error) {
 	if strings.HasPrefix(spec, "TZ=") || strings.HasPrefix(spec, "CRON_TZ=") {
 		var err error
 
-		i := strings.Index(spec, " ")
+		i := strings.IndexFunc(spec, unicode.IsSpace)
 		eq := strings.Index(spec, "=")
+
+		if i == -1 {
+			return nil, fmt.Errorf("timezone prefix %s is not followed by a schedule", spec)
+		}
 
 		loc, err = time.LoadLocation(spec[eq+1 : i])
 		if err != nil {
