@@ -182,6 +182,10 @@ For example:
 
 The prefix "TZ=(TIME ZONE)" is also supported for legacy compatibility.
 
+A time zone prefix is not supported on "@every <duration>" schedules. These fire
+at a fixed interval rather than at a wall-clock time, so there is no wall clock
+for a time zone to apply to, and such a schedule is rejected at parse time.
+
 Be aware that jobs scheduled during daylight-savings leap-ahead transitions will
 not be run!
 

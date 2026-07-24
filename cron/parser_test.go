@@ -452,12 +452,16 @@ func TestParseScheduleTimezoneDST(t *testing.T) {
 // A constant delay has no wall clock for a timezone to apply to, so the pair is
 // rejected rather than silently dropping the location.
 func TestParseScheduleTimezoneRejectedForEvery(t *testing.T) {
-	if _, err := secondParser.Parse("CRON_TZ=Europe/Rome @every 1h"); err == nil {
+	_, err := secondParser.Parse("CRON_TZ=Europe/Rome @every 1h")
+	if err == nil {
 		t.Error("expected an error, got nil")
+	} else if !strings.Contains(err.Error(), "CRON_TZ=Europe/Rome @every 1h") {
+		t.Errorf("error should include the original spec, got: %v", err)
 	}
 
 	// An unprefixed @every is still valid.
-	if _, err := secondParser.Parse("@every 1h"); err != nil {
+	_, err = secondParser.Parse("@every 1h")
+	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 }
