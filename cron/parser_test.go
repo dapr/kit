@@ -146,6 +146,8 @@ func TestParseScheduleErrors(t *testing.T) {
 		{"TZ=UTC", "not followed by a schedule"},
 		{"CRON_TZ=Asia/Tokyo", "not followed by a schedule"},
 		{"TZ=", "not followed by a schedule"},
+		{"CRON_TZ=Europe/Rome @every 1h", "not supported for @every"},
+		{"TZ=Asia/Tokyo @every 30m", "not supported for @every"},
 	}
 	for _, c := range tests {
 		actual, err := secondParser.Parse(c.expr)
@@ -161,6 +163,7 @@ func TestParseScheduleErrors(t *testing.T) {
 
 func TestParseSchedule(t *testing.T) {
 	tokyo, _ := time.LoadLocation("Asia/Tokyo")
+	rome, _ := time.LoadLocation("Europe/Rome")
 	entries := []struct {
 		parser   Parser
 		expr     string
@@ -178,6 +181,7 @@ func TestParseSchedule(t *testing.T) {
 		{secondParser, "@midnight", midnight(time.Local)}, //nolint:gosmopolitan
 		{secondParser, "TZ=UTC  @midnight", midnight(time.UTC)},
 		{secondParser, "TZ=Asia/Tokyo @midnight", midnight(tokyo)},
+		{secondParser, "CRON_TZ=Europe/Rome @daily", midnight(rome)},
 		{secondParser, "@yearly", annual(time.Local)},   //nolint:gosmopolitan
 		{secondParser, "@annually", annual(time.Local)}, //nolint:gosmopolitan
 		{
@@ -445,22 +449,19 @@ func TestParseScheduleTimezoneDST(t *testing.T) {
 	}
 }
 
-// A constant delay has no wall clock for a timezone to apply to, so the prefix
-// is accepted but has no effect.
-func TestParseScheduleTimezoneIgnoredForEvery(t *testing.T) {
-	from := time.Date(2026, 7, 20, 12, 0, 0, 0, time.UTC)
-
-	withTZ, err := secondParser.Parse("CRON_TZ=Europe/Rome @every 1h")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+// A constant delay has no wall clock for a timezone to apply to, so the pair is
+// rejected rather than silently dropping the location.
+func TestParseScheduleTimezoneRejectedForEvery(t *testing.T) {
+	_, err := secondParser.Parse("CRON_TZ=Europe/Rome @every 1h")
+	if err == nil {
+		t.Error("expected an error, got nil")
+	} else if !strings.Contains(err.Error(), "CRON_TZ=Europe/Rome @every 1h") {
+		t.Errorf("error should include the original spec, got: %v", err)
 	}
 
-	without, err := secondParser.Parse("@every 1h")
+	// An unprefixed @every is still valid.
+	_, err = secondParser.Parse("@every 1h")
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if !withTZ.Next(from).Equal(without.Next(from)) {
-		t.Errorf("expected %v, got %v", without.Next(from), withTZ.Next(from))
+		t.Errorf("unexpected error: %v", err)
 	}
 }

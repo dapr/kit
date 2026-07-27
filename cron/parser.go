@@ -116,6 +116,8 @@ func (p Parser) Parse(spec string) (Schedule, error) {
 	if strings.HasPrefix(spec, "TZ=") || strings.HasPrefix(spec, "CRON_TZ=") {
 		var err error
 
+		prefixed := spec
+
 		i := strings.IndexFunc(spec, unicode.IsSpace)
 		eq := strings.Index(spec, "=")
 
@@ -129,6 +131,13 @@ func (p Parser) Parse(spec string) (Schedule, error) {
 		}
 
 		spec = strings.TrimSpace(spec[i:])
+
+		// An @every schedule fires at a fixed interval and has no wall clock for
+		// a timezone to apply to, so reject the pair rather than silently
+		// dropping the location.
+		if strings.HasPrefix(spec, "@every ") {
+			return nil, fmt.Errorf("timezone is not supported for @every schedules: %s", prefixed)
+		}
 	}
 
 	// Handle named schedules (descriptors), if configured
