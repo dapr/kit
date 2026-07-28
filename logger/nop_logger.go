@@ -33,6 +33,9 @@ func (n *nopLogger) SetOutputLevel(_ LogLevel) {}
 // SetOutput sets the destination for the logs
 func (n *nopLogger) SetOutput(_ io.Writer) {}
 
+// SetTimestampFormat sets the format used for log timestamps.
+func (n *nopLogger) SetTimestampFormat(_ string) {}
+
 // IsOutputLevelEnabled returns true if the logger will output this LogLevel.
 func (n *nopLogger) IsOutputLevelEnabled(_ LogLevel) bool { return true }
 

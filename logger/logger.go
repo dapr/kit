@@ -83,6 +83,11 @@ type Logger interface { //nolint: interfacebloat
 	// SetOutput sets the destination for the logs
 	SetOutput(dst io.Writer)
 
+	// SetTimestampFormat sets the format used for log timestamps, expressed
+	// as a Go time layout. An empty format resets it to the default (RFC3339
+	// with nanoseconds).
+	SetTimestampFormat(format string)
+
 	// IsOutputLevelEnabled returns true if the logger will output this LogLevel.
 	IsOutputLevelEnabled(level LogLevel) bool
 

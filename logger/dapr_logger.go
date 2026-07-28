@@ -16,7 +16,6 @@ package logger
 import (
 	"io"
 	"os"
-	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -27,6 +26,10 @@ type daprLogger struct {
 	name string
 	// loger is the instance of logrus logger
 	logger *logrus.Entry
+	// jsonOutput indicates whether the logger emits JSON formatted logs
+	jsonOutput bool
+	// timestampFormat is the format used for log timestamps
+	timestampFormat string
 }
 
 var DaprVersion = "unknown"
@@ -41,6 +44,7 @@ func newDaprLogger(name string) *daprLogger {
 			logFieldScope: name,
 			logFieldType:  LogTypeLog,
 		}),
+		timestampFormat: defaultTimestampFormat,
 	}
 
 	dl.EnableJSONOutput(defaultJSONOutput)
@@ -50,6 +54,32 @@ func newDaprLogger(name string) *daprLogger {
 
 // EnableJSONOutput enables JSON formatted output log.
 func (l *daprLogger) EnableJSONOutput(enabled bool) {
+	hostname, _ := os.Hostname()
+	l.logger.Data = logrus.Fields{
+		logFieldScope:    l.logger.Data[logFieldScope],
+		logFieldType:     LogTypeLog,
+		logFieldInstance: hostname,
+		logFieldDaprVer:  DaprVersion,
+	}
+
+	l.jsonOutput = enabled
+	l.applyFormatter()
+}
+
+// SetTimestampFormat sets the format used for log timestamps. An empty format
+// resets it to the default (RFC3339 with nanoseconds).
+func (l *daprLogger) SetTimestampFormat(format string) {
+	if format == "" {
+		format = defaultTimestampFormat
+	}
+
+	l.timestampFormat = format
+	l.applyFormatter()
+}
+
+// applyFormatter builds and applies the logrus formatter based on the current
+// output format and timestamp format.
+func (l *daprLogger) applyFormatter() {
 	var formatter logrus.Formatter
 
 	fieldMap := logrus.FieldMap{
@@ -60,22 +90,14 @@ func (l *daprLogger) EnableJSONOutput(enabled bool) {
 		logrus.FieldKeyMsg:   logFieldMessage,
 	}
 
-	hostname, _ := os.Hostname()
-	l.logger.Data = logrus.Fields{
-		logFieldScope:    l.logger.Data[logFieldScope],
-		logFieldType:     LogTypeLog,
-		logFieldInstance: hostname,
-		logFieldDaprVer:  DaprVersion,
-	}
-
-	if enabled {
+	if l.jsonOutput {
 		formatter = &logrus.JSONFormatter{ //nolint: exhaustruct
-			TimestampFormat: time.RFC3339Nano,
+			TimestampFormat: l.timestampFormat,
 			FieldMap:        fieldMap,
 		}
 	} else {
 		formatter = &logrus.TextFormatter{ //nolint: exhaustruct
-			TimestampFormat: time.RFC3339Nano,
+			TimestampFormat: l.timestampFormat,
 			FieldMap:        fieldMap,
 		}
 	}
