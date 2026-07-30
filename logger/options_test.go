@@ -44,6 +44,7 @@ func TestOptions(t *testing.T) {
 
 		logLevelAsserted := false
 		logFileAsserted := false
+		logTimestampFormatAsserted := false
 		testStringVarFn := func(p *string, name string, value string, usage string) {
 			if name == "log-level" && value == defaultOutputLevel {
 				logLevelAsserted = true
@@ -51,6 +52,10 @@ func TestOptions(t *testing.T) {
 
 			if name == "log-file" && value == "" {
 				logFileAsserted = true
+			}
+
+			if name == "log-timestamp-format" && value == "" {
+				logTimestampFormatAsserted = true
 			}
 		}
 
@@ -66,6 +71,7 @@ func TestOptions(t *testing.T) {
 		// assert
 		assert.True(t, logLevelAsserted)
 		assert.True(t, logFileAsserted)
+		assert.True(t, logTimestampFormatAsserted)
 		assert.True(t, logAsJSONAsserted)
 	})
 }
@@ -75,6 +81,7 @@ func TestApplyOptionsToLoggers(t *testing.T) {
 		JSONFormatEnabled: true,
 		appID:             "dapr-app",
 		OutputLevel:       "debug",
+		TimestampFormat:   "2006/01/02 15:04:05.000",
 	}
 
 	// Create two loggers
@@ -99,6 +106,10 @@ func TestApplyOptionsToLoggers(t *testing.T) {
 			t,
 			toLogrusLevel(DebugLevel),
 			(l.(*daprLogger)).logger.Logger.GetLevel())
+		assert.Equal(
+			t,
+			"2006/01/02 15:04:05.000",
+			(l.(*daprLogger)).timestampFormat)
 	}
 }
 

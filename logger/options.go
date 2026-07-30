@@ -18,12 +18,14 @@ import (
 	"io"
 	"os"
 	"sync"
+	"time"
 )
 
 const (
-	defaultJSONOutput  = false
-	defaultOutputLevel = "info"
-	undefinedAppID     = ""
+	defaultJSONOutput      = false
+	defaultOutputLevel     = "info"
+	defaultTimestampFormat = time.RFC3339Nano
+	undefinedAppID         = ""
 )
 
 var (
@@ -45,6 +47,11 @@ type Options struct {
 
 	// OutputFile is the destination file path for logs.
 	OutputFile string
+
+	// TimestampFormat is the format used for log timestamps, expressed as a
+	// Go time layout. An empty value means the default (RFC3339 with
+	// nanoseconds).
+	TimestampFormat string
 }
 
 // SetOutputLevel sets the log output level.
@@ -79,6 +86,11 @@ func (o *Options) AttachCmdFlags(
 			"log-file",
 			"",
 			"Path to a file where logs will be written")
+		stringVar(
+			&o.TimestampFormat,
+			"log-timestamp-format",
+			"",
+			"Format for log timestamps, expressed as a Go time layout, e.g. '2006/01/02 15:04:05.000' (default RFC3339 with nanoseconds)")
 	}
 
 	if boolVar != nil {
@@ -97,6 +109,7 @@ func DefaultOptions() Options {
 		appID:             undefinedAppID,
 		OutputLevel:       defaultOutputLevel,
 		OutputFile:        "",
+		TimestampFormat:   "",
 	}
 }
 
@@ -107,6 +120,7 @@ func ApplyOptionsToLoggers(options *Options) error {
 	// Apply formatting options first
 	for _, v := range internalLoggers {
 		v.EnableJSONOutput(options.JSONFormatEnabled)
+		v.SetTimestampFormat(options.TimestampFormat)
 
 		if options.appID != undefinedAppID {
 			v.SetAppID(options.appID)

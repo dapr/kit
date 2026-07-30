@@ -59,6 +59,88 @@ func TestEnableJSON(t *testing.T) {
 	assert.Equal(t, expectedHost, testLogger.logger.Data[logFieldInstance])
 }
 
+func TestSetTimestampFormat(t *testing.T) {
+	const customFormat = "2006/01/02 15:04:05.000"
+
+	t.Run("default is RFC3339Nano", func(t *testing.T) {
+		var buf bytes.Buffer
+
+		testLogger := getTestLogger(&buf)
+		testLogger.EnableJSONOutput(true)
+
+		formatter, ok := testLogger.logger.Logger.Formatter.(*logrus.JSONFormatter)
+		require.True(t, ok)
+		assert.Equal(t, time.RFC3339Nano, formatter.TimestampFormat)
+	})
+
+	t.Run("custom format applied to JSON formatter", func(t *testing.T) {
+		var buf bytes.Buffer
+
+		testLogger := getTestLogger(&buf)
+		testLogger.EnableJSONOutput(true)
+		testLogger.SetTimestampFormat(customFormat)
+
+		formatter, ok := testLogger.logger.Logger.Formatter.(*logrus.JSONFormatter)
+		require.True(t, ok)
+		assert.Equal(t, customFormat, formatter.TimestampFormat)
+
+		testLogger.Info("Hello, dapr")
+
+		b, _ := buf.ReadBytes('\n')
+
+		var o map[string]any
+		require.NoError(t, json.Unmarshal(b, &o))
+
+		timeVal, ok := o[logFieldTimeStamp].(string)
+		require.True(t, ok)
+		_, err := time.Parse(customFormat, timeVal)
+		require.NoError(t, err)
+	})
+
+	t.Run("custom format applied to text formatter", func(t *testing.T) {
+		var buf bytes.Buffer
+
+		testLogger := getTestLogger(&buf)
+		testLogger.EnableJSONOutput(false)
+		testLogger.SetTimestampFormat(customFormat)
+
+		formatter, ok := testLogger.logger.Logger.Formatter.(*logrus.TextFormatter)
+		require.True(t, ok)
+		assert.Equal(t, customFormat, formatter.TimestampFormat)
+	})
+
+	t.Run("format is preserved when toggling JSON output", func(t *testing.T) {
+		var buf bytes.Buffer
+
+		testLogger := getTestLogger(&buf)
+		testLogger.SetTimestampFormat(customFormat)
+		testLogger.EnableJSONOutput(true)
+
+		jsonFormatter, ok := testLogger.logger.Logger.Formatter.(*logrus.JSONFormatter)
+		require.True(t, ok)
+		assert.Equal(t, customFormat, jsonFormatter.TimestampFormat)
+
+		testLogger.EnableJSONOutput(false)
+
+		textFormatter, ok := testLogger.logger.Logger.Formatter.(*logrus.TextFormatter)
+		require.True(t, ok)
+		assert.Equal(t, customFormat, textFormatter.TimestampFormat)
+	})
+
+	t.Run("empty format resets to default", func(t *testing.T) {
+		var buf bytes.Buffer
+
+		testLogger := getTestLogger(&buf)
+		testLogger.EnableJSONOutput(true)
+		testLogger.SetTimestampFormat(customFormat)
+		testLogger.SetTimestampFormat("")
+
+		formatter, ok := testLogger.logger.Logger.Formatter.(*logrus.JSONFormatter)
+		require.True(t, ok)
+		assert.Equal(t, time.RFC3339Nano, formatter.TimestampFormat)
+	})
+}
+
 func TestJSONLoggerFields(t *testing.T) {
 	tests := []struct {
 		name        string
