@@ -1,0 +1,2711 @@
+=== RUN   TestByteSlicePool
+--- PASS: TestByteSlicePool (0.00s)
+PASS
+ok  	github.com/dapr/kit/byteslicepool	(cached)
+FAIL	github.com/dapr/kit/concurrency [build failed]
+=== RUN   TestAtomicInt32_New_Get_Delete
+=== RUN   TestAtomicInt32_New_Get_Delete/basic_operations
+=== RUN   TestAtomicInt32_New_Get_Delete/concurrent_access_multiple_keys
+--- PASS: TestAtomicInt32_New_Get_Delete (0.00s)
+    --- PASS: TestAtomicInt32_New_Get_Delete/basic_operations (0.00s)
+    --- PASS: TestAtomicInt32_New_Get_Delete/concurrent_access_multiple_keys (0.00s)
+=== RUN   TestNewMutex_Add_Delete
+=== RUN   TestNewMutex_Add_Delete/New_mutex_map
+=== RUN   TestNewMutex_Add_Delete/Lock_and_unlock_mutex
+=== RUN   TestNewMutex_Add_Delete/Concurrently_lock_and_unlock_mutexes
+=== RUN   TestNewMutex_Add_Delete/RLock_and_RUnlock_mutex
+=== RUN   TestNewMutex_Add_Delete/Concurrently_RLock_and_RUnlock_mutexes
+=== RUN   TestNewMutex_Add_Delete/Delete_mutex
+=== RUN   TestNewMutex_Add_Delete/Clear_all_mutexes,_and_check_item_count
+--- PASS: TestNewMutex_Add_Delete (0.01s)
+    --- PASS: TestNewMutex_Add_Delete/New_mutex_map (0.00s)
+    --- PASS: TestNewMutex_Add_Delete/Lock_and_unlock_mutex (0.00s)
+    --- PASS: TestNewMutex_Add_Delete/Concurrently_lock_and_unlock_mutexes (0.00s)
+    --- PASS: TestNewMutex_Add_Delete/RLock_and_RUnlock_mutex (0.00s)
+    --- PASS: TestNewMutex_Add_Delete/Concurrently_RLock_and_RUnlock_mutexes (0.01s)
+    --- PASS: TestNewMutex_Add_Delete/Delete_mutex (0.00s)
+    --- PASS: TestNewMutex_Add_Delete/Clear_all_mutexes,_and_check_item_count (0.00s)
+PASS
+ok  	github.com/dapr/kit/concurrency/cmap	(cached)
+?   	github.com/dapr/kit/concurrency/ctesting	[no test files]
+?   	github.com/dapr/kit/concurrency/ctesting/internal	[no test files]
+?   	github.com/dapr/kit/concurrency/dir	[no test files]
+=== RUN   Test_Map
+--- PASS: Test_Map (0.01s)
+PASS
+ok  	github.com/dapr/kit/concurrency/fifo	(cached)
+=== RUN   Test_Context
+=== RUN   Test_Context/Successful_Lock
+=== PAUSE Test_Context/Successful_Lock
+=== RUN   Test_Context/Lock_with_Context_Timeout
+=== PAUSE Test_Context/Lock_with_Context_Timeout
+=== RUN   Test_Context/Successful_RLock
+=== PAUSE Test_Context/Successful_RLock
+=== RUN   Test_Context/RLock_with_Context_Timeout
+=== PAUSE Test_Context/RLock_with_Context_Timeout
+=== CONT  Test_Context/Successful_Lock
+=== CONT  Test_Context/RLock_with_Context_Timeout
+=== CONT  Test_Context/Successful_RLock
+=== CONT  Test_Context/Lock_with_Context_Timeout
+--- PASS: Test_Context (0.00s)
+    --- PASS: Test_Context/Successful_Lock (0.00s)
+    --- PASS: Test_Context/Successful_RLock (0.00s)
+    --- PASS: Test_Context/Lock_with_Context_Timeout (0.05s)
+    --- PASS: Test_Context/RLock_with_Context_Timeout (0.05s)
+=== RUN   Test_OuterCancel
+=== PAUSE Test_OuterCancel
+=== CONT  Test_OuterCancel
+=== RUN   Test_OuterCancel/can_rlock_multiple_times
+=== PAUSE Test_OuterCancel/can_rlock_multiple_times
+=== RUN   Test_OuterCancel/rlock_unlock_removes_cancel_state
+=== PAUSE Test_OuterCancel/rlock_unlock_removes_cancel_state
+=== RUN   Test_OuterCancel/calling_lock_cancels_all_current_rlocks
+=== PAUSE Test_OuterCancel/calling_lock_cancels_all_current_rlocks
+=== RUN   Test_OuterCancel/rlock_when_closed_should_error
+=== PAUSE Test_OuterCancel/rlock_when_closed_should_error
+=== RUN   Test_OuterCancel/lock_continues_to_work_after_close
+=== PAUSE Test_OuterCancel/lock_continues_to_work_after_close
+=== RUN   Test_OuterCancel/rlock_blocks_until_outter_unlocks
+=== PAUSE Test_OuterCancel/rlock_blocks_until_outter_unlocks
+=== RUN   Test_OuterCancel/lock_blocks_until_outter_unlocks
+=== PAUSE Test_OuterCancel/lock_blocks_until_outter_unlocks
+=== CONT  Test_OuterCancel/rlock_unlock_removes_cancel_state
+=== CONT  Test_OuterCancel/lock_blocks_until_outter_unlocks
+=== CONT  Test_OuterCancel/lock_continues_to_work_after_close
+=== CONT  Test_OuterCancel/rlock_when_closed_should_error
+=== CONT  Test_OuterCancel/rlock_blocks_until_outter_unlocks
+=== CONT  Test_OuterCancel/calling_lock_cancels_all_current_rlocks
+=== CONT  Test_OuterCancel/can_rlock_multiple_times
+--- PASS: Test_OuterCancel (0.00s)
+    --- PASS: Test_OuterCancel/lock_continues_to_work_after_close (0.00s)
+    --- PASS: Test_OuterCancel/rlock_when_closed_should_error (0.00s)
+    --- PASS: Test_OuterCancel/can_rlock_multiple_times (0.00s)
+    --- PASS: Test_OuterCancel/rlock_unlock_removes_cancel_state (0.00s)
+    --- PASS: Test_OuterCancel/lock_blocks_until_outter_unlocks (0.50s)
+    --- PASS: Test_OuterCancel/rlock_blocks_until_outter_unlocks (0.50s)
+    --- PASS: Test_OuterCancel/calling_lock_cancels_all_current_rlocks (1.00s)
+PASS
+ok  	github.com/dapr/kit/concurrency/lock	(cached)
+?   	github.com/dapr/kit/concurrency/slice	[no test files]
+=== RUN   TestDecode
+=== RUN   TestDecode/primitive_values
+=== RUN   TestDecode/string_values
+--- PASS: TestDecode (0.00s)
+    --- PASS: TestDecode/primitive_values (0.00s)
+    --- PASS: TestDecode/string_values (0.00s)
+=== RUN   TestDecodeErrors
+--- PASS: TestDecodeErrors (0.00s)
+=== RUN   TestNormalize
+=== RUN   TestNormalize/slice_of_interface{}_with_error
+=== RUN   TestNormalize/simple
+=== RUN   TestNormalize/map_of_string_to_interface{}
+=== RUN   TestNormalize/map_of_string_to_interface{}_with_error
+=== RUN   TestNormalize/map_of_interface{}_to_interface{}
+=== RUN   TestNormalize/map_of_interface{}_to_interface{}_with_error
+=== RUN   TestNormalize/slice_of_interface{}
+--- PASS: TestNormalize (0.00s)
+    --- PASS: TestNormalize/slice_of_interface{}_with_error (0.00s)
+    --- PASS: TestNormalize/simple (0.00s)
+    --- PASS: TestNormalize/map_of_string_to_interface{} (0.00s)
+    --- PASS: TestNormalize/map_of_string_to_interface{}_with_error (0.00s)
+    --- PASS: TestNormalize/map_of_interface{}_to_interface{} (0.00s)
+    --- PASS: TestNormalize/map_of_interface{}_to_interface{}_with_error (0.00s)
+    --- PASS: TestNormalize/slice_of_interface{} (0.00s)
+=== RUN   TestPrefixedBy
+=== RUN   TestPrefixedBy/map_of_string_to_string
+=== RUN   TestPrefixedBy/map_of_string_to_interface{}
+--- PASS: TestPrefixedBy (0.00s)
+    --- PASS: TestPrefixedBy/map_of_string_to_string (0.00s)
+    --- PASS: TestPrefixedBy/map_of_string_to_interface{} (0.00s)
+PASS
+ok  	github.com/dapr/kit/config	(cached)
+=== RUN   Test_Pool
+=== RUN   Test_Pool/a_pool_with_no_context_will_always_be_done
+=== PAUSE Test_Pool/a_pool_with_no_context_will_always_be_done
+=== RUN   Test_Pool/a_cancelled_context_given_to_pool,_should_have_pool_cancelled
+=== PAUSE Test_Pool/a_cancelled_context_given_to_pool,_should_have_pool_cancelled
+=== RUN   Test_Pool/a_cancelled_context_given_to_pool,_given_a_new_context,_should_still_have_pool_cancelled
+=== PAUSE Test_Pool/a_cancelled_context_given_to_pool,_given_a_new_context,_should_still_have_pool_cancelled
+=== RUN   Test_Pool/pool_with_multiple_contexts_should_return_once_all_contexts_have_been_cancelled
+=== PAUSE Test_Pool/pool_with_multiple_contexts_should_return_once_all_contexts_have_been_cancelled
+=== RUN   Test_Pool/pool_size_will_not_increase_if_the_given_contexts_have_been_cancelled
+=== PAUSE Test_Pool/pool_size_will_not_increase_if_the_given_contexts_have_been_cancelled
+=== RUN   Test_Pool/pool_size_will_not_increase_if_the_pool_has_been_closed
+=== PAUSE Test_Pool/pool_size_will_not_increase_if_the_pool_has_been_closed
+=== RUN   Test_Pool/wait_for_added_context_to_be_closed
+=== PAUSE Test_Pool/wait_for_added_context_to_be_closed
+=== CONT  Test_Pool/a_pool_with_no_context_will_always_be_done
+=== CONT  Test_Pool/a_cancelled_context_given_to_pool,_given_a_new_context,_should_still_have_pool_cancelled
+=== CONT  Test_Pool/pool_with_multiple_contexts_should_return_once_all_contexts_have_been_cancelled
+=== CONT  Test_Pool/pool_size_will_not_increase_if_the_pool_has_been_closed
+=== CONT  Test_Pool/wait_for_added_context_to_be_closed
+=== CONT  Test_Pool/pool_size_will_not_increase_if_the_given_contexts_have_been_cancelled
+=== CONT  Test_Pool/a_cancelled_context_given_to_pool,_should_have_pool_cancelled
+--- PASS: Test_Pool (0.00s)
+    --- PASS: Test_Pool/a_cancelled_context_given_to_pool,_given_a_new_context,_should_still_have_pool_cancelled (0.00s)
+    --- PASS: Test_Pool/a_pool_with_no_context_will_always_be_done (0.00s)
+    --- PASS: Test_Pool/pool_size_will_not_increase_if_the_pool_has_been_closed (0.00s)
+    --- PASS: Test_Pool/a_cancelled_context_given_to_pool,_should_have_pool_cancelled (0.00s)
+    --- PASS: Test_Pool/pool_size_will_not_increase_if_the_given_contexts_have_been_cancelled (0.00s)
+    --- PASS: Test_Pool/wait_for_added_context_to_be_closed (0.01s)
+    --- PASS: Test_Pool/pool_with_multiple_contexts_should_return_once_all_contexts_have_been_cancelled (0.06s)
+PASS
+ok  	github.com/dapr/kit/context	(cached)
+=== RUN   TestChain
+--- PASS: TestChain (0.00s)
+=== RUN   TestChainRecover
+=== RUN   TestChainRecover/panic_exits_job_by_default
+=== RUN   TestChainRecover/Recovering_JobWrapper_recovers
+=== RUN   TestChainRecover/composed_with_the_*IfStillRunning_wrappers
+--- PASS: TestChainRecover (0.00s)
+    --- PASS: TestChainRecover/panic_exits_job_by_default (0.00s)
+    --- PASS: TestChainRecover/Recovering_JobWrapper_recovers (0.00s)
+    --- PASS: TestChainRecover/composed_with_the_*IfStillRunning_wrappers (0.00s)
+=== RUN   TestChainDelayIfStillRunning
+=== RUN   TestChainDelayIfStillRunning/runs_immediately
+=== RUN   TestChainDelayIfStillRunning/second_run_immediate_if_first_done
+=== RUN   TestChainDelayIfStillRunning/second_run_delayed_if_first_not_done
+--- PASS: TestChainDelayIfStillRunning (0.11s)
+    --- PASS: TestChainDelayIfStillRunning/runs_immediately (0.02s)
+    --- PASS: TestChainDelayIfStillRunning/second_run_immediate_if_first_done (0.04s)
+    --- PASS: TestChainDelayIfStillRunning/second_run_delayed_if_first_not_done (0.04s)
+=== RUN   TestChainSkipIfStillRunning
+=== RUN   TestChainSkipIfStillRunning/runs_immediately
+=== RUN   TestChainSkipIfStillRunning/second_run_immediate_if_first_done
+=== RUN   TestChainSkipIfStillRunning/second_run_skipped_if_first_not_done
+=== RUN   TestChainSkipIfStillRunning/skip_10_jobs_on_rapid_fire
+=== RUN   TestChainSkipIfStillRunning/different_jobs_independent
+--- PASS: TestChainSkipIfStillRunning (0.15s)
+    --- PASS: TestChainSkipIfStillRunning/runs_immediately (0.02s)
+    --- PASS: TestChainSkipIfStillRunning/second_run_immediate_if_first_done (0.04s)
+    --- PASS: TestChainSkipIfStillRunning/second_run_skipped_if_first_not_done (0.03s)
+    --- PASS: TestChainSkipIfStillRunning/skip_10_jobs_on_rapid_fire (0.02s)
+    --- PASS: TestChainSkipIfStillRunning/different_jobs_independent (0.03s)
+=== RUN   TestConstantDelayNext
+--- PASS: TestConstantDelayNext (0.00s)
+=== RUN   TestFuncPanicRecovery
+--- PASS: TestFuncPanicRecovery (0.02s)
+=== RUN   TestJobPanicRecovery
+--- PASS: TestJobPanicRecovery (0.02s)
+=== RUN   TestNoEntries
+--- PASS: TestNoEntries (0.00s)
+=== RUN   TestStopCausesJobsToNotRun
+--- PASS: TestStopCausesJobsToNotRun (0.10s)
+=== RUN   TestAddBeforeRunning
+--- PASS: TestAddBeforeRunning (0.01s)
+=== RUN   TestAddWhileRunning
+--- PASS: TestAddWhileRunning (0.01s)
+=== RUN   TestAddWhileRunningWithDelay
+--- PASS: TestAddWhileRunningWithDelay (0.02s)
+=== RUN   TestRemoveBeforeRunning
+--- PASS: TestRemoveBeforeRunning (0.10s)
+=== RUN   TestRemoveWhileRunning
+--- PASS: TestRemoveWhileRunning (0.12s)
+=== RUN   TestSnapshotEntries
+--- PASS: TestSnapshotEntries (0.11s)
+=== RUN   TestMultipleEntries
+--- PASS: TestMultipleEntries (0.01s)
+=== RUN   TestRunningJobTwice
+--- PASS: TestRunningJobTwice (0.02s)
+=== RUN   TestRunningMultipleSchedules
+--- PASS: TestRunningMultipleSchedules (0.01s)
+=== RUN   TestLocalTimezone
+--- PASS: TestLocalTimezone (0.02s)
+=== RUN   TestNonLocalTimezone
+--- PASS: TestNonLocalTimezone (0.02s)
+=== RUN   TestStopWithoutStart
+--- PASS: TestStopWithoutStart (0.00s)
+=== RUN   TestInvalidJobSpec
+--- PASS: TestInvalidJobSpec (0.00s)
+=== RUN   TestBlockingRun
+--- PASS: TestBlockingRun (0.01s)
+=== RUN   TestStartNoop
+--- PASS: TestStartNoop (0.02s)
+=== RUN   TestJob
+--- PASS: TestJob (0.01s)
+=== RUN   TestScheduleAfterRemoval
+--- PASS: TestScheduleAfterRemoval (0.03s)
+=== RUN   TestJobWithZeroTimeDoesNotRun
+--- PASS: TestJobWithZeroTimeDoesNotRun (0.02s)
+=== RUN   TestStopAndWait
+=== RUN   TestStopAndWait/nothing_running,_returns_immediately
+=== RUN   TestStopAndWait/repeated_calls_to_Stop
+=== RUN   TestStopAndWait/a_couple_fast_jobs_added,_still_returns_immediately
+=== RUN   TestStopAndWait/a_couple_fast_jobs_and_a_slow_job_added,_waits_for_slow_job
+=== RUN   TestStopAndWait/repeated_calls_to_stop,_waiting_for_completion_and_after
+--- PASS: TestStopAndWait (0.17s)
+    --- PASS: TestStopAndWait/nothing_running,_returns_immediately (0.00s)
+    --- PASS: TestStopAndWait/repeated_calls_to_Stop (0.00s)
+    --- PASS: TestStopAndWait/a_couple_fast_jobs_added,_still_returns_immediately (0.01s)
+    --- PASS: TestStopAndWait/a_couple_fast_jobs_and_a_slow_job_added,_waits_for_slow_job (0.03s)
+    --- PASS: TestStopAndWait/repeated_calls_to_stop,_waiting_for_completion_and_after (0.12s)
+=== RUN   TestMockClock
+--- PASS: TestMockClock (0.12s)
+=== RUN   TestMillisecond
+--- PASS: TestMillisecond (1.31s)
+=== RUN   TestNanoseconds
+--- PASS: TestNanoseconds (0.68s)
+=== RUN   TestMultiThreadedStartAndStop
+--- PASS: TestMultiThreadedStartAndStop (0.00s)
+=== RUN   TestWithLocation
+--- PASS: TestWithLocation (0.00s)
+=== RUN   TestWithParser
+--- PASS: TestWithParser (0.00s)
+=== RUN   TestWithVerboseLogger
+--- PASS: TestWithVerboseLogger (0.02s)
+=== RUN   TestRange
+--- PASS: TestRange (0.00s)
+=== RUN   TestField
+--- PASS: TestField (0.00s)
+=== RUN   TestAll
+--- PASS: TestAll (0.00s)
+=== RUN   TestBits
+--- PASS: TestBits (0.00s)
+=== RUN   TestParseScheduleErrors
+--- PASS: TestParseScheduleErrors (0.01s)
+=== RUN   TestParseSchedule
+--- PASS: TestParseSchedule (0.00s)
+=== RUN   TestOptionalSecondSchedule
+--- PASS: TestOptionalSecondSchedule (0.00s)
+=== RUN   TestNormalizeFields
+=== RUN   TestNormalizeFields/AllFields_NoOptional
+=== RUN   TestNormalizeFields/AllFields_SecondOptional_Provided
+=== RUN   TestNormalizeFields/AllFields_SecondOptional_NotProvided
+=== RUN   TestNormalizeFields/SubsetFields_NoOptional
+=== RUN   TestNormalizeFields/SubsetFields_DowOptional_Provided
+=== RUN   TestNormalizeFields/SubsetFields_DowOptional_NotProvided
+=== RUN   TestNormalizeFields/SubsetFields_SecondOptional_NotProvided
+--- PASS: TestNormalizeFields (0.00s)
+    --- PASS: TestNormalizeFields/AllFields_NoOptional (0.00s)
+    --- PASS: TestNormalizeFields/AllFields_SecondOptional_Provided (0.00s)
+    --- PASS: TestNormalizeFields/AllFields_SecondOptional_NotProvided (0.00s)
+    --- PASS: TestNormalizeFields/SubsetFields_NoOptional (0.00s)
+    --- PASS: TestNormalizeFields/SubsetFields_DowOptional_Provided (0.00s)
+    --- PASS: TestNormalizeFields/SubsetFields_DowOptional_NotProvided (0.00s)
+    --- PASS: TestNormalizeFields/SubsetFields_SecondOptional_NotProvided (0.00s)
+=== RUN   TestNormalizeFields_Errors
+=== RUN   TestNormalizeFields_Errors/TwoOptionals
+=== RUN   TestNormalizeFields_Errors/TooManyFields
+=== RUN   TestNormalizeFields_Errors/NoFields
+=== RUN   TestNormalizeFields_Errors/TooFewFields
+--- PASS: TestNormalizeFields_Errors (0.00s)
+    --- PASS: TestNormalizeFields_Errors/TwoOptionals (0.00s)
+    --- PASS: TestNormalizeFields_Errors/TooManyFields (0.00s)
+    --- PASS: TestNormalizeFields_Errors/NoFields (0.00s)
+    --- PASS: TestNormalizeFields_Errors/TooFewFields (0.00s)
+=== RUN   TestStandardSpecSchedule
+--- PASS: TestStandardSpecSchedule (0.00s)
+=== RUN   TestNoDescriptorParser
+--- PASS: TestNoDescriptorParser (0.00s)
+=== RUN   TestParseScheduleTimezoneDST
+--- PASS: TestParseScheduleTimezoneDST (0.00s)
+=== RUN   TestParseScheduleTimezoneRejectedForEvery
+--- PASS: TestParseScheduleTimezoneRejectedForEvery (0.00s)
+=== RUN   TestActivation
+--- PASS: TestActivation (0.00s)
+=== RUN   TestNext
+--- PASS: TestNext (0.01s)
+=== RUN   TestErrors
+--- PASS: TestErrors (0.00s)
+=== RUN   TestNextWithTz
+--- PASS: TestNextWithTz (0.00s)
+=== RUN   TestSlash0NoHang
+--- PASS: TestSlash0NoHang (0.00s)
+PASS
+ok  	github.com/dapr/kit/cron	(cached)
+=== RUN   TestEncryptionRSAPKCS1v15
+=== RUN   TestEncryptionRSAPKCS1v15/encrypt
+=== RUN   TestEncryptionRSAPKCS1v15/decrypt
+--- PASS: TestEncryptionRSAPKCS1v15 (0.00s)
+    --- PASS: TestEncryptionRSAPKCS1v15/encrypt (0.00s)
+    --- PASS: TestEncryptionRSAPKCS1v15/decrypt (0.00s)
+=== RUN   TestEncryptionRSAOAEP
+=== RUN   TestEncryptionRSAOAEP/RSA-OAEP
+=== RUN   TestEncryptionRSAOAEP/RSA-OAEP/encrypt
+=== RUN   TestEncryptionRSAOAEP/RSA-OAEP/decrypt
+=== RUN   TestEncryptionRSAOAEP/RSA-OAEP-256
+=== RUN   TestEncryptionRSAOAEP/RSA-OAEP-256/encrypt
+=== RUN   TestEncryptionRSAOAEP/RSA-OAEP-256/decrypt
+=== RUN   TestEncryptionRSAOAEP/RSA-OAEP-384
+=== RUN   TestEncryptionRSAOAEP/RSA-OAEP-384/encrypt
+=== RUN   TestEncryptionRSAOAEP/RSA-OAEP-384/decrypt
+=== RUN   TestEncryptionRSAOAEP/RSA-OAEP-512
+=== RUN   TestEncryptionRSAOAEP/RSA-OAEP-512/encrypt
+=== RUN   TestEncryptionRSAOAEP/RSA-OAEP-512/decrypt
+--- PASS: TestEncryptionRSAOAEP (0.01s)
+    --- PASS: TestEncryptionRSAOAEP/RSA-OAEP (0.00s)
+        --- PASS: TestEncryptionRSAOAEP/RSA-OAEP/encrypt (0.00s)
+        --- PASS: TestEncryptionRSAOAEP/RSA-OAEP/decrypt (0.00s)
+    --- PASS: TestEncryptionRSAOAEP/RSA-OAEP-256 (0.00s)
+        --- PASS: TestEncryptionRSAOAEP/RSA-OAEP-256/encrypt (0.00s)
+        --- PASS: TestEncryptionRSAOAEP/RSA-OAEP-256/decrypt (0.00s)
+    --- PASS: TestEncryptionRSAOAEP/RSA-OAEP-384 (0.00s)
+        --- PASS: TestEncryptionRSAOAEP/RSA-OAEP-384/encrypt (0.00s)
+        --- PASS: TestEncryptionRSAOAEP/RSA-OAEP-384/decrypt (0.00s)
+    --- PASS: TestEncryptionRSAOAEP/RSA-OAEP-512 (0.00s)
+        --- PASS: TestEncryptionRSAOAEP/RSA-OAEP-512/encrypt (0.00s)
+        --- PASS: TestEncryptionRSAOAEP/RSA-OAEP-512/decrypt (0.00s)
+=== RUN   TestSigningRSAPKCS1v15
+=== RUN   TestSigningRSAPKCS1v15/sign
+=== RUN   TestSigningRSAPKCS1v15/verify
+--- PASS: TestSigningRSAPKCS1v15 (0.00s)
+    --- PASS: TestSigningRSAPKCS1v15/sign (0.00s)
+    --- PASS: TestSigningRSAPKCS1v15/verify (0.00s)
+=== RUN   TestSigningRSAPSS
+=== RUN   TestSigningRSAPSS/sign
+=== RUN   TestSigningRSAPSS/verify
+--- PASS: TestSigningRSAPSS (0.00s)
+    --- PASS: TestSigningRSAPSS/sign (0.00s)
+    --- PASS: TestSigningRSAPSS/verify (0.00s)
+=== RUN   TestSigningECDSA
+=== RUN   TestSigningECDSA/sign
+=== RUN   TestSigningECDSA/verify
+--- PASS: TestSigningECDSA (0.00s)
+    --- PASS: TestSigningECDSA/sign (0.00s)
+    --- PASS: TestSigningECDSA/verify (0.00s)
+=== RUN   TestSigningEdDSA
+=== RUN   TestSigningEdDSA/sign
+=== RUN   TestSigningEdDSA/verify
+--- PASS: TestSigningEdDSA (0.01s)
+    --- PASS: TestSigningEdDSA/sign (0.00s)
+    --- PASS: TestSigningEdDSA/verify (0.00s)
+=== RUN   TestEmptyKey
+--- PASS: TestEmptyKey (0.00s)
+=== RUN   TestSymmetricKeys
+=== RUN   TestSymmetricKeys/raw_bytes
+=== RUN   TestSymmetricKeys/raw_bytes/parse
+=== RUN   TestSymmetricKeys/raw_bytes/serialize
+=== RUN   TestSymmetricKeys/base64_standard_with_padding
+=== RUN   TestSymmetricKeys/base64_standard_with_padding/parse
+=== RUN   TestSymmetricKeys/base64_standard_with_padding/serialize
+=== RUN   TestSymmetricKeys/base64_standard_without_padding
+=== RUN   TestSymmetricKeys/base64_standard_without_padding/parse
+=== RUN   TestSymmetricKeys/base64_standard_without_padding/serialize
+=== RUN   TestSymmetricKeys/base64_standard_with_padding_and_trailing_newline
+=== RUN   TestSymmetricKeys/base64_standard_with_padding_and_trailing_newline/parse
+=== RUN   TestSymmetricKeys/base64_standard_with_padding_and_trailing_newline/serialize
+=== RUN   TestSymmetricKeys/base64_standard_without_padding_and_trailing_newline
+=== RUN   TestSymmetricKeys/base64_standard_without_padding_and_trailing_newline/parse
+=== RUN   TestSymmetricKeys/base64_standard_without_padding_and_trailing_newline/serialize
+=== RUN   TestSymmetricKeys/base64_url_with_padding
+=== RUN   TestSymmetricKeys/base64_url_with_padding/parse
+=== RUN   TestSymmetricKeys/base64_url_with_padding/serialize
+=== RUN   TestSymmetricKeys/base64_url_without_padding
+=== RUN   TestSymmetricKeys/base64_url_without_padding/parse
+=== RUN   TestSymmetricKeys/base64_url_without_padding/serialize
+=== RUN   TestSymmetricKeys/base64_url_with_padding_and_trailing_newline
+=== RUN   TestSymmetricKeys/base64_url_with_padding_and_trailing_newline/parse
+=== RUN   TestSymmetricKeys/base64_url_with_padding_and_trailing_newline/serialize
+=== RUN   TestSymmetricKeys/base64_url_without_padding_and_trailing_newline
+=== RUN   TestSymmetricKeys/base64_url_without_padding_and_trailing_newline/parse
+=== RUN   TestSymmetricKeys/base64_url_without_padding_and_trailing_newline/serialize
+=== RUN   TestSymmetricKeys/JSON_with_content-type
+=== RUN   TestSymmetricKeys/JSON_with_content-type/parse
+=== RUN   TestSymmetricKeys/JSON_with_content-type/serialize
+=== RUN   TestSymmetricKeys/JSON_without_content-type
+=== RUN   TestSymmetricKeys/JSON_without_content-type/parse
+=== RUN   TestSymmetricKeys/JSON_without_content-type/serialize
+--- PASS: TestSymmetricKeys (0.00s)
+    --- PASS: TestSymmetricKeys/raw_bytes (0.00s)
+        --- PASS: TestSymmetricKeys/raw_bytes/parse (0.00s)
+        --- PASS: TestSymmetricKeys/raw_bytes/serialize (0.00s)
+    --- PASS: TestSymmetricKeys/base64_standard_with_padding (0.00s)
+        --- PASS: TestSymmetricKeys/base64_standard_with_padding/parse (0.00s)
+        --- PASS: TestSymmetricKeys/base64_standard_with_padding/serialize (0.00s)
+    --- PASS: TestSymmetricKeys/base64_standard_without_padding (0.00s)
+        --- PASS: TestSymmetricKeys/base64_standard_without_padding/parse (0.00s)
+        --- PASS: TestSymmetricKeys/base64_standard_without_padding/serialize (0.00s)
+    --- PASS: TestSymmetricKeys/base64_standard_with_padding_and_trailing_newline (0.00s)
+        --- PASS: TestSymmetricKeys/base64_standard_with_padding_and_trailing_newline/parse (0.00s)
+        --- PASS: TestSymmetricKeys/base64_standard_with_padding_and_trailing_newline/serialize (0.00s)
+    --- PASS: TestSymmetricKeys/base64_standard_without_padding_and_trailing_newline (0.00s)
+        --- PASS: TestSymmetricKeys/base64_standard_without_padding_and_trailing_newline/parse (0.00s)
+        --- PASS: TestSymmetricKeys/base64_standard_without_padding_and_trailing_newline/serialize (0.00s)
+    --- PASS: TestSymmetricKeys/base64_url_with_padding (0.00s)
+        --- PASS: TestSymmetricKeys/base64_url_with_padding/parse (0.00s)
+        --- PASS: TestSymmetricKeys/base64_url_with_padding/serialize (0.00s)
+    --- PASS: TestSymmetricKeys/base64_url_without_padding (0.00s)
+        --- PASS: TestSymmetricKeys/base64_url_without_padding/parse (0.00s)
+        --- PASS: TestSymmetricKeys/base64_url_without_padding/serialize (0.00s)
+    --- PASS: TestSymmetricKeys/base64_url_with_padding_and_trailing_newline (0.00s)
+        --- PASS: TestSymmetricKeys/base64_url_with_padding_and_trailing_newline/parse (0.00s)
+        --- PASS: TestSymmetricKeys/base64_url_with_padding_and_trailing_newline/serialize (0.00s)
+    --- PASS: TestSymmetricKeys/base64_url_without_padding_and_trailing_newline (0.00s)
+        --- PASS: TestSymmetricKeys/base64_url_without_padding_and_trailing_newline/parse (0.00s)
+        --- PASS: TestSymmetricKeys/base64_url_without_padding_and_trailing_newline/serialize (0.00s)
+    --- PASS: TestSymmetricKeys/JSON_with_content-type (0.00s)
+        --- PASS: TestSymmetricKeys/JSON_with_content-type/parse (0.00s)
+        --- PASS: TestSymmetricKeys/JSON_with_content-type/serialize (0.00s)
+    --- PASS: TestSymmetricKeys/JSON_without_content-type (0.00s)
+        --- PASS: TestSymmetricKeys/JSON_without_content-type/parse (0.00s)
+        --- PASS: TestSymmetricKeys/JSON_without_content-type/serialize (0.00s)
+=== RUN   TestPrivateKeysRSA
+=== RUN   TestPrivateKeysRSA/PEM_PKCS#8_with_content-type
+=== RUN   TestPrivateKeysRSA/PEM_PKCS#8_with_content-type/parse
+=== RUN   TestPrivateKeysRSA/PEM_PKCS#8_with_content-type/serialize
+=== RUN   TestPrivateKeysRSA/PEM_PKCS#8_with_content-type_2
+=== RUN   TestPrivateKeysRSA/PEM_PKCS#8_with_content-type_2/parse
+=== RUN   TestPrivateKeysRSA/PEM_PKCS#8_with_content-type_2/serialize
+=== RUN   TestPrivateKeysRSA/PEM_PKCS#8_without_content-type
+=== RUN   TestPrivateKeysRSA/PEM_PKCS#8_without_content-type/parse
+=== RUN   TestPrivateKeysRSA/PEM_PKCS#8_without_content-type/serialize
+=== RUN   TestPrivateKeysRSA/PEM_PKCS#1_with_content-type
+=== RUN   TestPrivateKeysRSA/PEM_PKCS#1_with_content-type/parse
+=== RUN   TestPrivateKeysRSA/PEM_PKCS#1_with_content-type/serialize
+=== RUN   TestPrivateKeysRSA/PEM_PKCS#1_without_content-type
+=== RUN   TestPrivateKeysRSA/PEM_PKCS#1_without_content-type/parse
+=== RUN   TestPrivateKeysRSA/PEM_PKCS#1_without_content-type/serialize
+=== RUN   TestPrivateKeysRSA/JSON_with_content-type
+=== RUN   TestPrivateKeysRSA/JSON_with_content-type/parse
+=== RUN   TestPrivateKeysRSA/JSON_with_content-type/serialize
+=== RUN   TestPrivateKeysRSA/JSON_without_content-type
+=== RUN   TestPrivateKeysRSA/JSON_without_content-type/parse
+=== RUN   TestPrivateKeysRSA/JSON_without_content-type/serialize
+--- PASS: TestPrivateKeysRSA (0.01s)
+    --- PASS: TestPrivateKeysRSA/PEM_PKCS#8_with_content-type (0.00s)
+        --- PASS: TestPrivateKeysRSA/PEM_PKCS#8_with_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysRSA/PEM_PKCS#8_with_content-type/serialize (0.00s)
+    --- PASS: TestPrivateKeysRSA/PEM_PKCS#8_with_content-type_2 (0.00s)
+        --- PASS: TestPrivateKeysRSA/PEM_PKCS#8_with_content-type_2/parse (0.00s)
+        --- PASS: TestPrivateKeysRSA/PEM_PKCS#8_with_content-type_2/serialize (0.00s)
+    --- PASS: TestPrivateKeysRSA/PEM_PKCS#8_without_content-type (0.00s)
+        --- PASS: TestPrivateKeysRSA/PEM_PKCS#8_without_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysRSA/PEM_PKCS#8_without_content-type/serialize (0.00s)
+    --- PASS: TestPrivateKeysRSA/PEM_PKCS#1_with_content-type (0.00s)
+        --- PASS: TestPrivateKeysRSA/PEM_PKCS#1_with_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysRSA/PEM_PKCS#1_with_content-type/serialize (0.00s)
+    --- PASS: TestPrivateKeysRSA/PEM_PKCS#1_without_content-type (0.00s)
+        --- PASS: TestPrivateKeysRSA/PEM_PKCS#1_without_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysRSA/PEM_PKCS#1_without_content-type/serialize (0.00s)
+    --- PASS: TestPrivateKeysRSA/JSON_with_content-type (0.00s)
+        --- PASS: TestPrivateKeysRSA/JSON_with_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysRSA/JSON_with_content-type/serialize (0.00s)
+    --- PASS: TestPrivateKeysRSA/JSON_without_content-type (0.00s)
+        --- PASS: TestPrivateKeysRSA/JSON_without_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysRSA/JSON_without_content-type/serialize (0.00s)
+=== RUN   TestPublicKeysRSA
+=== RUN   TestPublicKeysRSA/PEM_PKIX_with_content-type
+=== RUN   TestPublicKeysRSA/PEM_PKIX_with_content-type/parse
+=== RUN   TestPublicKeysRSA/PEM_PKIX_with_content-type/serialize
+=== RUN   TestPublicKeysRSA/PEM_PKIX_without_content-type
+=== RUN   TestPublicKeysRSA/PEM_PKIX_without_content-type/parse
+=== RUN   TestPublicKeysRSA/PEM_PKIX_without_content-type/serialize
+=== RUN   TestPublicKeysRSA/PEM_PKCS#1_with_content-type
+=== RUN   TestPublicKeysRSA/PEM_PKCS#1_with_content-type/parse
+=== RUN   TestPublicKeysRSA/PEM_PKCS#1_with_content-type/serialize
+=== RUN   TestPublicKeysRSA/PEM_PKCS#1_without_content-type
+=== RUN   TestPublicKeysRSA/PEM_PKCS#1_without_content-type/parse
+=== RUN   TestPublicKeysRSA/PEM_PKCS#1_without_content-type/serialize
+=== RUN   TestPublicKeysRSA/JSON_with_content-type
+=== RUN   TestPublicKeysRSA/JSON_with_content-type/parse
+=== RUN   TestPublicKeysRSA/JSON_with_content-type/serialize
+=== RUN   TestPublicKeysRSA/JSON_without_content-type
+=== RUN   TestPublicKeysRSA/JSON_without_content-type/parse
+=== RUN   TestPublicKeysRSA/JSON_without_content-type/serialize
+--- PASS: TestPublicKeysRSA (0.00s)
+    --- PASS: TestPublicKeysRSA/PEM_PKIX_with_content-type (0.00s)
+        --- PASS: TestPublicKeysRSA/PEM_PKIX_with_content-type/parse (0.00s)
+        --- PASS: TestPublicKeysRSA/PEM_PKIX_with_content-type/serialize (0.00s)
+    --- PASS: TestPublicKeysRSA/PEM_PKIX_without_content-type (0.00s)
+        --- PASS: TestPublicKeysRSA/PEM_PKIX_without_content-type/parse (0.00s)
+        --- PASS: TestPublicKeysRSA/PEM_PKIX_without_content-type/serialize (0.00s)
+    --- PASS: TestPublicKeysRSA/PEM_PKCS#1_with_content-type (0.00s)
+        --- PASS: TestPublicKeysRSA/PEM_PKCS#1_with_content-type/parse (0.00s)
+        --- PASS: TestPublicKeysRSA/PEM_PKCS#1_with_content-type/serialize (0.00s)
+    --- PASS: TestPublicKeysRSA/PEM_PKCS#1_without_content-type (0.00s)
+        --- PASS: TestPublicKeysRSA/PEM_PKCS#1_without_content-type/parse (0.00s)
+        --- PASS: TestPublicKeysRSA/PEM_PKCS#1_without_content-type/serialize (0.00s)
+    --- PASS: TestPublicKeysRSA/JSON_with_content-type (0.00s)
+        --- PASS: TestPublicKeysRSA/JSON_with_content-type/parse (0.00s)
+        --- PASS: TestPublicKeysRSA/JSON_with_content-type/serialize (0.00s)
+    --- PASS: TestPublicKeysRSA/JSON_without_content-type (0.00s)
+        --- PASS: TestPublicKeysRSA/JSON_without_content-type/parse (0.00s)
+        --- PASS: TestPublicKeysRSA/JSON_without_content-type/serialize (0.00s)
+=== RUN   TestPrivateKeysEd25519
+=== RUN   TestPrivateKeysEd25519/PEM_PKCS#8_with_content-type
+=== RUN   TestPrivateKeysEd25519/PEM_PKCS#8_with_content-type/parse
+=== RUN   TestPrivateKeysEd25519/PEM_PKCS#8_with_content-type/serialize
+=== RUN   TestPrivateKeysEd25519/PEM_PKCS#8_with_content-type_2
+=== RUN   TestPrivateKeysEd25519/PEM_PKCS#8_with_content-type_2/parse
+=== RUN   TestPrivateKeysEd25519/PEM_PKCS#8_with_content-type_2/serialize
+=== RUN   TestPrivateKeysEd25519/PEM_PKCS#8_without_content-type
+=== RUN   TestPrivateKeysEd25519/PEM_PKCS#8_without_content-type/parse
+=== RUN   TestPrivateKeysEd25519/PEM_PKCS#8_without_content-type/serialize
+=== RUN   TestPrivateKeysEd25519/JSON_with_content-type
+=== RUN   TestPrivateKeysEd25519/JSON_with_content-type/parse
+=== RUN   TestPrivateKeysEd25519/JSON_with_content-type/serialize
+=== RUN   TestPrivateKeysEd25519/JSON_without_content-type
+=== RUN   TestPrivateKeysEd25519/JSON_without_content-type/parse
+=== RUN   TestPrivateKeysEd25519/JSON_without_content-type/serialize
+--- PASS: TestPrivateKeysEd25519 (0.00s)
+    --- PASS: TestPrivateKeysEd25519/PEM_PKCS#8_with_content-type (0.00s)
+        --- PASS: TestPrivateKeysEd25519/PEM_PKCS#8_with_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysEd25519/PEM_PKCS#8_with_content-type/serialize (0.00s)
+    --- PASS: TestPrivateKeysEd25519/PEM_PKCS#8_with_content-type_2 (0.00s)
+        --- PASS: TestPrivateKeysEd25519/PEM_PKCS#8_with_content-type_2/parse (0.00s)
+        --- PASS: TestPrivateKeysEd25519/PEM_PKCS#8_with_content-type_2/serialize (0.00s)
+    --- PASS: TestPrivateKeysEd25519/PEM_PKCS#8_without_content-type (0.00s)
+        --- PASS: TestPrivateKeysEd25519/PEM_PKCS#8_without_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysEd25519/PEM_PKCS#8_without_content-type/serialize (0.00s)
+    --- PASS: TestPrivateKeysEd25519/JSON_with_content-type (0.00s)
+        --- PASS: TestPrivateKeysEd25519/JSON_with_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysEd25519/JSON_with_content-type/serialize (0.00s)
+    --- PASS: TestPrivateKeysEd25519/JSON_without_content-type (0.00s)
+        --- PASS: TestPrivateKeysEd25519/JSON_without_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysEd25519/JSON_without_content-type/serialize (0.00s)
+=== RUN   TestPublicKeysEd25519
+=== RUN   TestPublicKeysEd25519/PEM_PKIX_with_content-type
+=== RUN   TestPublicKeysEd25519/PEM_PKIX_with_content-type/parse
+=== RUN   TestPublicKeysEd25519/PEM_PKIX_with_content-type/serialize
+=== RUN   TestPublicKeysEd25519/PEM_PKIX_without_content-type
+=== RUN   TestPublicKeysEd25519/PEM_PKIX_without_content-type/parse
+=== RUN   TestPublicKeysEd25519/PEM_PKIX_without_content-type/serialize
+=== RUN   TestPublicKeysEd25519/JSON_with_content-type
+=== RUN   TestPublicKeysEd25519/JSON_with_content-type/parse
+=== RUN   TestPublicKeysEd25519/JSON_with_content-type/serialize
+=== RUN   TestPublicKeysEd25519/JSON_without_content-type
+=== RUN   TestPublicKeysEd25519/JSON_without_content-type/parse
+=== RUN   TestPublicKeysEd25519/JSON_without_content-type/serialize
+--- PASS: TestPublicKeysEd25519 (0.00s)
+    --- PASS: TestPublicKeysEd25519/PEM_PKIX_with_content-type (0.00s)
+        --- PASS: TestPublicKeysEd25519/PEM_PKIX_with_content-type/parse (0.00s)
+        --- PASS: TestPublicKeysEd25519/PEM_PKIX_with_content-type/serialize (0.00s)
+    --- PASS: TestPublicKeysEd25519/PEM_PKIX_without_content-type (0.00s)
+        --- PASS: TestPublicKeysEd25519/PEM_PKIX_without_content-type/parse (0.00s)
+        --- PASS: TestPublicKeysEd25519/PEM_PKIX_without_content-type/serialize (0.00s)
+    --- PASS: TestPublicKeysEd25519/JSON_with_content-type (0.00s)
+        --- PASS: TestPublicKeysEd25519/JSON_with_content-type/parse (0.00s)
+        --- PASS: TestPublicKeysEd25519/JSON_with_content-type/serialize (0.00s)
+    --- PASS: TestPublicKeysEd25519/JSON_without_content-type (0.00s)
+        --- PASS: TestPublicKeysEd25519/JSON_without_content-type/parse (0.00s)
+        --- PASS: TestPublicKeysEd25519/JSON_without_content-type/serialize (0.00s)
+=== RUN   TestPrivateKeysP256
+=== RUN   TestPrivateKeysP256/PEM_EC_with_content-type
+=== RUN   TestPrivateKeysP256/PEM_EC_with_content-type/parse
+=== RUN   TestPrivateKeysP256/PEM_EC_with_content-type/serialize
+=== RUN   TestPrivateKeysP256/PEM_EC_without_content-type
+=== RUN   TestPrivateKeysP256/PEM_EC_without_content-type/parse
+=== RUN   TestPrivateKeysP256/PEM_EC_without_content-type/serialize
+=== RUN   TestPrivateKeysP256/PEM_PKCS8_with_content-type
+=== RUN   TestPrivateKeysP256/PEM_PKCS8_with_content-type/parse
+=== RUN   TestPrivateKeysP256/PEM_PKCS8_with_content-type/serialize
+=== RUN   TestPrivateKeysP256/PEM_PKCS8_without_content-type
+=== RUN   TestPrivateKeysP256/PEM_PKCS8_without_content-type/parse
+=== RUN   TestPrivateKeysP256/PEM_PKCS8_without_content-type/serialize
+=== RUN   TestPrivateKeysP256/JSON_with_content-type
+=== RUN   TestPrivateKeysP256/JSON_with_content-type/parse
+=== RUN   TestPrivateKeysP256/JSON_with_content-type/serialize
+=== RUN   TestPrivateKeysP256/JSON_without_content-type
+=== RUN   TestPrivateKeysP256/JSON_without_content-type/parse
+=== RUN   TestPrivateKeysP256/JSON_without_content-type/serialize
+--- PASS: TestPrivateKeysP256 (0.00s)
+    --- PASS: TestPrivateKeysP256/PEM_EC_with_content-type (0.00s)
+        --- PASS: TestPrivateKeysP256/PEM_EC_with_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysP256/PEM_EC_with_content-type/serialize (0.00s)
+    --- PASS: TestPrivateKeysP256/PEM_EC_without_content-type (0.00s)
+        --- PASS: TestPrivateKeysP256/PEM_EC_without_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysP256/PEM_EC_without_content-type/serialize (0.00s)
+    --- PASS: TestPrivateKeysP256/PEM_PKCS8_with_content-type (0.00s)
+        --- PASS: TestPrivateKeysP256/PEM_PKCS8_with_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysP256/PEM_PKCS8_with_content-type/serialize (0.00s)
+    --- PASS: TestPrivateKeysP256/PEM_PKCS8_without_content-type (0.00s)
+        --- PASS: TestPrivateKeysP256/PEM_PKCS8_without_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysP256/PEM_PKCS8_without_content-type/serialize (0.00s)
+    --- PASS: TestPrivateKeysP256/JSON_with_content-type (0.00s)
+        --- PASS: TestPrivateKeysP256/JSON_with_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysP256/JSON_with_content-type/serialize (0.00s)
+    --- PASS: TestPrivateKeysP256/JSON_without_content-type (0.00s)
+        --- PASS: TestPrivateKeysP256/JSON_without_content-type/parse (0.00s)
+        --- PASS: TestPrivateKeysP256/JSON_without_content-type/serialize (0.00s)
+=== RUN   TestPublicKeysP256
+=== RUN   TestPublicKeysP256/PEM_PKIX_with_content-type
+=== RUN   TestPublicKeysP256/PEM_PKIX_with_content-type/parse
+=== RUN   TestPublicKeysP256/PEM_PKIX_with_content-type/serialize
+=== RUN   TestPublicKeysP256/PEM_PKIX_without_content-type
+=== RUN   TestPublicKeysP256/PEM_PKIX_without_content-type/parse
+=== RUN   TestPublicKeysP256/PEM_PKIX_without_content-type/serialize
+=== RUN   TestPublicKeysP256/JSON_with_content-type
+=== RUN   TestPublicKeysP256/JSON_with_content-type/parse
+=== RUN   TestPublicKeysP256/JSON_with_content-type/serialize
+=== RUN   TestPublicKeysP256/JSON_without_content-type
+=== RUN   TestPublicKeysP256/JSON_without_content-type/parse
+=== RUN   TestPublicKeysP256/JSON_without_content-type/serialize
+--- PASS: TestPublicKeysP256 (0.00s)
+    --- PASS: TestPublicKeysP256/PEM_PKIX_with_content-type (0.00s)
+        --- PASS: TestPublicKeysP256/PEM_PKIX_with_content-type/parse (0.00s)
+        --- PASS: TestPublicKeysP256/PEM_PKIX_with_content-type/serialize (0.00s)
+    --- PASS: TestPublicKeysP256/PEM_PKIX_without_content-type (0.00s)
+        --- PASS: TestPublicKeysP256/PEM_PKIX_without_content-type/parse (0.00s)
+        --- PASS: TestPublicKeysP256/PEM_PKIX_without_content-type/serialize (0.00s)
+    --- PASS: TestPublicKeysP256/JSON_with_content-type (0.00s)
+        --- PASS: TestPublicKeysP256/JSON_with_content-type/parse (0.00s)
+        --- PASS: TestPublicKeysP256/JSON_with_content-type/serialize (0.00s)
+    --- PASS: TestPublicKeysP256/JSON_without_content-type (0.00s)
+        --- PASS: TestPublicKeysP256/JSON_without_content-type/parse (0.00s)
+        --- PASS: TestPublicKeysP256/JSON_without_content-type/serialize (0.00s)
+=== RUN   TestEncryptSymmetricAESCBC
+=== RUN   TestEncryptSymmetricAESCBC/key_size_mismatch
+=== RUN   TestEncryptSymmetricAESCBC/iv_size_mismatch
+=== RUN   TestEncryptSymmetricAESCBC/NIST_test_vector_1_+_padding
+=== RUN   TestEncryptSymmetricAESCBC/NIST_test_vector_2_+_padding
+=== RUN   TestEncryptSymmetricAESCBC/NIST_test_vector_3_+_padding
+=== RUN   TestEncryptSymmetricAESCBC/NIST_test_vector_4_+_padding
+=== RUN   TestEncryptSymmetricAESCBC/NIST_test_vector_5_+_padding
+=== RUN   TestEncryptSymmetricAESCBC/NIST_test_vector_6_+_padding
+=== RUN   TestEncryptSymmetricAESCBC/NIST_test_vector_7_+_padding
+=== RUN   TestEncryptSymmetricAESCBC/NIST_test_vector_8_+_padding
+=== RUN   TestEncryptSymmetricAESCBC/NIST_test_vector_9_+_padding
+=== RUN   TestEncryptSymmetricAESCBC/NIST_test_vector_10_+_padding
+=== RUN   TestEncryptSymmetricAESCBC/NIST_test_vector_11_+_padding
+=== RUN   TestEncryptSymmetricAESCBC/NIST_test_vector_12_+_padding
+=== RUN   TestEncryptSymmetricAESCBC/Length_not_multiple_of_block_size
+--- PASS: TestEncryptSymmetricAESCBC (0.03s)
+    --- PASS: TestEncryptSymmetricAESCBC/key_size_mismatch (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBC/iv_size_mismatch (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBC/NIST_test_vector_1_+_padding (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBC/NIST_test_vector_2_+_padding (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBC/NIST_test_vector_3_+_padding (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBC/NIST_test_vector_4_+_padding (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBC/NIST_test_vector_5_+_padding (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBC/NIST_test_vector_6_+_padding (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBC/NIST_test_vector_7_+_padding (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBC/NIST_test_vector_8_+_padding (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBC/NIST_test_vector_9_+_padding (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBC/NIST_test_vector_10_+_padding (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBC/NIST_test_vector_11_+_padding (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBC/NIST_test_vector_12_+_padding (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBC/Length_not_multiple_of_block_size (0.00s)
+=== RUN   TestEncryptSymmetricAESCBCNOPAD
+=== RUN   TestEncryptSymmetricAESCBCNOPAD/key_size_mismatch
+=== RUN   TestEncryptSymmetricAESCBCNOPAD/iv_size_mismatch
+=== RUN   TestEncryptSymmetricAESCBCNOPAD/invalid_plaintext_length
+=== RUN   TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_1
+=== RUN   TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_2
+=== RUN   TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_3
+=== RUN   TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_4
+=== RUN   TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_5
+=== RUN   TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_6
+=== RUN   TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_7
+=== RUN   TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_8
+=== RUN   TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_9
+=== RUN   TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_10
+=== RUN   TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_11
+=== RUN   TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_12
+--- PASS: TestEncryptSymmetricAESCBCNOPAD (0.02s)
+    --- PASS: TestEncryptSymmetricAESCBCNOPAD/key_size_mismatch (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBCNOPAD/iv_size_mismatch (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBCNOPAD/invalid_plaintext_length (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_1 (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_2 (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_3 (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_4 (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_5 (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_6 (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_7 (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_8 (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_9 (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_10 (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_11 (0.00s)
+    --- PASS: TestEncryptSymmetricAESCBCNOPAD/NIST_test_vector_12 (0.00s)
+=== RUN   TestDecryptSymmetricAESCBC
+=== RUN   TestDecryptSymmetricAESCBC/key_size_mismatch
+=== RUN   TestDecryptSymmetricAESCBC/iv_size_mismatch
+=== RUN   TestDecryptSymmetricAESCBC/invalid_padding
+=== RUN   TestDecryptSymmetricAESCBC/NIST_test_vector_1_+_padding
+=== RUN   TestDecryptSymmetricAESCBC/NIST_test_vector_2_+_padding
+=== RUN   TestDecryptSymmetricAESCBC/NIST_test_vector_3_+_padding
+=== RUN   TestDecryptSymmetricAESCBC/NIST_test_vector_4_+_padding
+=== RUN   TestDecryptSymmetricAESCBC/NIST_test_vector_5_+_padding
+=== RUN   TestDecryptSymmetricAESCBC/NIST_test_vector_6_+_padding
+=== RUN   TestDecryptSymmetricAESCBC/NIST_test_vector_7_+_padding
+=== RUN   TestDecryptSymmetricAESCBC/NIST_test_vector_8_+_padding
+=== RUN   TestDecryptSymmetricAESCBC/NIST_test_vector_9_+_padding
+=== RUN   TestDecryptSymmetricAESCBC/NIST_test_vector_10_+_padding
+=== RUN   TestDecryptSymmetricAESCBC/NIST_test_vector_11_+_padding
+=== RUN   TestDecryptSymmetricAESCBC/NIST_test_vector_12_+_padding
+=== RUN   TestDecryptSymmetricAESCBC/Length_not_multiple_of_block_size
+--- PASS: TestDecryptSymmetricAESCBC (0.02s)
+    --- PASS: TestDecryptSymmetricAESCBC/key_size_mismatch (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBC/iv_size_mismatch (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBC/invalid_padding (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBC/NIST_test_vector_1_+_padding (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBC/NIST_test_vector_2_+_padding (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBC/NIST_test_vector_3_+_padding (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBC/NIST_test_vector_4_+_padding (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBC/NIST_test_vector_5_+_padding (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBC/NIST_test_vector_6_+_padding (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBC/NIST_test_vector_7_+_padding (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBC/NIST_test_vector_8_+_padding (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBC/NIST_test_vector_9_+_padding (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBC/NIST_test_vector_10_+_padding (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBC/NIST_test_vector_11_+_padding (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBC/NIST_test_vector_12_+_padding (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBC/Length_not_multiple_of_block_size (0.00s)
+=== RUN   TestDecryptSymmetricAESCBCNOPAD
+=== RUN   TestDecryptSymmetricAESCBCNOPAD/key_size_mismatch
+=== RUN   TestDecryptSymmetricAESCBCNOPAD/iv_size_mismatch
+=== RUN   TestDecryptSymmetricAESCBCNOPAD/invalid_ciphertext_length
+=== RUN   TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_1
+=== RUN   TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_2
+=== RUN   TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_3
+=== RUN   TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_4
+=== RUN   TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_5
+=== RUN   TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_6
+=== RUN   TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_7
+=== RUN   TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_8
+=== RUN   TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_9
+=== RUN   TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_10
+=== RUN   TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_11
+=== RUN   TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_12
+--- PASS: TestDecryptSymmetricAESCBCNOPAD (0.02s)
+    --- PASS: TestDecryptSymmetricAESCBCNOPAD/key_size_mismatch (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBCNOPAD/iv_size_mismatch (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBCNOPAD/invalid_ciphertext_length (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_1 (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_2 (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_3 (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_4 (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_5 (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_6 (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_7 (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_8 (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_9 (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_10 (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_11 (0.00s)
+    --- PASS: TestDecryptSymmetricAESCBCNOPAD/NIST_test_vector_12 (0.00s)
+=== RUN   TestEncryptSymmetricAESGCM
+=== RUN   TestEncryptSymmetricAESGCM/key_size_mismatch
+=== RUN   TestEncryptSymmetricAESGCM/nonce_size_mismatch
+=== RUN   TestEncryptSymmetricAESGCM/NIST_test_vector_1
+=== RUN   TestEncryptSymmetricAESGCM/NIST_test_vector_2
+=== RUN   TestEncryptSymmetricAESGCM/NIST_test_vector_3
+=== RUN   TestEncryptSymmetricAESGCM/NIST_test_vector_4
+=== RUN   TestEncryptSymmetricAESGCM/NIST_test_vector_5
+=== RUN   TestEncryptSymmetricAESGCM/NIST_test_vector_6
+=== RUN   TestEncryptSymmetricAESGCM/NIST_test_vector_7
+=== RUN   TestEncryptSymmetricAESGCM/NIST_test_vector_8
+--- PASS: TestEncryptSymmetricAESGCM (0.02s)
+    --- PASS: TestEncryptSymmetricAESGCM/key_size_mismatch (0.00s)
+    --- PASS: TestEncryptSymmetricAESGCM/nonce_size_mismatch (0.00s)
+    --- PASS: TestEncryptSymmetricAESGCM/NIST_test_vector_1 (0.00s)
+    --- PASS: TestEncryptSymmetricAESGCM/NIST_test_vector_2 (0.00s)
+    --- PASS: TestEncryptSymmetricAESGCM/NIST_test_vector_3 (0.00s)
+    --- PASS: TestEncryptSymmetricAESGCM/NIST_test_vector_4 (0.00s)
+    --- PASS: TestEncryptSymmetricAESGCM/NIST_test_vector_5 (0.00s)
+    --- PASS: TestEncryptSymmetricAESGCM/NIST_test_vector_6 (0.00s)
+    --- PASS: TestEncryptSymmetricAESGCM/NIST_test_vector_7 (0.00s)
+    --- PASS: TestEncryptSymmetricAESGCM/NIST_test_vector_8 (0.00s)
+=== RUN   TestDecryptSymmetricAESGCM
+=== RUN   TestDecryptSymmetricAESGCM/key_size_mismatch
+=== RUN   TestDecryptSymmetricAESGCM/nonce_size_mismatch
+=== RUN   TestDecryptSymmetricAESGCM/tag_size_mismatch
+=== RUN   TestDecryptSymmetricAESGCM/NIST_test_vector_1
+=== RUN   TestDecryptSymmetricAESGCM/NIST_test_vector_2
+=== RUN   TestDecryptSymmetricAESGCM/NIST_test_vector_3
+=== RUN   TestDecryptSymmetricAESGCM/NIST_test_vector_4
+=== RUN   TestDecryptSymmetricAESGCM/NIST_test_vector_5
+=== RUN   TestDecryptSymmetricAESGCM/NIST_test_vector_6
+=== RUN   TestDecryptSymmetricAESGCM/NIST_test_vector_7
+=== RUN   TestDecryptSymmetricAESGCM/NIST_test_vector_8
+--- PASS: TestDecryptSymmetricAESGCM (0.02s)
+    --- PASS: TestDecryptSymmetricAESGCM/key_size_mismatch (0.00s)
+    --- PASS: TestDecryptSymmetricAESGCM/nonce_size_mismatch (0.00s)
+    --- PASS: TestDecryptSymmetricAESGCM/tag_size_mismatch (0.00s)
+    --- PASS: TestDecryptSymmetricAESGCM/NIST_test_vector_1 (0.00s)
+    --- PASS: TestDecryptSymmetricAESGCM/NIST_test_vector_2 (0.00s)
+    --- PASS: TestDecryptSymmetricAESGCM/NIST_test_vector_3 (0.00s)
+    --- PASS: TestDecryptSymmetricAESGCM/NIST_test_vector_4 (0.00s)
+    --- PASS: TestDecryptSymmetricAESGCM/NIST_test_vector_5 (0.00s)
+    --- PASS: TestDecryptSymmetricAESGCM/NIST_test_vector_6 (0.00s)
+    --- PASS: TestDecryptSymmetricAESGCM/NIST_test_vector_7 (0.00s)
+    --- PASS: TestDecryptSymmetricAESGCM/NIST_test_vector_8 (0.00s)
+=== RUN   TestEncryptSymmetricAESKW
+=== RUN   TestEncryptSymmetricAESKW/Wrap_128_bits_of_Key_Data_with_a_128-bit_KEK
+=== RUN   TestEncryptSymmetricAESKW/Wrap_128_bits_of_Key_Data_with_a_192-bit_KEK
+=== RUN   TestEncryptSymmetricAESKW/Wrap_128_bits_of_Key_Data_with_a_256-bit_KEK
+=== RUN   TestEncryptSymmetricAESKW/Wrap_192_bits_of_Key_Data_with_a_192-bit_KEK
+=== RUN   TestEncryptSymmetricAESKW/Wrap_192_bits_of_Key_Data_with_a_256-bit_KEK
+=== RUN   TestEncryptSymmetricAESKW/Wrap_256_bits_of_Key_Data_with_a_256-bit_KEK
+--- PASS: TestEncryptSymmetricAESKW (0.02s)
+    --- PASS: TestEncryptSymmetricAESKW/Wrap_128_bits_of_Key_Data_with_a_128-bit_KEK (0.00s)
+    --- PASS: TestEncryptSymmetricAESKW/Wrap_128_bits_of_Key_Data_with_a_192-bit_KEK (0.00s)
+    --- PASS: TestEncryptSymmetricAESKW/Wrap_128_bits_of_Key_Data_with_a_256-bit_KEK (0.00s)
+    --- PASS: TestEncryptSymmetricAESKW/Wrap_192_bits_of_Key_Data_with_a_192-bit_KEK (0.00s)
+    --- PASS: TestEncryptSymmetricAESKW/Wrap_192_bits_of_Key_Data_with_a_256-bit_KEK (0.00s)
+    --- PASS: TestEncryptSymmetricAESKW/Wrap_256_bits_of_Key_Data_with_a_256-bit_KEK (0.00s)
+=== RUN   TestDecryptSymmetricAESKW
+=== RUN   TestDecryptSymmetricAESKW/Wrap_128_bits_of_Key_Data_with_a_128-bit_KEK
+=== RUN   TestDecryptSymmetricAESKW/Wrap_128_bits_of_Key_Data_with_a_192-bit_KEK
+=== RUN   TestDecryptSymmetricAESKW/Wrap_128_bits_of_Key_Data_with_a_256-bit_KEK
+=== RUN   TestDecryptSymmetricAESKW/Wrap_192_bits_of_Key_Data_with_a_192-bit_KEK
+=== RUN   TestDecryptSymmetricAESKW/Wrap_192_bits_of_Key_Data_with_a_256-bit_KEK
+=== RUN   TestDecryptSymmetricAESKW/Wrap_256_bits_of_Key_Data_with_a_256-bit_KEK
+--- PASS: TestDecryptSymmetricAESKW (0.02s)
+    --- PASS: TestDecryptSymmetricAESKW/Wrap_128_bits_of_Key_Data_with_a_128-bit_KEK (0.00s)
+    --- PASS: TestDecryptSymmetricAESKW/Wrap_128_bits_of_Key_Data_with_a_192-bit_KEK (0.00s)
+    --- PASS: TestDecryptSymmetricAESKW/Wrap_128_bits_of_Key_Data_with_a_256-bit_KEK (0.00s)
+    --- PASS: TestDecryptSymmetricAESKW/Wrap_192_bits_of_Key_Data_with_a_192-bit_KEK (0.00s)
+    --- PASS: TestDecryptSymmetricAESKW/Wrap_192_bits_of_Key_Data_with_a_256-bit_KEK (0.00s)
+    --- PASS: TestDecryptSymmetricAESKW/Wrap_256_bits_of_Key_Data_with_a_256-bit_KEK (0.00s)
+=== RUN   TestEncryptSymmetricChaCha20Poly1305
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#00
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#01
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#02
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#03
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#04
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#05
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#06
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#07
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#08
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#09
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#10
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#11
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#12
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#13
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#14
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#15
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#16
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#17
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#18
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#19
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#20
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#21
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#22
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#23
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#24
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#25
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#26
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#27
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#28
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#29
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#30
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#31
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#32
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#33
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#34
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#35
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#36
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#37
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#38
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#39
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#40
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#41
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#42
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#43
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#44
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#45
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#46
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#47
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#48
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#49
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#50
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#51
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#52
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#53
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#54
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#55
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#56
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#57
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#58
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#59
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#60
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#61
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#62
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#63
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#64
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#65
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#66
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#67
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#68
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#69
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#70
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#71
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#72
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#73
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#74
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#75
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#76
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#77
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#78
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#79
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#80
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#81
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#82
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#83
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#84
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#85
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#86
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#87
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#88
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#89
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#90
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#91
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#92
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#93
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#94
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#95
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#96
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#97
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#98
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#99
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#100
+=== RUN   TestEncryptSymmetricChaCha20Poly1305/#101
+--- PASS: TestEncryptSymmetricChaCha20Poly1305 (0.03s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#00 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#01 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#02 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#03 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#04 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#05 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#06 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#07 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#08 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#09 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#10 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#11 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#12 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#13 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#14 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#15 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#16 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#17 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#18 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#19 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#20 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#21 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#22 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#23 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#24 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#25 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#26 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#27 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#28 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#29 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#30 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#31 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#32 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#33 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#34 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#35 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#36 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#37 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#38 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#39 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#40 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#41 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#42 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#43 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#44 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#45 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#46 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#47 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#48 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#49 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#50 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#51 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#52 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#53 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#54 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#55 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#56 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#57 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#58 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#59 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#60 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#61 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#62 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#63 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#64 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#65 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#66 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#67 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#68 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#69 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#70 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#71 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#72 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#73 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#74 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#75 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#76 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#77 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#78 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#79 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#80 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#81 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#82 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#83 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#84 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#85 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#86 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#87 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#88 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#89 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#90 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#91 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#92 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#93 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#94 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#95 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#96 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#97 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#98 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#99 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#100 (0.00s)
+    --- PASS: TestEncryptSymmetricChaCha20Poly1305/#101 (0.00s)
+=== RUN   TestDecryptSymmetricChaCha20Poly1305
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#00
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#01
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#02
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#03
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#04
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#05
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#06
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#07
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#08
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#09
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#10
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#11
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#12
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#13
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#14
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#15
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#16
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#17
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#18
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#19
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#20
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#21
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#22
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#23
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#24
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#25
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#26
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#27
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#28
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#29
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#30
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#31
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#32
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#33
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#34
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#35
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#36
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#37
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#38
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#39
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#40
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#41
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#42
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#43
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#44
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#45
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#46
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#47
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#48
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#49
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#50
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#51
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#52
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#53
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#54
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#55
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#56
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#57
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#58
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#59
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#60
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#61
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#62
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#63
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#64
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#65
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#66
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#67
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#68
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#69
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#70
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#71
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#72
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#73
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#74
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#75
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#76
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#77
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#78
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#79
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#80
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#81
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#82
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#83
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#84
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#85
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#86
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#87
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#88
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#89
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#90
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#91
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#92
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#93
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#94
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#95
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#96
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#97
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#98
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#99
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#100
+=== RUN   TestDecryptSymmetricChaCha20Poly1305/#101
+--- PASS: TestDecryptSymmetricChaCha20Poly1305 (0.03s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#00 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#01 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#02 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#03 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#04 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#05 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#06 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#07 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#08 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#09 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#10 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#11 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#12 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#13 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#14 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#15 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#16 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#17 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#18 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#19 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#20 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#21 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#22 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#23 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#24 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#25 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#26 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#27 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#28 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#29 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#30 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#31 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#32 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#33 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#34 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#35 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#36 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#37 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#38 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#39 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#40 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#41 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#42 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#43 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#44 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#45 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#46 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#47 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#48 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#49 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#50 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#51 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#52 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#53 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#54 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#55 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#56 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#57 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#58 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#59 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#60 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#61 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#62 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#63 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#64 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#65 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#66 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#67 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#68 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#69 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#70 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#71 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#72 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#73 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#74 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#75 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#76 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#77 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#78 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#79 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#80 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#81 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#82 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#83 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#84 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#85 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#86 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#87 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#88 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#89 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#90 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#91 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#92 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#93 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#94 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#95 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#96 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#97 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#98 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#99 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#100 (0.00s)
+    --- PASS: TestDecryptSymmetricChaCha20Poly1305/#101 (0.00s)
+=== RUN   TestAESCBCHMAC
+=== RUN   TestAESCBCHMAC/alg_A128CBC-HS256
+=== RUN   TestAESCBCHMAC/alg_A192CBC-HS384
+=== RUN   TestAESCBCHMAC/alg_A256CBC-HS512
+--- PASS: TestAESCBCHMAC (0.00s)
+    --- PASS: TestAESCBCHMAC/alg_A128CBC-HS256 (0.00s)
+    --- PASS: TestAESCBCHMAC/alg_A192CBC-HS384 (0.00s)
+    --- PASS: TestAESCBCHMAC/alg_A256CBC-HS512 (0.00s)
+PASS
+ok  	github.com/dapr/kit/crypto	(cached)
+=== RUN   TestNewAESCBCAEAD
+=== RUN   TestNewAESCBCAEAD/test_cases_from_RFC
+=== RUN   TestNewAESCBCAEAD/test_cases_from_RFC/AEAD_AES_128_CBC_HMAC_SHA256
+=== RUN   TestNewAESCBCAEAD/test_cases_from_RFC/AEAD_AES_192_CBC_HMAC_SHA384
+=== RUN   TestNewAESCBCAEAD/test_cases_from_RFC/AEAD_AES_256_CBC_HMAC_SHA384
+=== RUN   TestNewAESCBCAEAD/test_cases_from_RFC/AEAD_AES_256_CBC_HMAC_SHA512
+=== RUN   TestNewAESCBCAEAD/dst_buffer
+=== RUN   TestNewAESCBCAEAD/dst_buffer/encrypt_with_empty_dst_buffer
+=== RUN   TestNewAESCBCAEAD/dst_buffer/encrypt_with_dst_buffer_with_capacity
+=== RUN   TestNewAESCBCAEAD/dst_buffer/encrypt_with_non-empty_dst_buffer
+=== RUN   TestNewAESCBCAEAD/dst_buffer/encrypt_with_non-empty_dst_buffer_with_capacity
+=== RUN   TestNewAESCBCAEAD/dst_buffer/decrypt_with_empty_dst_buffer
+=== RUN   TestNewAESCBCAEAD/dst_buffer/decrypt_with_dst_buffer_with_capacity
+=== RUN   TestNewAESCBCAEAD/dst_buffer/decrypt_with_non-empty_dst_buffer
+=== RUN   TestNewAESCBCAEAD/dst_buffer/decrypt_with_non-empty_dst_buffer_with_capacity
+--- PASS: TestNewAESCBCAEAD (0.00s)
+    --- PASS: TestNewAESCBCAEAD/test_cases_from_RFC (0.00s)
+        --- PASS: TestNewAESCBCAEAD/test_cases_from_RFC/AEAD_AES_128_CBC_HMAC_SHA256 (0.00s)
+        --- PASS: TestNewAESCBCAEAD/test_cases_from_RFC/AEAD_AES_192_CBC_HMAC_SHA384 (0.00s)
+        --- PASS: TestNewAESCBCAEAD/test_cases_from_RFC/AEAD_AES_256_CBC_HMAC_SHA384 (0.00s)
+        --- PASS: TestNewAESCBCAEAD/test_cases_from_RFC/AEAD_AES_256_CBC_HMAC_SHA512 (0.00s)
+    --- PASS: TestNewAESCBCAEAD/dst_buffer (0.00s)
+        --- PASS: TestNewAESCBCAEAD/dst_buffer/encrypt_with_empty_dst_buffer (0.00s)
+        --- PASS: TestNewAESCBCAEAD/dst_buffer/encrypt_with_dst_buffer_with_capacity (0.00s)
+        --- PASS: TestNewAESCBCAEAD/dst_buffer/encrypt_with_non-empty_dst_buffer (0.00s)
+        --- PASS: TestNewAESCBCAEAD/dst_buffer/encrypt_with_non-empty_dst_buffer_with_capacity (0.00s)
+        --- PASS: TestNewAESCBCAEAD/dst_buffer/decrypt_with_empty_dst_buffer (0.00s)
+        --- PASS: TestNewAESCBCAEAD/dst_buffer/decrypt_with_dst_buffer_with_capacity (0.00s)
+        --- PASS: TestNewAESCBCAEAD/dst_buffer/decrypt_with_non-empty_dst_buffer (0.00s)
+        --- PASS: TestNewAESCBCAEAD/dst_buffer/decrypt_with_non-empty_dst_buffer_with_capacity (0.00s)
+PASS
+ok  	github.com/dapr/kit/crypto/aescbcaead	(cached)
+=== RUN   TestWrapRfc3394Vectors
+    keywrap_test.go:78: Testcase 	 4.1 Wrap 128 bits of Key Data with a 128-bit KEK
+    keywrap_test.go:79: kek 	 =  000102030405060708090A0B0C0D0E0F
+    keywrap_test.go:80: data 	 =  00112233445566778899AABBCCDDEEFF
+    keywrap_test.go:81: exp 	 =  1FA68B0A8112B447AEF34BD8FB5A7B829D3E862371D2CFE5
+    keywrap_test.go:78: Testcase 	 4.2 Wrap 128 bits of Key Data with a 192-bit KEK
+    keywrap_test.go:79: kek 	 =  000102030405060708090A0B0C0D0E0F1011121314151617
+    keywrap_test.go:80: data 	 =  00112233445566778899AABBCCDDEEFF
+    keywrap_test.go:81: exp 	 =  96778B25AE6CA435F92B5B97C050AED2468AB8A17AD84E5D
+    keywrap_test.go:78: Testcase 	 4.3 Wrap 128 bits of Key Data with a 256-bit KEK
+    keywrap_test.go:79: kek 	 =  000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F
+    keywrap_test.go:80: data 	 =  00112233445566778899AABBCCDDEEFF
+    keywrap_test.go:81: exp 	 =  64E8C3F9CE0F5BA263E9777905818A2A93C8191E7D6E8AE7
+    keywrap_test.go:78: Testcase 	 4.4 Wrap 192 bits of Key Data with a 192-bit KEK
+    keywrap_test.go:79: kek 	 =  000102030405060708090A0B0C0D0E0F1011121314151617
+    keywrap_test.go:80: data 	 =  00112233445566778899AABBCCDDEEFF0001020304050607
+    keywrap_test.go:81: exp 	 =  031D33264E15D33268F24EC260743EDCE1C6C7DDEE725A936BA814915C6762D2
+    keywrap_test.go:78: Testcase 	 4.5 Wrap 192 bits of Key Data with a 256-bit KEK
+    keywrap_test.go:79: kek 	 =  000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F
+    keywrap_test.go:80: data 	 =  00112233445566778899AABBCCDDEEFF0001020304050607
+    keywrap_test.go:81: exp 	 =  A8F9BC1612C68B3FF6E6F4FBE30E71E4769C8B80A32CB8958CD5D17D6B254DA1
+    keywrap_test.go:78: Testcase 	 4.6 Wrap 256 bits of Key Data with a 256-bit KEK
+    keywrap_test.go:79: kek 	 =  000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F
+    keywrap_test.go:80: data 	 =  00112233445566778899AABBCCDDEEFF000102030405060708090A0B0C0D0E0F
+    keywrap_test.go:81: exp 	 =  28C9F404C4B810F4CBCCB35CFB87F8263F5786E2D80ED326CBC7F0E71A99F43BFB988B9B7A02DD21
+--- PASS: TestWrapRfc3394Vectors (0.00s)
+PASS
+ok  	github.com/dapr/kit/crypto/aeskw	(cached)
+=== RUN   TestPkcs7
+=== RUN   TestPkcs7/Pads
+=== RUN   TestPkcs7/Unpads
+=== RUN   TestPkcs7/Handles_long
+=== RUN   TestPkcs7/Handles_short
+=== RUN   TestPkcs7/Handles_empty
+=== RUN   TestPkcs7/Handles_block_size
+=== RUN   TestPkcs7/Invalid_length_while_unpadding
+=== RUN   TestPkcs7/Invalid_padding_bytes
+=== RUN   TestPkcs7/Invalid_block_size
+=== RUN   TestPkcs7/Unpad_empty_string
+--- PASS: TestPkcs7 (0.00s)
+    --- PASS: TestPkcs7/Pads (0.00s)
+    --- PASS: TestPkcs7/Unpads (0.00s)
+    --- PASS: TestPkcs7/Handles_long (0.00s)
+    --- PASS: TestPkcs7/Handles_short (0.00s)
+    --- PASS: TestPkcs7/Handles_empty (0.00s)
+    --- PASS: TestPkcs7/Handles_block_size (0.00s)
+    --- PASS: TestPkcs7/Invalid_length_while_unpadding (0.00s)
+    --- PASS: TestPkcs7/Invalid_padding_bytes (0.00s)
+    --- PASS: TestPkcs7/Invalid_block_size (0.00s)
+    --- PASS: TestPkcs7/Unpad_empty_string (0.00s)
+PASS
+ok  	github.com/dapr/kit/crypto/padding	(cached)
+=== RUN   TestEncodePrivateKey
+=== RUN   TestEncodePrivateKey/ECDSA_P-256
+=== RUN   TestEncodePrivateKey/RSA_2048
+=== RUN   TestEncodePrivateKey/Ed25519
+=== RUN   TestEncodePrivateKey/unsupported_type
+--- PASS: TestEncodePrivateKey (0.07s)
+    --- PASS: TestEncodePrivateKey/ECDSA_P-256 (0.00s)
+    --- PASS: TestEncodePrivateKey/RSA_2048 (0.00s)
+    --- PASS: TestEncodePrivateKey/Ed25519 (0.00s)
+    --- PASS: TestEncodePrivateKey/unsupported_type (0.00s)
+PASS
+ok  	github.com/dapr/kit/crypto/pem	(cached)
+=== RUN   Test_renewalTime
+--- PASS: Test_renewalTime (0.00s)
+=== RUN   Test_calculateRenewalTime
+=== RUN   Test_calculateRenewalTime/Certificate_only
+=== RUN   Test_calculateRenewalTime/Certificate_and_JWT,_JWT_earlier
+=== RUN   Test_calculateRenewalTime/Certificate_and_JWT,_Certificate_earlier
+--- PASS: Test_calculateRenewalTime (0.00s)
+    --- PASS: Test_calculateRenewalTime/Certificate_only (0.00s)
+    --- PASS: Test_calculateRenewalTime/Certificate_and_JWT,_JWT_earlier (0.00s)
+    --- PASS: Test_calculateRenewalTime/Certificate_and_JWT,_Certificate_earlier (0.00s)
+=== RUN   Test_fetchIdentity_perAudienceParseError_includesAudience
+--- PASS: Test_fetchIdentity_perAudienceParseError_includesAudience (0.01s)
+=== RUN   Test_fetchIdentity_keyAlgorithm
+=== RUN   Test_fetchIdentity_keyAlgorithm/ECDSA_generates_an_ECDSA_P-256_private_key
+=== RUN   Test_fetchIdentity_keyAlgorithm/nil_defaults_to_Ed25519
+=== RUN   Test_fetchIdentity_keyAlgorithm/explicit_Ed25519
+=== RUN   Test_fetchIdentity_keyAlgorithm/RSA_generates_an_RSA_private_key
+--- PASS: Test_fetchIdentity_keyAlgorithm (0.06s)
+    --- PASS: Test_fetchIdentity_keyAlgorithm/ECDSA_generates_an_ECDSA_P-256_private_key (0.00s)
+    --- PASS: Test_fetchIdentity_keyAlgorithm/nil_defaults_to_Ed25519 (0.00s)
+    --- PASS: Test_fetchIdentity_keyAlgorithm/explicit_Ed25519 (0.00s)
+    --- PASS: Test_fetchIdentity_keyAlgorithm/RSA_generates_an_RSA_private_key (0.05s)
+=== RUN   Test_Run
+=== RUN   Test_Run/should_return_error_multiple_Runs_are_called
+time="2026-08-13T14:11:52.388840636-03:00" level=info msg="Fetching initial identity" instance=peach scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.39020396-03:00" level=info msg="Security is initialized successfully" instance=peach scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.390269668-03:00" level=info msg="Starting workload identity expiry watcher" cert_expires_at="2026-08-13 18:11:52 +0000 UTC" instance=peach renews_at="2026-08-13 17:41:52 +0000 UTC" scope=test type=log ver=unknown
+=== RUN   Test_Run/should_return_error_if_initial_fetch_errors
+time="2026-08-13T14:11:52.3904645-03:00" level=info msg="Fetching initial identity" instance=peach scope=test type=log ver=unknown
+=== RUN   Test_Run/should_renew_certificate_when_it_has_expired
+time="2026-08-13T14:11:52.39529222-03:00" level=info msg="Fetching initial identity" instance=peach scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.396396921-03:00" level=info msg="Security is initialized successfully" instance=peach scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.396427754-03:00" level=info msg="Starting workload identity expiry watcher" cert_expires_at="2026-08-13 18:11:52 +0000 UTC" instance=peach renews_at="2026-08-13 17:41:52 +0000 UTC" scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.396505045-03:00" level=info msg="Renewing workload identity" cert_expires_at="2026-08-13 18:11:52 +0000 UTC" instance=peach scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.397628288-03:00" level=info msg="Successfully renewed workload identity" cert_expires_at="2026-08-13 18:11:52 +0000 UTC" instance=peach renews_at="2026-08-13 17:41:52 +0000 UTC" scope=test type=log ver=unknown
+=== RUN   Test_Run/if_renewal_failed,_should_try_again_in_10_seconds
+time="2026-08-13T14:11:52.401484346-03:00" level=info msg="Fetching initial identity" instance=peach scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.402608298-03:00" level=info msg="Security is initialized successfully" instance=peach scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.402647006-03:00" level=info msg="Starting workload identity expiry watcher" cert_expires_at="2026-08-13 18:11:52 +0000 UTC" instance=peach renews_at="2026-08-13 17:41:52 +0000 UTC" scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.402736297-03:00" level=info msg="Renewing workload identity" cert_expires_at="2026-08-13 18:11:52 +0000 UTC" instance=peach scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.403846748-03:00" level=error msg="Error renewing identity, trying again in 10 seconds" error="this is an error" instance=peach scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.40765064-03:00" level=info msg="Renewing workload identity" cert_expires_at="2026-08-13 18:11:52 +0000 UTC" instance=peach scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.408750008-03:00" level=error msg="Error renewing identity, trying again in 10 seconds" error="this is an error" instance=peach scope=test type=log ver=unknown
+--- PASS: Test_Run (0.02s)
+    --- PASS: Test_Run/should_return_error_multiple_Runs_are_called (0.01s)
+    --- PASS: Test_Run/should_return_error_if_initial_fetch_errors (0.00s)
+    --- PASS: Test_Run/should_renew_certificate_when_it_has_expired (0.01s)
+    --- PASS: Test_Run/if_renewal_failed,_should_try_again_in_10_seconds (0.01s)
+=== RUN   Test_svidSource
+--- PASS: Test_svidSource (0.00s)
+=== RUN   TestGetX509SVID
+=== RUN   TestGetX509SVID/should_return_error_when_no_X509_SVID_available
+=== RUN   TestGetX509SVID/should_return_X509_SVID_when_available
+=== RUN   TestGetX509SVID/does_not_hold_RLock_while_waiting_for_readyCh
+--- PASS: TestGetX509SVID (0.01s)
+    --- PASS: TestGetX509SVID/should_return_error_when_no_X509_SVID_available (0.00s)
+    --- PASS: TestGetX509SVID/should_return_X509_SVID_when_available (0.00s)
+    --- PASS: TestGetX509SVID/does_not_hold_RLock_while_waiting_for_readyCh (0.01s)
+=== RUN   TestFetchJWTSVID
+=== RUN   TestFetchJWTSVID/should_return_error_when_audience_is_empty
+=== RUN   TestFetchJWTSVID/should_return_error_when_no_JWT_SVID_available
+=== RUN   TestFetchJWTSVID/should_return_error_when_audience_doesn't_match
+=== RUN   TestFetchJWTSVID/PER:_should_return_error_when_audience_doesn't_match
+=== RUN   TestFetchJWTSVID/should_return_JWT_SVID_when_audience_matches
+=== RUN   TestFetchJWTSVID/PER:_should_return_JWT_SVID_when_audience_matches
+=== RUN   TestFetchJWTSVID/does_not_hold_RLock_while_waiting_for_readyCh
+=== RUN   TestFetchJWTSVID/should_wait_for_readyCh_before_checking_SVID
+--- PASS: TestFetchJWTSVID (0.11s)
+    --- PASS: TestFetchJWTSVID/should_return_error_when_audience_is_empty (0.00s)
+    --- PASS: TestFetchJWTSVID/should_return_error_when_no_JWT_SVID_available (0.00s)
+    --- PASS: TestFetchJWTSVID/should_return_error_when_audience_doesn't_match (0.00s)
+    --- PASS: TestFetchJWTSVID/PER:_should_return_error_when_audience_doesn't_match (0.00s)
+    --- PASS: TestFetchJWTSVID/should_return_JWT_SVID_when_audience_matches (0.00s)
+    --- PASS: TestFetchJWTSVID/PER:_should_return_JWT_SVID_when_audience_matches (0.00s)
+    --- PASS: TestFetchJWTSVID/does_not_hold_RLock_while_waiting_for_readyCh (0.01s)
+    --- PASS: TestFetchJWTSVID/should_wait_for_readyCh_before_checking_SVID (0.10s)
+PASS
+ok  	github.com/dapr/kit/crypto/spiffe	(cached)
+=== RUN   TestWithX509FromX509
+--- PASS: TestWithX509FromX509 (0.00s)
+=== RUN   TestWithJWTFromJWT
+--- PASS: TestWithJWTFromJWT (0.00s)
+=== RUN   TestWithFrom
+--- PASS: TestWithFrom (0.00s)
+PASS
+ok  	github.com/dapr/kit/crypto/spiffe/context	(cached)
+=== RUN   TestNew
+=== PAUSE TestNew
+=== RUN   TestSign_NilSVIDSource
+=== PAUSE TestSign_NilSVIDSource
+=== RUN   TestSign_SVIDSourceError
+=== PAUSE TestSign_SVIDSourceError
+=== RUN   TestSign_NoCertificates
+=== PAUSE TestSign_NoCertificates
+=== RUN   TestSignAndVerify_Ed25519
+=== PAUSE TestSignAndVerify_Ed25519
+=== RUN   TestSignAndVerify_ECDSA
+=== PAUSE TestSignAndVerify_ECDSA
+=== RUN   TestSignAndVerify_RSA
+=== PAUSE TestSignAndVerify_RSA
+=== RUN   TestVerify_TamperedDigest
+=== PAUSE TestVerify_TamperedDigest
+=== RUN   TestVerify_TamperedSignature
+=== PAUSE TestVerify_TamperedSignature
+=== RUN   TestVerify_InvalidCertChain
+=== PAUSE TestVerify_InvalidCertChain
+=== RUN   TestVerify_EmptyCertChain
+=== PAUSE TestVerify_EmptyCertChain
+=== RUN   TestSign_ReturnsCertChainDER
+=== PAUSE TestSign_ReturnsCertChainDER
+=== RUN   TestCertChainDER_NilSVIDSource
+=== PAUSE TestCertChainDER_NilSVIDSource
+=== RUN   TestCertChainDER_SVIDSourceError
+=== PAUSE TestCertChainDER_SVIDSourceError
+=== RUN   TestCertChainDER_NoCertificates
+=== PAUSE TestCertChainDER_NoCertificates
+=== RUN   TestCertChainDER_MatchesSignChain
+=== PAUSE TestCertChainDER_MatchesSignChain
+=== RUN   TestVerifyCertChainOfTrust_SelfSigned
+=== PAUSE TestVerifyCertChainOfTrust_SelfSigned
+=== RUN   TestVerifyCertChainOfTrust_CAChain
+=== PAUSE TestVerifyCertChainOfTrust_CAChain
+=== RUN   TestVerifyCertChainOfTrust_IntermediateChain
+=== PAUSE TestVerifyCertChainOfTrust_IntermediateChain
+=== RUN   TestVerifyCertChainOfTrust_WrongTrustAnchor
+=== PAUSE TestVerifyCertChainOfTrust_WrongTrustAnchor
+=== RUN   TestVerifyCertChainOfTrust_EmptyChain
+=== PAUSE TestVerifyCertChainOfTrust_EmptyChain
+=== RUN   TestVerifyCertChainOfTrust_InvalidDER
+=== PAUSE TestVerifyCertChainOfTrust_InvalidDER
+=== RUN   TestSignAndVerify_RoundTrip_AllKeyTypes
+=== PAUSE TestSignAndVerify_RoundTrip_AllKeyTypes
+=== CONT  TestNew
+=== CONT  TestVerifyCertChainOfTrust_IntermediateChain
+=== CONT  TestSign_SVIDSourceError
+=== CONT  TestVerify_TamperedSignature
+=== RUN   TestNew/nil_svidSource_for_verify-only
+--- PASS: TestSign_SVIDSourceError (0.00s)
+=== PAUSE TestNew/nil_svidSource_for_verify-only
+=== CONT  TestCertChainDER_NilSVIDSource
+=== RUN   TestNew/nil_trustAnchors_for_sign-only
+=== PAUSE TestNew/nil_trustAnchors_for_sign-only
+--- PASS: TestCertChainDER_NilSVIDSource (0.00s)
+=== RUN   TestNew/both_present
+=== CONT  TestSignAndVerify_ECDSA
+=== CONT  TestSign_NoCertificates
+=== CONT  TestSign_NilSVIDSource
+=== CONT  TestSignAndVerify_Ed25519
+=== CONT  TestSignAndVerify_RoundTrip_AllKeyTypes
+=== CONT  TestCertChainDER_NoCertificates
+=== RUN   TestSignAndVerify_RoundTrip_AllKeyTypes/ed25519
+=== CONT  TestVerify_TamperedDigest
+=== PAUSE TestSignAndVerify_RoundTrip_AllKeyTypes/ed25519
+=== CONT  TestVerifyCertChainOfTrust_EmptyChain
+=== RUN   TestSignAndVerify_RoundTrip_AllKeyTypes/ecdsa
+=== CONT  TestSign_ReturnsCertChainDER
+=== PAUSE TestSignAndVerify_RoundTrip_AllKeyTypes/ecdsa
+=== RUN   TestSignAndVerify_RoundTrip_AllKeyTypes/rsa
+=== CONT  TestVerify_EmptyCertChain
+=== PAUSE TestSignAndVerify_RoundTrip_AllKeyTypes/rsa
+=== CONT  TestCertChainDER_MatchesSignChain
+=== CONT  TestVerifyCertChainOfTrust_SelfSigned
+=== CONT  TestVerifyCertChainOfTrust_CAChain
+=== CONT  TestSignAndVerify_RSA
+=== CONT  TestVerifyCertChainOfTrust_InvalidDER
+=== CONT  TestVerifyCertChainOfTrust_WrongTrustAnchor
+=== CONT  TestSignAndVerify_RoundTrip_AllKeyTypes/ecdsa
+=== CONT  TestVerify_InvalidCertChain
+=== PAUSE TestNew/both_present
+--- PASS: TestSign_NilSVIDSource (0.00s)
+--- PASS: TestVerifyCertChainOfTrust_EmptyChain (0.00s)
+=== CONT  TestNew/nil_svidSource_for_verify-only
+=== CONT  TestCertChainDER_SVIDSourceError
+--- PASS: TestCertChainDER_SVIDSourceError (0.00s)
+=== CONT  TestSignAndVerify_RoundTrip_AllKeyTypes/ed25519
+=== CONT  TestSignAndVerify_RoundTrip_AllKeyTypes/rsa
+=== CONT  TestNew/nil_trustAnchors_for_sign-only
+--- PASS: TestVerify_EmptyCertChain (0.00s)
+--- PASS: TestVerifyCertChainOfTrust_InvalidDER (0.00s)
+--- PASS: TestSignAndVerify_ECDSA (0.00s)
+--- PASS: TestVerify_InvalidCertChain (0.00s)
+=== CONT  TestNew/both_present
+--- PASS: TestSign_NoCertificates (0.00s)
+--- PASS: TestCertChainDER_NoCertificates (0.00s)
+--- PASS: TestVerifyCertChainOfTrust_SelfSigned (0.01s)
+--- PASS: TestCertChainDER_MatchesSignChain (0.01s)
+--- PASS: TestNew (0.00s)
+    --- PASS: TestNew/nil_svidSource_for_verify-only (0.00s)
+    --- PASS: TestNew/nil_trustAnchors_for_sign-only (0.01s)
+    --- PASS: TestNew/both_present (0.01s)
+--- PASS: TestVerify_TamperedSignature (0.01s)
+--- PASS: TestSignAndVerify_Ed25519 (0.01s)
+--- PASS: TestSign_ReturnsCertChainDER (0.01s)
+--- PASS: TestVerifyCertChainOfTrust_CAChain (0.01s)
+--- PASS: TestVerifyCertChainOfTrust_IntermediateChain (0.01s)
+--- PASS: TestVerify_TamperedDigest (0.01s)
+--- PASS: TestVerifyCertChainOfTrust_WrongTrustAnchor (0.01s)
+--- PASS: TestSignAndVerify_RoundTrip_AllKeyTypes (0.00s)
+    --- PASS: TestSignAndVerify_RoundTrip_AllKeyTypes/ecdsa (0.00s)
+    --- PASS: TestSignAndVerify_RoundTrip_AllKeyTypes/ed25519 (0.01s)
+    --- PASS: TestSignAndVerify_RoundTrip_AllKeyTypes/rsa (0.02s)
+--- PASS: TestSignAndVerify_RSA (0.05s)
+PASS
+ok  	github.com/dapr/kit/crypto/spiffe/signer	(cached)
+?   	github.com/dapr/kit/crypto/spiffe/trustanchors	[no test files]
+?   	github.com/dapr/kit/crypto/spiffe/trustanchors/fake	[no test files]
+=== RUN   TestFile_Run
+=== RUN   TestFile_Run/if_Run_multiple_times,_expect_error
+=== RUN   TestFile_Run/if_file_is_not_found_and_context_cancelled,_should_return_ctx.Err
+=== RUN   TestFile_Run/if_file_found_but_is_empty,_should_return_error
+time="2026-08-13T14:11:52.452654976-03:00" level=info msg="Trust anchors file found" instance=peach path="/tmp/TestFile_Runif_file_found_but_is_empty,_should_return_error999364383/001/ca.crt" scope=test type=log ver=unknown
+=== RUN   TestFile_Run/if_file_found_but_is_only_garbage_data,_expect_error
+time="2026-08-13T14:11:52.453283722-03:00" level=info msg="Trust anchors file found" instance=peach path="/tmp/TestFile_Runif_file_found_but_is_only_garbage_data,_expect_erro3835657605/001/ca.crt" scope=test type=log ver=unknown
+=== RUN   TestFile_Run/if_file_found_but_is_only_garbage_data_in_root,_expect_error
+time="2026-08-13T14:11:52.462915619-03:00" level=info msg="Trust anchors file found" instance=peach path="/tmp/TestFile_Runif_file_found_but_is_only_garbage_data_in_root,_exp2260066039/001/ca.crt" scope=test type=log ver=unknown
+=== RUN   TestFile_Run/single_root_should_be_correctly_parsed_from_file
+time="2026-08-13T14:11:52.466902343-03:00" level=info msg="Trust anchors file found" instance=peach path=/tmp/TestFile_Runsingle_root_should_be_correctly_parsed_from_file73061058/001/ca.crt scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.467055092-03:00" level=info msg="Watching trust anchors file for changes" instance=peach path=/tmp/TestFile_Runsingle_root_should_be_correctly_parsed_from_file73061058/001/ca.crt scope=test type=log ver=unknown
+=== RUN   TestFile_Run/garbage_data_outside_of_root_should_be_ignored
+time="2026-08-13T14:11:52.470935859-03:00" level=info msg="Trust anchors file found" instance=peach path=/tmp/TestFile_Rungarbage_data_outside_of_root_should_be_ignored88681473/001/ca.crt scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.471067317-03:00" level=info msg="Watching trust anchors file for changes" instance=peach path=/tmp/TestFile_Rungarbage_data_outside_of_root_should_be_ignored88681473/001/ca.crt scope=test type=log ver=unknown
+=== RUN   TestFile_Run/multiple_roots_should_be_parsed
+time="2026-08-13T14:11:52.478230021-03:00" level=info msg="Trust anchors file found" instance=peach path=/tmp/TestFile_Runmultiple_roots_should_be_parsed1481555243/001/ca.crt scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.478393603-03:00" level=info msg="Watching trust anchors file for changes" instance=peach path=/tmp/TestFile_Runmultiple_roots_should_be_parsed1481555243/001/ca.crt scope=test type=log ver=unknown
+=== RUN   TestFile_Run/writing_a_bad_root_PEM_file_should_make_Run_return_error
+time="2026-08-13T14:11:52.486086595-03:00" level=info msg="Trust anchors file found" instance=peach path=/tmp/TestFile_Runwriting_a_bad_root_PEM_file_should_make_Run_return_4198070115/001/ca.crt scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.486257636-03:00" level=info msg="Watching trust anchors file for changes" instance=peach path=/tmp/TestFile_Runwriting_a_bad_root_PEM_file_should_make_Run_return_4198070115/001/ca.crt scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.492096098-03:00" level=info msg="Trust anchors file changed, reloading trust anchors" instance=peach scope=test type=log ver=unknown
+--- PASS: TestFile_Run (0.06s)
+    --- PASS: TestFile_Run/if_Run_multiple_times,_expect_error (0.00s)
+    --- PASS: TestFile_Run/if_file_is_not_found_and_context_cancelled,_should_return_ctx.Err (0.00s)
+    --- PASS: TestFile_Run/if_file_found_but_is_empty,_should_return_error (0.00s)
+    --- PASS: TestFile_Run/if_file_found_but_is_only_garbage_data,_expect_error (0.00s)
+    --- PASS: TestFile_Run/if_file_found_but_is_only_garbage_data_in_root,_expect_error (0.01s)
+    --- PASS: TestFile_Run/single_root_should_be_correctly_parsed_from_file (0.00s)
+    --- PASS: TestFile_Run/garbage_data_outside_of_root_should_be_ignored (0.00s)
+    --- PASS: TestFile_Run/multiple_roots_should_be_parsed (0.01s)
+    --- PASS: TestFile_Run/writing_a_bad_root_PEM_file_should_make_Run_return_error (0.03s)
+=== RUN   TestFile_GetX509BundleForTrustDomain
+=== RUN   TestFile_GetX509BundleForTrustDomain/Should_return_full_PEM_regardless_given_trust_domain
+time="2026-08-13T14:11:52.510960352-03:00" level=info msg="Trust anchors file found" instance=peach path=/tmp/TestFile_GetX509BundleForTrustDomainShould_return_full_PEM_rega4138920033/001/ca.crt scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.511114393-03:00" level=info msg="Watching trust anchors file for changes" instance=peach path=/tmp/TestFile_GetX509BundleForTrustDomainShould_return_full_PEM_rega4138920033/001/ca.crt scope=test type=log ver=unknown
+--- PASS: TestFile_GetX509BundleForTrustDomain (0.02s)
+    --- PASS: TestFile_GetX509BundleForTrustDomain/Should_return_full_PEM_regardless_given_trust_domain (0.02s)
+=== RUN   TestFile_Watch
+=== RUN   TestFile_Watch/should_return_when_Run_context_has_been_cancelled
+time="2026-08-13T14:11:52.530123646-03:00" level=info msg="Trust anchors file found" instance=peach path=/tmp/TestFile_Watchshould_return_when_Run_context_has_been_cancelled78078772/001/ca.crt scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.530256645-03:00" level=info msg="Watching trust anchors file for changes" instance=peach path=/tmp/TestFile_Watchshould_return_when_Run_context_has_been_cancelled78078772/001/ca.crt scope=test type=log ver=unknown
+=== RUN   TestFile_Watch/should_return_when_given_context_has_been_cancelled
+time="2026-08-13T14:11:52.559190043-03:00" level=info msg="Trust anchors file found" instance=peach path=/tmp/TestFile_Watchshould_return_when_given_context_has_been_cancell3422168195/001/ca.crt scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.559340292-03:00" level=info msg="Watching trust anchors file for changes" instance=peach path=/tmp/TestFile_Watchshould_return_when_given_context_has_been_cancell3422168195/001/ca.crt scope=test type=log ver=unknown
+=== RUN   TestFile_Watch/should_update_Watch_subscribers_when_root_PEM_has_been_changed
+time="2026-08-13T14:11:52.59858729-03:00" level=info msg="Trust anchors file found" instance=peach path=/tmp/TestFile_Watchshould_update_Watch_subscribers_when_root_PEM_has705739673/001/ca.crt scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.598721081-03:00" level=info msg="Watching trust anchors file for changes" instance=peach path=/tmp/TestFile_Watchshould_update_Watch_subscribers_when_root_PEM_has705739673/001/ca.crt scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.61609122-03:00" level=info msg="Trust anchors file changed, reloading trust anchors" instance=peach scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.622380054-03:00" level=info msg="Trust anchors file changed, reloading trust anchors" instance=peach scope=test type=log ver=unknown
+--- PASS: TestFile_Watch (0.11s)
+    --- PASS: TestFile_Watch/should_return_when_Run_context_has_been_cancelled (0.03s)
+    --- PASS: TestFile_Watch/should_return_when_given_context_has_been_cancelled (0.03s)
+    --- PASS: TestFile_Watch/should_update_Watch_subscribers_when_root_PEM_has_been_changed (0.05s)
+=== RUN   TestFile_CurrentTrustAnchors
+=== RUN   TestFile_CurrentTrustAnchors/returns_trust_anchors_as_they_change
+time="2026-08-13T14:11:52.649222924-03:00" level=info msg="Trust anchors file found" instance=peach path=/tmp/TestFile_CurrentTrustAnchorsreturns_trust_anchors_as_they_chang1088260305/001/ca.crt scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.649376673-03:00" level=info msg="Watching trust anchors file for changes" instance=peach path=/tmp/TestFile_CurrentTrustAnchorsreturns_trust_anchors_as_they_chang1088260305/001/ca.crt scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.665537361-03:00" level=info msg="Trust anchors file changed, reloading trust anchors" instance=peach scope=test type=log ver=unknown
+time="2026-08-13T14:11:52.678477069-03:00" level=info msg="Trust anchors file changed, reloading trust anchors" instance=peach scope=test type=log ver=unknown
+--- PASS: TestFile_CurrentTrustAnchors (0.06s)
+    --- PASS: TestFile_CurrentTrustAnchors/returns_trust_anchors_as_they_change (0.06s)
+PASS
+ok  	github.com/dapr/kit/crypto/spiffe/trustanchors/file	(cached)
+?   	github.com/dapr/kit/crypto/spiffe/trustanchors/multi	[no test files]
+=== RUN   TestFromStatic
+=== RUN   TestFromStatic/empty_root_should_return_error
+=== RUN   TestFromStatic/garbage_data_should_return_error
+=== RUN   TestFromStatic/just_garbage_data_should_return_error
+=== RUN   TestFromStatic/garbage_data_in_root_should_return_error
+=== RUN   TestFromStatic/single_root_should_be_correctly_parsed
+=== RUN   TestFromStatic/garbage_data_outside_of_root_should_be_ignored
+=== RUN   TestFromStatic/multiple_roots_should_be_correctly_parsed
+--- PASS: TestFromStatic (0.02s)
+    --- PASS: TestFromStatic/empty_root_should_return_error (0.00s)
+    --- PASS: TestFromStatic/garbage_data_should_return_error (0.00s)
+    --- PASS: TestFromStatic/just_garbage_data_should_return_error (0.00s)
+    --- PASS: TestFromStatic/garbage_data_in_root_should_return_error (0.01s)
+    --- PASS: TestFromStatic/single_root_should_be_correctly_parsed (0.00s)
+    --- PASS: TestFromStatic/garbage_data_outside_of_root_should_be_ignored (0.00s)
+    --- PASS: TestFromStatic/multiple_roots_should_be_correctly_parsed (0.01s)
+=== RUN   TestStatic_GetX509BundleForTrustDomain
+=== RUN   TestStatic_GetX509BundleForTrustDomain/Should_return_full_PEM_regardless_given_trust_domain
+--- PASS: TestStatic_GetX509BundleForTrustDomain (0.00s)
+    --- PASS: TestStatic_GetX509BundleForTrustDomain/Should_return_full_PEM_regardless_given_trust_domain (0.00s)
+=== RUN   TestStatic_Run
+=== RUN   TestStatic_Run/Run_multiple_times_should_return_error
+--- PASS: TestStatic_Run (0.00s)
+    --- PASS: TestStatic_Run/Run_multiple_times_should_return_error (0.00s)
+=== RUN   TestStatic_Watch
+=== RUN   TestStatic_Watch/should_return_when_context_is_cancelled
+=== RUN   TestStatic_Watch/should_return_when_cancel_is_closed_via_closed_Run
+--- PASS: TestStatic_Watch (0.01s)
+    --- PASS: TestStatic_Watch/should_return_when_context_is_cancelled (0.00s)
+    --- PASS: TestStatic_Watch/should_return_when_cancel_is_closed_via_closed_Run (0.00s)
+PASS
+ok  	github.com/dapr/kit/crypto/spiffe/trustanchors/static	(cached)
+?   	github.com/dapr/kit/crypto/test	[no test files]
+=== RUN   TestGetIntWithRangeWrongValues
+=== RUN   TestGetIntWithRangeWrongValues/should_error_if_value_is_not_a_valid_time.Duration
+=== RUN   TestGetIntWithRangeWrongValues/should_error_if_value_is_lower_than_1s
+=== RUN   TestGetIntWithRangeWrongValues/should_error_if_value_is_higher_than_10s
+--- PASS: TestGetIntWithRangeWrongValues (0.00s)
+    --- PASS: TestGetIntWithRangeWrongValues/should_error_if_value_is_not_a_valid_time.Duration (0.00s)
+    --- PASS: TestGetIntWithRangeWrongValues/should_error_if_value_is_lower_than_1s (0.00s)
+    --- PASS: TestGetIntWithRangeWrongValues/should_error_if_value_is_higher_than_10s (0.00s)
+=== RUN   TestGetEnvDurationWithRangeValidValues
+=== RUN   TestGetEnvDurationWithRangeValidValues/should_return_default_value_if_env_variable_is_not_set
+=== RUN   TestGetEnvDurationWithRangeValidValues/should_return_result_is_env_variable_value_is_valid
+--- PASS: TestGetEnvDurationWithRangeValidValues (0.00s)
+    --- PASS: TestGetEnvDurationWithRangeValidValues/should_return_default_value_if_env_variable_is_not_set (0.00s)
+    --- PASS: TestGetEnvDurationWithRangeValidValues/should_return_result_is_env_variable_value_is_valid (0.00s)
+PASS
+ok  	github.com/dapr/kit/env	(cached)
+=== RUN   TestError_HTTPStatusCode
+--- PASS: TestError_HTTPStatusCode (0.00s)
+=== RUN   TestError_GrpcStatusCode
+--- PASS: TestError_GrpcStatusCode (0.00s)
+=== RUN   TestError_AddDetails
+--- PASS: TestError_AddDetails (0.00s)
+=== RUN   TestError_Error
+=== RUN   TestError_Error/Has_GrpcCode_And_Message
+=== RUN   TestError_Error/Has_Only_Message
+=== RUN   TestError_Error/Has_Only_GrpcCode
+--- PASS: TestError_Error (0.00s)
+    --- PASS: TestError_Error/Has_GrpcCode_And_Message (0.00s)
+    --- PASS: TestError_Error/Has_Only_Message (0.00s)
+    --- PASS: TestError_Error/Has_Only_GrpcCode (0.00s)
+=== RUN   TestErrorBuilder_WithErrorInfo
+--- PASS: TestErrorBuilder_WithErrorInfo (0.00s)
+=== RUN   TestErrorBuilder_WithDetails
+=== RUN   TestErrorBuilder_WithDetails/Has_Multiple_Details
+--- PASS: TestErrorBuilder_WithDetails (0.00s)
+    --- PASS: TestErrorBuilder_WithDetails/Has_Multiple_Details (0.00s)
+=== RUN   TestWithErrorHelp
+--- PASS: TestWithErrorHelp (0.00s)
+=== RUN   TestWithErrorFieldViolation
+--- PASS: TestWithErrorFieldViolation (0.00s)
+=== RUN   TestError_JSONErrorValue
+=== RUN   TestError_JSONErrorValue/No_Details
+=== RUN   TestError_JSONErrorValue/With_Multiple_Details
+=== RUN   TestError_JSONErrorValue/ErrorInfo
+=== RUN   TestError_JSONErrorValue/RetryInfo
+=== RUN   TestError_JSONErrorValue/DebugInfo
+=== RUN   TestError_JSONErrorValue/QuotaFailure
+=== RUN   TestError_JSONErrorValue/PreconditionFailure
+=== RUN   TestError_JSONErrorValue/BadRequest
+=== RUN   TestError_JSONErrorValue/RequestInfo
+=== RUN   TestError_JSONErrorValue/ResourceInfo
+=== RUN   TestError_JSONErrorValue/Help
+=== RUN   TestError_JSONErrorValue/LocalizedMessage
+=== RUN   TestError_JSONErrorValue/QuotaFailure_Violation
+=== RUN   TestError_JSONErrorValue/PreconditionFailure_Violation
+=== RUN   TestError_JSONErrorValue/BadRequest_FieldViolation
+=== RUN   TestError_JSONErrorValue/Help_Link
+=== RUN   TestError_JSONErrorValue/Unknown_Detail_Type
+--- PASS: TestError_JSONErrorValue (0.01s)
+    --- PASS: TestError_JSONErrorValue/No_Details (0.00s)
+    --- PASS: TestError_JSONErrorValue/With_Multiple_Details (0.00s)
+    --- PASS: TestError_JSONErrorValue/ErrorInfo (0.00s)
+    --- PASS: TestError_JSONErrorValue/RetryInfo (0.00s)
+    --- PASS: TestError_JSONErrorValue/DebugInfo (0.00s)
+    --- PASS: TestError_JSONErrorValue/QuotaFailure (0.00s)
+    --- PASS: TestError_JSONErrorValue/PreconditionFailure (0.00s)
+    --- PASS: TestError_JSONErrorValue/BadRequest (0.00s)
+    --- PASS: TestError_JSONErrorValue/RequestInfo (0.00s)
+    --- PASS: TestError_JSONErrorValue/ResourceInfo (0.00s)
+    --- PASS: TestError_JSONErrorValue/Help (0.00s)
+    --- PASS: TestError_JSONErrorValue/LocalizedMessage (0.00s)
+    --- PASS: TestError_JSONErrorValue/QuotaFailure_Violation (0.00s)
+    --- PASS: TestError_JSONErrorValue/PreconditionFailure_Violation (0.00s)
+    --- PASS: TestError_JSONErrorValue/BadRequest_FieldViolation (0.00s)
+    --- PASS: TestError_JSONErrorValue/Help_Link (0.00s)
+    --- PASS: TestError_JSONErrorValue/Unknown_Detail_Type (0.00s)
+=== RUN   TestError_GRPCStatus
+=== RUN   TestError_GRPCStatus/No_Details
+=== RUN   TestError_GRPCStatus/With_Details
+--- PASS: TestError_GRPCStatus (0.00s)
+    --- PASS: TestError_GRPCStatus/No_Details (0.00s)
+    --- PASS: TestError_GRPCStatus/With_Details (0.00s)
+=== RUN   TestErrorBuilder_Build
+=== RUN   TestErrorBuilder_Build/With_ErrorInfo
+=== RUN   TestErrorBuilder_Build/With_ErrorInfo_(legacy_tag_absent)
+=== RUN   TestErrorBuilder_Build/Without_ErrorInfo
+time="2026-08-13T14:11:53.178011493-03:00" level=error msg="Must include ErrorInfo in error details" error="api error: code = ResourceExhausted desc = Test Msg" instance=peach scope=dapr.kit type=log ver=unknown
+--- PASS: TestErrorBuilder_Build (0.00s)
+    --- PASS: TestErrorBuilder_Build/With_ErrorInfo (0.00s)
+    --- PASS: TestErrorBuilder_Build/With_ErrorInfo_(legacy_tag_absent) (0.00s)
+    --- PASS: TestErrorBuilder_Build/Without_ErrorInfo (0.00s)
+=== RUN   TestEnsureAllErrDetailsCovered
+--- PASS: TestEnsureAllErrDetailsCovered (0.27s)
+=== RUN   TestFromError
+--- PASS: TestFromError (0.00s)
+PASS
+ok  	github.com/dapr/kit/errors	(cached)
+=== RUN   TestNew
+=== PAUSE TestNew
+=== RUN   TestWithClock
+--- PASS: TestWithClock (0.00s)
+=== RUN   TestSubscribe
+=== PAUSE TestSubscribe
+=== RUN   TestBatch
+=== PAUSE TestBatch
+=== RUN   TestClose
+=== PAUSE TestClose
+=== RUN   TestSubscribeAfterClose
+=== PAUSE TestSubscribeAfterClose
+=== CONT  TestNew
+--- PASS: TestNew (0.00s)
+=== CONT  TestBatch
+=== CONT  TestSubscribeAfterClose
+=== CONT  TestClose
+=== CONT  TestSubscribe
+--- PASS: TestSubscribeAfterClose (0.00s)
+--- PASS: TestSubscribe (0.00s)
+--- PASS: TestClose (0.00s)
+=== RUN   TestBatch/ensure_items_are_received_in_order_with_latest_value
+--- PASS: TestBatch (0.10s)
+    --- PASS: TestBatch/ensure_items_are_received_in_order_with_latest_value (0.00s)
+PASS
+ok  	github.com/dapr/kit/events/batcher	(cached)
+?   	github.com/dapr/kit/events/broadcaster	[no test files]
+=== RUN   TestLoop_EnqueueAndRunOrder_Unbounded
+--- PASS: TestLoop_EnqueueAndRunOrder_Unbounded (0.00s)
+=== RUN   TestLoop_CloseTwiceIsSafe
+--- PASS: TestLoop_CloseTwiceIsSafe (0.00s)
+=== RUN   TestLoop_Reset
+--- PASS: TestLoop_Reset (0.00s)
+=== RUN   TestLoop_EnqueueAfterCloseIsDropped
+--- PASS: TestLoop_EnqueueAfterCloseIsDropped (0.00s)
+PASS
+ok  	github.com/dapr/kit/events/loop	(cached)
+=== RUN   Test_Fake
+--- PASS: Test_Fake (0.00s)
+PASS
+ok  	github.com/dapr/kit/events/loop/fake	(cached)
+=== RUN   TestProcessor
+=== RUN   TestProcessor/enqueue_items
+    processor_test.go:79: Waiting for signal 1
+    processor_test.go:79: Waiting for signal 2
+    processor_test.go:79: Waiting for signal 3
+    processor_test.go:79: Waiting for signal 4
+    processor_test.go:79: Waiting for signal 5
+=== RUN   TestProcessor/enqueue_item_to_be_executed_right_away
+=== RUN   TestProcessor/enqueue_item_at_the_front_of_the_queue
+    processor_test.go:108: Waiting for signal 1
+    processor_test.go:127: Waiting for signal 99
+    processor_test.go:127: Waiting for signal 2
+    processor_test.go:127: Waiting for signal 3
+    processor_test.go:127: Waiting for signal 4
+=== RUN   TestProcessor/dequeue_item
+    processor_test.go:167: Waiting for signal 1
+    processor_test.go:161: Should not receive signal 2
+    processor_test.go:167: Waiting for signal 3
+    processor_test.go:161: Should not receive signal 4
+    processor_test.go:167: Waiting for signal 5
+=== RUN   TestProcessor/dequeue_item_from_the_front_of_the_queue
+    processor_test.go:199: Waiting for signal 1
+    processor_test.go:192: Should not receive signal 2
+    processor_test.go:199: Waiting for signal 3
+    processor_test.go:199: Waiting for signal 4
+    processor_test.go:192: Should not receive signal 5
+    processor_test.go:199: Waiting for signal 6
+=== RUN   TestProcessor/replace_item
+    processor_test.go:236: Waiting for signal 1
+    processor_test.go:236: Waiting for signal 2
+    processor_test.go:236: Waiting for signal 3
+    processor_test.go:224: Should not receive signal 4 now
+    processor_test.go:236: Waiting for signal 5
+    processor_test.go:236: Waiting for signal 4
+=== RUN   TestProcessor/replace_item_at_the_front_of_the_queue
+    processor_test.go:272: Waiting for signal 1
+    processor_test.go:259: Should not receive signal 2 now
+    processor_test.go:272: Waiting for signal 3
+    processor_test.go:272: Waiting for signal 4
+    processor_test.go:272: Waiting for signal 5
+    processor_test.go:272: Waiting for signal 2
+=== RUN   TestProcessor/enqueue_multiple_items_concurrently_that_to_be_executed_randomly
+=== RUN   TestProcessor/stop_processor
+--- PASS: TestProcessor (5.49s)
+    --- PASS: TestProcessor/enqueue_items (0.00s)
+    --- PASS: TestProcessor/enqueue_item_to_be_executed_right_away (0.00s)
+    --- PASS: TestProcessor/enqueue_item_at_the_front_of_the_queue (0.10s)
+    --- PASS: TestProcessor/dequeue_item (1.51s)
+    --- PASS: TestProcessor/dequeue_item_from_the_front_of_the_queue (1.61s)
+    --- PASS: TestProcessor/replace_item (0.50s)
+    --- PASS: TestProcessor/replace_item_at_the_front_of_the_queue (1.11s)
+    --- PASS: TestProcessor/enqueue_multiple_items_concurrently_that_to_be_executed_randomly (0.05s)
+    --- PASS: TestProcessor/stop_processor (0.60s)
+=== RUN   TestClose
+--- PASS: TestClose (0.21s)
+=== RUN   TestQueue
+--- PASS: TestQueue (0.00s)
+=== RUN   TestQueueSkipDuplicates
+--- PASS: TestQueueSkipDuplicates (0.00s)
+=== RUN   TestQueueReplaceDuplicates
+--- PASS: TestQueueReplaceDuplicates (0.00s)
+=== RUN   TestAddToQueue
+--- PASS: TestAddToQueue (0.00s)
+=== RUN   TestRemoveFromQueue
+--- PASS: TestRemoveFromQueue (0.00s)
+=== RUN   TestUpdateInQueue
+--- PASS: TestUpdateInQueue (0.00s)
+=== RUN   TestQueuePeek
+--- PASS: TestQueuePeek (0.00s)
+=== RUN   ExampleProcessor
+--- PASS: ExampleProcessor (0.50s)
+PASS
+ok  	github.com/dapr/kit/events/queue	(cached)
+FAIL	github.com/dapr/kit/events/ratelimiting [build failed]
+=== RUN   TestFSWatcher
+=== RUN   TestFSWatcher/creating_fswatcher_with_no_directory_should_not_error
+=== RUN   TestFSWatcher/running_Run_twice_should_error
+=== RUN   TestFSWatcher/creating_fswatcher_with_non-existent_directory_should_error
+=== RUN   TestFSWatcher/should_fire_event_when_event_occurs_on_target_file
+=== RUN   TestFSWatcher/should_fire_2_events_when_event_occurs_on_2_file_target
+=== RUN   TestFSWatcher/should_fire_2_events_when_event_occurs_on_2_files_inside_target_directory
+=== RUN   TestFSWatcher/should_fire_2_events_when_event_occurs_on_2_target_directories
+=== RUN   TestFSWatcher/should_debounce_burst_of_writes_on_same_file
+--- PASS: TestFSWatcher (0.68s)
+    --- PASS: TestFSWatcher/creating_fswatcher_with_no_directory_should_not_error (0.01s)
+    --- PASS: TestFSWatcher/running_Run_twice_should_error (0.00s)
+    --- PASS: TestFSWatcher/creating_fswatcher_with_non-existent_directory_should_error (0.00s)
+    --- PASS: TestFSWatcher/should_fire_event_when_event_occurs_on_target_file (0.03s)
+    --- PASS: TestFSWatcher/should_fire_2_events_when_event_occurs_on_2_file_target (0.03s)
+    --- PASS: TestFSWatcher/should_fire_2_events_when_event_occurs_on_2_files_inside_target_directory (0.03s)
+    --- PASS: TestFSWatcher/should_fire_2_events_when_event_occurs_on_2_target_directories (0.04s)
+    --- PASS: TestFSWatcher/should_debounce_burst_of_writes_on_same_file (0.53s)
+PASS
+ok  	github.com/dapr/kit/fswatcher	(cached)
+=== RUN   TestHTTPStatusFromCode
+=== RUN   TestHTTPStatusFromCode/codes.OK-http.StatusOK
+=== RUN   TestHTTPStatusFromCode/codes.Canceled-http.StatusRequestTimeout
+=== RUN   TestHTTPStatusFromCode/codes.Unknown-http.StatusInternalServerError
+=== RUN   TestHTTPStatusFromCode/codes.InvalidArgument-http.StatusBadRequest
+=== RUN   TestHTTPStatusFromCode/codes.DeadlineExceeded-http.StatusGatewayTimeout
+=== RUN   TestHTTPStatusFromCode/codes.NotFound-http.StatusNotFound
+=== RUN   TestHTTPStatusFromCode/codes.AlreadyExists-http.StatusConflict
+=== RUN   TestHTTPStatusFromCode/codes.PermissionDenied-http.StatusForbidden
+=== RUN   TestHTTPStatusFromCode/codes.Unauthenticated-http.StatusUnauthorized
+=== RUN   TestHTTPStatusFromCode/codes.ResourceExhausted-http.StatusTooManyRequests
+=== RUN   TestHTTPStatusFromCode/codes.FailedPrecondition-http.StatusBadRequest
+=== RUN   TestHTTPStatusFromCode/codes.Aborted-http.StatusConflict
+=== RUN   TestHTTPStatusFromCode/codes.OutOfRange-http.StatusBadRequest
+=== RUN   TestHTTPStatusFromCode/codes.Unimplemented-http.StatusNotImplemented
+=== RUN   TestHTTPStatusFromCode/codes.Internal-http.StatusInternalServerError
+=== RUN   TestHTTPStatusFromCode/codes.Unavailable-http.StatusServiceUnavailable
+=== RUN   TestHTTPStatusFromCode/codes.DataLoss-http.StatusInternalServerError
+=== RUN   TestHTTPStatusFromCode/codes.InvalidCode-http.StatusInternalServerError
+--- PASS: TestHTTPStatusFromCode (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.OK-http.StatusOK (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.Canceled-http.StatusRequestTimeout (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.Unknown-http.StatusInternalServerError (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.InvalidArgument-http.StatusBadRequest (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.DeadlineExceeded-http.StatusGatewayTimeout (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.NotFound-http.StatusNotFound (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.AlreadyExists-http.StatusConflict (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.PermissionDenied-http.StatusForbidden (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.Unauthenticated-http.StatusUnauthorized (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.ResourceExhausted-http.StatusTooManyRequests (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.FailedPrecondition-http.StatusBadRequest (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.Aborted-http.StatusConflict (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.OutOfRange-http.StatusBadRequest (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.Unimplemented-http.StatusNotImplemented (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.Internal-http.StatusInternalServerError (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.Unavailable-http.StatusServiceUnavailable (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.DataLoss-http.StatusInternalServerError (0.00s)
+    --- PASS: TestHTTPStatusFromCode/codes.InvalidCode-http.StatusInternalServerError (0.00s)
+=== RUN   TestCodeFromHTTPStatus
+=== RUN   TestCodeFromHTTPStatus/http.OK-codes.OK
+=== RUN   TestCodeFromHTTPStatus/http.StatusCreated-codes.OK
+=== RUN   TestCodeFromHTTPStatus/http.StatusAccepted-codes.OK
+=== RUN   TestCodeFromHTTPStatus/http.StatusNonAuthoritativeInfo-codes.OK
+=== RUN   TestCodeFromHTTPStatus/http.StatusNoContent-codes.OK
+=== RUN   TestCodeFromHTTPStatus/http.StatusResetContent-codes.OK
+=== RUN   TestCodeFromHTTPStatus/http.StatusPartialContent-codes.OK
+=== RUN   TestCodeFromHTTPStatus/http.StatusMultiStatus-codes.OK
+=== RUN   TestCodeFromHTTPStatus/http.StatusAlreadyReported-codes.OK
+=== RUN   TestCodeFromHTTPStatus/http.StatusIMUsed-codes.OK
+=== RUN   TestCodeFromHTTPStatus/http.StatusRequestTimeout-codes.Canceled
+=== RUN   TestCodeFromHTTPStatus/http.StatusInternalServerError-codes.Unknown
+=== RUN   TestCodeFromHTTPStatus/http.StatusBadRequest-codes.Internal
+=== RUN   TestCodeFromHTTPStatus/http.StatusGatewayTimeout-codes.DeadlineExceeded
+=== RUN   TestCodeFromHTTPStatus/http.StatusNotFound-codes.NotFound
+=== RUN   TestCodeFromHTTPStatus/http.StatusConflict-codes.AlreadyExists
+=== RUN   TestCodeFromHTTPStatus/http.StatusForbidden-codes.PermissionDenied
+=== RUN   TestCodeFromHTTPStatus/http.StatusUnauthorized-codes.Unauthenticated
+=== RUN   TestCodeFromHTTPStatus/http.StatusTooManyRequests-codes.ResourceExhausted
+=== RUN   TestCodeFromHTTPStatus/http.StatusNotImplemented-codes.Unimplemented
+=== RUN   TestCodeFromHTTPStatus/http.StatusServiceUnavailable-codes.Unavailable
+=== RUN   TestCodeFromHTTPStatus/HTTPStatusDoesNotExist-codes.Unavailable
+--- PASS: TestCodeFromHTTPStatus (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.OK-codes.OK (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusCreated-codes.OK (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusAccepted-codes.OK (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusNonAuthoritativeInfo-codes.OK (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusNoContent-codes.OK (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusResetContent-codes.OK (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusPartialContent-codes.OK (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusMultiStatus-codes.OK (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusAlreadyReported-codes.OK (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusIMUsed-codes.OK (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusRequestTimeout-codes.Canceled (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusInternalServerError-codes.Unknown (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusBadRequest-codes.Internal (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusGatewayTimeout-codes.DeadlineExceeded (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusNotFound-codes.NotFound (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusConflict-codes.AlreadyExists (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusForbidden-codes.PermissionDenied (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusUnauthorized-codes.Unauthenticated (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusTooManyRequests-codes.ResourceExhausted (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusNotImplemented-codes.Unimplemented (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/http.StatusServiceUnavailable-codes.Unavailable (0.00s)
+    --- PASS: TestCodeFromHTTPStatus/HTTPStatusDoesNotExist-codes.Unavailable (0.00s)
+PASS
+ok  	github.com/dapr/kit/grpccodes	(cached)
+=== RUN   TestJWKSCache
+=== RUN   TestJWKSCache/init_with_value
+=== RUN   TestJWKSCache/init_with_base64-encoded_value
+=== RUN   TestJWKSCache/init_with_local_file
+=== RUN   TestJWKSCache/init_with_HTTP_client
+time="2026-08-13T14:11:54.688395427-03:00" level=warning msg="Loading JWK from an HTTP endpoint without TLS: this is not recommended on production environments." instance=peach scope=test type=log ver=unknown
+=== RUN   TestJWKSCache/start_and_wait_for_init
+=== RUN   TestJWKSCache/start_and_init_fails
+=== RUN   TestJWKSCache/start_and_init_times_out
+--- PASS: TestJWKSCache (2.56s)
+    --- PASS: TestJWKSCache/init_with_value (0.00s)
+    --- PASS: TestJWKSCache/init_with_base64-encoded_value (0.00s)
+    --- PASS: TestJWKSCache/init_with_local_file (1.05s)
+    --- PASS: TestJWKSCache/init_with_HTTP_client (0.00s)
+    --- PASS: TestJWKSCache/start_and_wait_for_init (0.00s)
+    --- PASS: TestJWKSCache/start_and_init_fails (0.00s)
+    --- PASS: TestJWKSCache/start_and_init_times_out (1.50s)
+PASS
+ok  	github.com/dapr/kit/jwkscache	(cached)
+=== RUN   TestEnableJSON
+--- PASS: TestEnableJSON (0.00s)
+=== RUN   TestJSONLoggerFields
+=== RUN   TestJSONLoggerFields/info()
+=== RUN   TestJSONLoggerFields/infof()
+=== RUN   TestJSONLoggerFields/debug()
+=== RUN   TestJSONLoggerFields/debugf()
+=== RUN   TestJSONLoggerFields/error()
+=== RUN   TestJSONLoggerFields/errorf()
+=== RUN   TestJSONLoggerFields/warn()
+--- PASS: TestJSONLoggerFields (0.00s)
+    --- PASS: TestJSONLoggerFields/info() (0.00s)
+    --- PASS: TestJSONLoggerFields/infof() (0.00s)
+    --- PASS: TestJSONLoggerFields/debug() (0.00s)
+    --- PASS: TestJSONLoggerFields/debugf() (0.00s)
+    --- PASS: TestJSONLoggerFields/error() (0.00s)
+    --- PASS: TestJSONLoggerFields/errorf() (0.00s)
+    --- PASS: TestJSONLoggerFields/warn() (0.00s)
+=== RUN   TestOutputLevel
+=== RUN   TestOutputLevel/debug
+=== RUN   TestOutputLevel/info
+=== RUN   TestOutputLevel/warn
+=== RUN   TestOutputLevel/error
+=== RUN   TestOutputLevel/fatal
+=== RUN   TestOutputLevel/undefined
+--- PASS: TestOutputLevel (0.00s)
+    --- PASS: TestOutputLevel/debug (0.00s)
+    --- PASS: TestOutputLevel/info (0.00s)
+    --- PASS: TestOutputLevel/warn (0.00s)
+    --- PASS: TestOutputLevel/error (0.00s)
+    --- PASS: TestOutputLevel/fatal (0.00s)
+    --- PASS: TestOutputLevel/undefined (0.00s)
+=== RUN   TestFatalExits
+=== RUN   TestFatalExits/Fatal
+=== RUN   TestFatalExits/Fatalf
+--- PASS: TestFatalExits (0.00s)
+    --- PASS: TestFatalExits/Fatal (0.00s)
+    --- PASS: TestFatalExits/Fatalf (0.00s)
+=== RUN   TestWithTypeFields
+--- PASS: TestWithTypeFields (0.00s)
+=== RUN   TestWithFields
+=== RUN   TestWithFields/json
+=== RUN   TestWithFields/text
+--- PASS: TestWithFields (0.00s)
+    --- PASS: TestWithFields/json (0.00s)
+    --- PASS: TestWithFields/text (0.00s)
+=== RUN   TestToSlogLevel
+=== RUN   TestToSlogLevel/undefined
+=== RUN   TestToSlogLevel/debug
+=== RUN   TestToSlogLevel/info
+=== RUN   TestToSlogLevel/warn
+=== RUN   TestToSlogLevel/error
+=== RUN   TestToSlogLevel/fatal
+--- PASS: TestToSlogLevel (0.00s)
+    --- PASS: TestToSlogLevel/undefined (0.00s)
+    --- PASS: TestToSlogLevel/debug (0.00s)
+    --- PASS: TestToSlogLevel/info (0.00s)
+    --- PASS: TestToSlogLevel/warn (0.00s)
+    --- PASS: TestToSlogLevel/error (0.00s)
+    --- PASS: TestToSlogLevel/fatal (0.00s)
+=== RUN   TestLevelString
+--- PASS: TestLevelString (0.00s)
+=== RUN   TestGoldenOutput
+=== RUN   TestGoldenOutput/text/plain
+=== RUN   TestGoldenOutput/json/plain
+=== RUN   TestGoldenOutput/text/quoting
+=== RUN   TestGoldenOutput/text/empty_message_omitted
+=== RUN   TestGoldenOutput/json/empty_message_present
+=== RUN   TestGoldenOutput/text/fields_sorted_and_quoted
+=== RUN   TestGoldenOutput/json/fields_sorted
+=== RUN   TestGoldenOutput/text/log_type
+=== RUN   TestGoldenOutput/text/warn_label
+=== RUN   TestGoldenOutput/text/debug_label
+=== RUN   TestGoldenOutput/text/error_label
+=== RUN   TestGoldenOutput/text/sprint_semantics
+=== RUN   TestGoldenOutput/text/app_id_first
+=== RUN   TestGoldenOutput/json/app_id_first
+=== RUN   TestGoldenOutput/json/html_escaped
+=== RUN   TestGoldenOutput/json/error_value
+--- PASS: TestGoldenOutput (0.00s)
+    --- PASS: TestGoldenOutput/text/plain (0.00s)
+    --- PASS: TestGoldenOutput/json/plain (0.00s)
+    --- PASS: TestGoldenOutput/text/quoting (0.00s)
+    --- PASS: TestGoldenOutput/text/empty_message_omitted (0.00s)
+    --- PASS: TestGoldenOutput/json/empty_message_present (0.00s)
+    --- PASS: TestGoldenOutput/text/fields_sorted_and_quoted (0.00s)
+    --- PASS: TestGoldenOutput/json/fields_sorted (0.00s)
+    --- PASS: TestGoldenOutput/text/log_type (0.00s)
+    --- PASS: TestGoldenOutput/text/warn_label (0.00s)
+    --- PASS: TestGoldenOutput/text/debug_label (0.00s)
+    --- PASS: TestGoldenOutput/text/error_label (0.00s)
+    --- PASS: TestGoldenOutput/text/sprint_semantics (0.00s)
+    --- PASS: TestGoldenOutput/text/app_id_first (0.00s)
+    --- PASS: TestGoldenOutput/json/app_id_first (0.00s)
+    --- PASS: TestGoldenOutput/json/html_escaped (0.00s)
+    --- PASS: TestGoldenOutput/json/error_value (0.00s)
+=== RUN   TestLogStructuredAttrs
+--- PASS: TestLogStructuredAttrs (0.00s)
+=== RUN   TestErrAttr
+=== RUN   TestErrAttr/error_is_rendered_via_Error()
+=== RUN   TestErrAttr/nil_error_is_omitted
+--- PASS: TestErrAttr (0.00s)
+    --- PASS: TestErrAttr/error_is_rendered_via_Error() (0.00s)
+    --- PASS: TestErrAttr/nil_error_is_omitted (0.00s)
+=== RUN   TestLogWith
+--- PASS: TestLogWith (0.00s)
+=== RUN   TestLogWithGroup
+--- PASS: TestLogWithGroup (0.00s)
+=== RUN   TestReservedKeysNotShadowed
+--- PASS: TestReservedKeysNotShadowed (0.00s)
+=== RUN   TestLogFatal
+--- PASS: TestLogFatal (0.00s)
+=== RUN   TestLegacyAndStructuredShareState
+--- PASS: TestLegacyAndStructuredShareState (0.00s)
+=== RUN   TestNewSharesStateWithNewLogger
+--- PASS: TestNewSharesStateWithNewLogger (0.00s)
+=== RUN   TestFromLogger
+=== RUN   TestFromLogger/converts_a_logger_from_this_package_in_place
+=== RUN   TestFromLogger/renders_through_a_third-party_Logger_rather_than_discarding
+--- PASS: TestFromLogger (0.00s)
+    --- PASS: TestFromLogger/converts_a_logger_from_this_package_in_place (0.00s)
+    --- PASS: TestFromLogger/renders_through_a_third-party_Logger_rather_than_discarding (0.00s)
+=== RUN   TestNewLogger
+=== RUN   TestNewLogger/create_new_logger_instance
+=== RUN   TestNewLogger/return_the_existing_logger_instance
+--- PASS: TestNewLogger (0.00s)
+    --- PASS: TestNewLogger/create_new_logger_instance (0.00s)
+    --- PASS: TestNewLogger/return_the_existing_logger_instance (0.00s)
+=== RUN   TestToLogLevel
+=== RUN   TestToLogLevel/convert_debug_to_DebugLevel
+=== RUN   TestToLogLevel/convert_info_to_InfoLevel
+=== RUN   TestToLogLevel/convert_warn_to_WarnLevel
+=== RUN   TestToLogLevel/convert_error_to_ErrorLevel
+=== RUN   TestToLogLevel/convert_fatal_to_FatalLevel
+=== RUN   TestToLogLevel/undefined_loglevel
+--- PASS: TestToLogLevel (0.00s)
+    --- PASS: TestToLogLevel/convert_debug_to_DebugLevel (0.00s)
+    --- PASS: TestToLogLevel/convert_info_to_InfoLevel (0.00s)
+    --- PASS: TestToLogLevel/convert_warn_to_WarnLevel (0.00s)
+    --- PASS: TestToLogLevel/convert_error_to_ErrorLevel (0.00s)
+    --- PASS: TestToLogLevel/convert_fatal_to_FatalLevel (0.00s)
+    --- PASS: TestToLogLevel/undefined_loglevel (0.00s)
+=== RUN   TestNewContext
+=== RUN   TestNewContext/input_nil_logger
+=== RUN   TestNewContext/input_non-nil_logger
+--- PASS: TestNewContext (0.00s)
+    --- PASS: TestNewContext/input_nil_logger (0.00s)
+    --- PASS: TestNewContext/input_non-nil_logger (0.00s)
+=== RUN   TestOptions
+=== RUN   TestOptions/default_options
+=== RUN   TestOptions/set_dapr_ID
+=== RUN   TestOptions/attaching_log_related_cmd_flags
+--- PASS: TestOptions (0.00s)
+    --- PASS: TestOptions/default_options (0.00s)
+    --- PASS: TestOptions/set_dapr_ID (0.00s)
+    --- PASS: TestOptions/attaching_log_related_cmd_flags (0.00s)
+=== RUN   TestApplyOptionsToLoggers
+--- PASS: TestApplyOptionsToLoggers (0.00s)
+=== RUN   TestApplyOptionsToLoggersLateCreated
+--- PASS: TestApplyOptionsToLoggersLateCreated (0.00s)
+=== RUN   TestApplyOptionsToLoggersFileOutput
+--- PASS: TestApplyOptionsToLoggersFileOutput (0.00s)
+=== RUN   TestApplyOptionsToLoggersFileOutputReapply
+--- PASS: TestApplyOptionsToLoggersFileOutputReapply (0.00s)
+PASS
+ok  	github.com/dapr/kit/logger	(cached)
+=== RUN   TestDurationToISOString
+=== RUN   TestDurationToISOString/P0D
+=== RUN   TestDurationToISOString/PT1S
+=== RUN   TestDurationToISOString/truncate_fractions_of_seconds
+=== RUN   TestDurationToISOString/P1D
+=== RUN   TestDurationToISOString/P2D
+=== RUN   TestDurationToISOString/P2DT2H
+=== RUN   TestDurationToISOString/P2DT2H20M
+=== RUN   TestDurationToISOString/P2DT3H40M
+=== RUN   TestDurationToISOString/P2DT2H20M15S
+=== RUN   TestDurationToISOString/P2DT2H15S
+=== RUN   TestDurationToISOString/P10DT15S
+--- PASS: TestDurationToISOString (0.00s)
+    --- PASS: TestDurationToISOString/P0D (0.00s)
+    --- PASS: TestDurationToISOString/PT1S (0.00s)
+    --- PASS: TestDurationToISOString/truncate_fractions_of_seconds (0.00s)
+    --- PASS: TestDurationToISOString/P1D (0.00s)
+    --- PASS: TestDurationToISOString/P2D (0.00s)
+    --- PASS: TestDurationToISOString/P2DT2H (0.00s)
+    --- PASS: TestDurationToISOString/P2DT2H20M (0.00s)
+    --- PASS: TestDurationToISOString/P2DT3H40M (0.00s)
+    --- PASS: TestDurationToISOString/P2DT2H20M15S (0.00s)
+    --- PASS: TestDurationToISOString/P2DT2H15S (0.00s)
+    --- PASS: TestDurationToISOString/P10DT15S (0.00s)
+=== RUN   TestMetadataDecode
+=== RUN   TestMetadataDecode/Test_metadata_decoding
+=== RUN   TestMetadataDecode/Test_metadata_decode_hook_for_truthy_values
+=== RUN   TestMetadataDecode/Test_metadata_decode_for_string_arrays
+=== RUN   TestMetadataDecode/Test_metadata_decode_hook_for_byte_sizes
+--- PASS: TestMetadataDecode (0.00s)
+    --- PASS: TestMetadataDecode/Test_metadata_decoding (0.00s)
+    --- PASS: TestMetadataDecode/Test_metadata_decode_hook_for_truthy_values (0.00s)
+    --- PASS: TestMetadataDecode/Test_metadata_decode_for_string_arrays (0.00s)
+    --- PASS: TestMetadataDecode/Test_metadata_decode_hook_for_byte_sizes (0.00s)
+=== RUN   TestResolveAliases
+=== RUN   TestResolveAliases/no_aliases
+=== RUN   TestResolveAliases/set_with_aliased_field
+=== RUN   TestResolveAliases/do_not_overwrite_existing_fields_with_aliases
+=== RUN   TestResolveAliases/no_fields_with_aliased_value
+=== RUN   TestResolveAliases/multiple_aliases
+=== RUN   TestResolveAliases/first_alias_wins
+=== RUN   TestResolveAliases/no_aliases_with_mixed_case
+=== RUN   TestResolveAliases/set_with_aliased_field_with_mixed_case
+=== RUN   TestResolveAliases/do_not_overwrite_existing_fields_with_aliases_with_mixed_cases
+=== RUN   TestResolveAliases/multiple_aliases_with_mixed_cases
+=== RUN   TestResolveAliases/aliases_in_embedded_struct
+--- PASS: TestResolveAliases (0.00s)
+    --- PASS: TestResolveAliases/no_aliases (0.00s)
+    --- PASS: TestResolveAliases/set_with_aliased_field (0.00s)
+    --- PASS: TestResolveAliases/do_not_overwrite_existing_fields_with_aliases (0.00s)
+    --- PASS: TestResolveAliases/no_fields_with_aliased_value (0.00s)
+    --- PASS: TestResolveAliases/multiple_aliases (0.00s)
+    --- PASS: TestResolveAliases/first_alias_wins (0.00s)
+    --- PASS: TestResolveAliases/no_aliases_with_mixed_case (0.00s)
+    --- PASS: TestResolveAliases/set_with_aliased_field_with_mixed_case (0.00s)
+    --- PASS: TestResolveAliases/do_not_overwrite_existing_fields_with_aliases_with_mixed_cases (0.00s)
+    --- PASS: TestResolveAliases/multiple_aliases_with_mixed_cases (0.00s)
+    --- PASS: TestResolveAliases/aliases_in_embedded_struct (0.00s)
+=== RUN   TestGetMetadataPropertyWithMatchedKey
+=== RUN   TestGetMetadataPropertyWithMatchedKey/Existing_key
+=== RUN   TestGetMetadataPropertyWithMatchedKey/Case-insensitive_matching
+=== RUN   TestGetMetadataPropertyWithMatchedKey/Non-existing_key
+=== RUN   TestGetMetadataPropertyWithMatchedKey/Empty_properties
+=== RUN   TestGetMetadataPropertyWithMatchedKey/Value_is_empty
+--- PASS: TestGetMetadataPropertyWithMatchedKey (0.00s)
+    --- PASS: TestGetMetadataPropertyWithMatchedKey/Existing_key (0.00s)
+    --- PASS: TestGetMetadataPropertyWithMatchedKey/Case-insensitive_matching (0.00s)
+    --- PASS: TestGetMetadataPropertyWithMatchedKey/Non-existing_key (0.00s)
+    --- PASS: TestGetMetadataPropertyWithMatchedKey/Empty_properties (0.00s)
+    --- PASS: TestGetMetadataPropertyWithMatchedKey/Value_is_empty (0.00s)
+PASS
+ok  	github.com/dapr/kit/metadata	(cached)
+=== RUN   TestPtr
+--- PASS: TestPtr (0.00s)
+=== RUN   TestSliceOfPtrs
+--- PASS: TestSliceOfPtrs (0.00s)
+PASS
+ok  	github.com/dapr/kit/ptr	(cached)
+=== RUN   TestDecode
+=== RUN   TestDecode/exponential_default
+=== RUN   TestDecode/exponential_with_string_settings
+=== RUN   TestDecode/exponential_with_typed_settings
+=== RUN   TestDecode/map[string]string_settings
+=== RUN   TestDecode/invalid_policy_type
+=== RUN   TestDecode/default
+=== RUN   TestDecode/constant_default
+=== RUN   TestDecode/constant_with_duraction
+--- PASS: TestDecode (0.00s)
+    --- PASS: TestDecode/exponential_default (0.00s)
+    --- PASS: TestDecode/exponential_with_string_settings (0.00s)
+    --- PASS: TestDecode/exponential_with_typed_settings (0.00s)
+    --- PASS: TestDecode/map[string]string_settings (0.00s)
+    --- PASS: TestDecode/invalid_policy_type (0.00s)
+    --- PASS: TestDecode/default (0.00s)
+    --- PASS: TestDecode/constant_default (0.00s)
+    --- PASS: TestDecode/constant_with_duraction (0.00s)
+=== RUN   TestRetryNotifyRecoverNoetries
+--- PASS: TestRetryNotifyRecoverNoetries (0.00s)
+=== RUN   TestRetryNotifyRecoverMaxRetries
+--- PASS: TestRetryNotifyRecoverMaxRetries (0.00s)
+=== RUN   TestRetryNotifyRecoverRecovery
+--- PASS: TestRetryNotifyRecoverRecovery (0.00s)
+=== RUN   TestRetryNotifyRecoverCancel
+--- PASS: TestRetryNotifyRecoverCancel (0.00s)
+=== RUN   TestCheckEmptyConfig
+--- PASS: TestCheckEmptyConfig (0.00s)
+PASS
+ok  	github.com/dapr/kit/retry	(cached)
+=== RUN   Test_Buffered
+--- PASS: Test_Buffered (0.00s)
+=== RUN   Test_BufferedRange
+--- PASS: Test_BufferedRange (0.00s)
+=== RUN   Test_BufferedShrinkNeverBelowMinCap
+--- PASS: Test_BufferedShrinkNeverBelowMinCap (0.00s)
+=== RUN   Test_BufferedFrontEmpty
+--- PASS: Test_BufferedFrontEmpty (0.00s)
+=== RUN   Test_BufferedWraparound
+--- PASS: Test_BufferedWraparound (0.00s)
+=== RUN   TestCornerCases
+--- PASS: TestCornerCases (0.00s)
+=== RUN   TestNew
+--- PASS: TestNew (0.00s)
+=== RUN   TestLink1
+--- PASS: TestLink1 (0.00s)
+=== RUN   TestLink2
+--- PASS: TestLink2 (0.00s)
+=== RUN   TestLink3
+--- PASS: TestLink3 (0.00s)
+=== RUN   TestUnlink
+--- PASS: TestUnlink (0.00s)
+=== RUN   TestLinkUnlink
+--- PASS: TestLinkUnlink (0.00s)
+=== RUN   TestMoveEmptyRing
+--- PASS: TestMoveEmptyRing (0.00s)
+PASS
+ok  	github.com/dapr/kit/ring	(cached)
+=== RUN   TestKeyAlgorithmValidate
+=== RUN   TestKeyAlgorithmValidate/A256KW
+=== RUN   TestKeyAlgorithmValidate/AES_alias
+=== RUN   TestKeyAlgorithmValidate/RSA-OAEP-256
+=== RUN   TestKeyAlgorithmValidate/RSA_alias
+=== RUN   TestKeyAlgorithmValidate/invalid_algorithm
+=== RUN   TestKeyAlgorithmValidate/empty_algorithm
+--- PASS: TestKeyAlgorithmValidate (0.00s)
+    --- PASS: TestKeyAlgorithmValidate/A256KW (0.00s)
+    --- PASS: TestKeyAlgorithmValidate/AES_alias (0.00s)
+    --- PASS: TestKeyAlgorithmValidate/RSA-OAEP-256 (0.00s)
+    --- PASS: TestKeyAlgorithmValidate/RSA_alias (0.00s)
+    --- PASS: TestKeyAlgorithmValidate/invalid_algorithm (0.00s)
+    --- PASS: TestKeyAlgorithmValidate/empty_algorithm (0.00s)
+=== RUN   TestKeyAlgorithmMarshalJSON
+=== RUN   TestKeyAlgorithmMarshalJSON/A256KW
+=== RUN   TestKeyAlgorithmMarshalJSON/AES_alias
+=== RUN   TestKeyAlgorithmMarshalJSON/A128CBC-NOPAD
+=== RUN   TestKeyAlgorithmMarshalJSON/A192CBC-NOPAD
+=== RUN   TestKeyAlgorithmMarshalJSON/A256CBC-NOPAD
+=== RUN   TestKeyAlgorithmMarshalJSON/RSA-OAEP-256
+=== RUN   TestKeyAlgorithmMarshalJSON/RSA_alias
+=== RUN   TestKeyAlgorithmMarshalJSON/invalid_algorithm
+=== RUN   TestKeyAlgorithmMarshalJSON/empty_algorithm
+--- PASS: TestKeyAlgorithmMarshalJSON (0.00s)
+    --- PASS: TestKeyAlgorithmMarshalJSON/A256KW (0.00s)
+    --- PASS: TestKeyAlgorithmMarshalJSON/AES_alias (0.00s)
+    --- PASS: TestKeyAlgorithmMarshalJSON/A128CBC-NOPAD (0.00s)
+    --- PASS: TestKeyAlgorithmMarshalJSON/A192CBC-NOPAD (0.00s)
+    --- PASS: TestKeyAlgorithmMarshalJSON/A256CBC-NOPAD (0.00s)
+    --- PASS: TestKeyAlgorithmMarshalJSON/RSA-OAEP-256 (0.00s)
+    --- PASS: TestKeyAlgorithmMarshalJSON/RSA_alias (0.00s)
+    --- PASS: TestKeyAlgorithmMarshalJSON/invalid_algorithm (0.00s)
+    --- PASS: TestKeyAlgorithmMarshalJSON/empty_algorithm (0.00s)
+=== RUN   TestKeyAlgorithmUnmarshalJSON
+=== RUN   TestKeyAlgorithmUnmarshalJSON/A256KW
+=== RUN   TestKeyAlgorithmUnmarshalJSON/A128CBC-NOPAD
+=== RUN   TestKeyAlgorithmUnmarshalJSON/A192CBC-NOPAD
+=== RUN   TestKeyAlgorithmUnmarshalJSON/A256CBC-NOPAD
+=== RUN   TestKeyAlgorithmUnmarshalJSON/RSA-OAEP-256
+=== RUN   TestKeyAlgorithmUnmarshalJSON/invalid_ID
+=== RUN   TestKeyAlgorithmUnmarshalJSON/empty
+=== RUN   TestKeyAlgorithmUnmarshalJSON/JSON_null
+=== RUN   TestKeyAlgorithmUnmarshalJSON/JSON_string
+=== RUN   TestKeyAlgorithmUnmarshalJSON/JSON_object
+--- PASS: TestKeyAlgorithmUnmarshalJSON (0.00s)
+    --- PASS: TestKeyAlgorithmUnmarshalJSON/A256KW (0.00s)
+    --- PASS: TestKeyAlgorithmUnmarshalJSON/A128CBC-NOPAD (0.00s)
+    --- PASS: TestKeyAlgorithmUnmarshalJSON/A192CBC-NOPAD (0.00s)
+    --- PASS: TestKeyAlgorithmUnmarshalJSON/A256CBC-NOPAD (0.00s)
+    --- PASS: TestKeyAlgorithmUnmarshalJSON/RSA-OAEP-256 (0.00s)
+    --- PASS: TestKeyAlgorithmUnmarshalJSON/invalid_ID (0.00s)
+    --- PASS: TestKeyAlgorithmUnmarshalJSON/empty (0.00s)
+    --- PASS: TestKeyAlgorithmUnmarshalJSON/JSON_null (0.00s)
+    --- PASS: TestKeyAlgorithmUnmarshalJSON/JSON_string (0.00s)
+    --- PASS: TestKeyAlgorithmUnmarshalJSON/JSON_object (0.00s)
+=== RUN   TestCipherValidate
+=== RUN   TestCipherValidate/AES-GCM
+=== RUN   TestCipherValidate/CHACHA20-POLY1305
+=== RUN   TestCipherValidate/invalid_cipher
+=== RUN   TestCipherValidate/empty_cipher
+--- PASS: TestCipherValidate (0.00s)
+    --- PASS: TestCipherValidate/AES-GCM (0.00s)
+    --- PASS: TestCipherValidate/CHACHA20-POLY1305 (0.00s)
+    --- PASS: TestCipherValidate/invalid_cipher (0.00s)
+    --- PASS: TestCipherValidate/empty_cipher (0.00s)
+=== RUN   TestCipherMarshalJSON
+=== RUN   TestCipherMarshalJSON/AES-GCM
+=== RUN   TestCipherMarshalJSON/CHACHA20-POLY1305
+=== RUN   TestCipherMarshalJSON/invalid_cipher
+=== RUN   TestCipherMarshalJSON/empty_cipher
+--- PASS: TestCipherMarshalJSON (0.00s)
+    --- PASS: TestCipherMarshalJSON/AES-GCM (0.00s)
+    --- PASS: TestCipherMarshalJSON/CHACHA20-POLY1305 (0.00s)
+    --- PASS: TestCipherMarshalJSON/invalid_cipher (0.00s)
+    --- PASS: TestCipherMarshalJSON/empty_cipher (0.00s)
+=== RUN   TestCipherUnmarshalJSON
+=== RUN   TestCipherUnmarshalJSON/AES-GCM
+=== RUN   TestCipherUnmarshalJSON/CHACHA20-POLY1305
+=== RUN   TestCipherUnmarshalJSON/invalid_ID
+=== RUN   TestCipherUnmarshalJSON/empty
+=== RUN   TestCipherUnmarshalJSON/JSON_null
+=== RUN   TestCipherUnmarshalJSON/JSON_string
+=== RUN   TestCipherUnmarshalJSON/JSON_object
+--- PASS: TestCipherUnmarshalJSON (0.00s)
+    --- PASS: TestCipherUnmarshalJSON/AES-GCM (0.00s)
+    --- PASS: TestCipherUnmarshalJSON/CHACHA20-POLY1305 (0.00s)
+    --- PASS: TestCipherUnmarshalJSON/invalid_ID (0.00s)
+    --- PASS: TestCipherUnmarshalJSON/empty (0.00s)
+    --- PASS: TestCipherUnmarshalJSON/JSON_null (0.00s)
+    --- PASS: TestCipherUnmarshalJSON/JSON_string (0.00s)
+    --- PASS: TestCipherUnmarshalJSON/JSON_object (0.00s)
+=== RUN   TestFileKey
+=== RUN   TestFileKey/getCipher
+=== RUN   TestFileKey/getCipher/AES-GCM
+=== RUN   TestFileKey/getCipher/CHACHA20-POLY1305
+=== RUN   TestFileKey/getCipher/invalid_cipher
+=== RUN   TestFileKey/getCipher/with_invalid_AES-GCM_key
+=== RUN   TestFileKey/getCipher/with_invalid_ChaCha20-Poly1305_key
+=== RUN   TestFileKey/nonceForSegment
+=== RUN   TestFileKey/nonceForSegment/segment_0
+=== RUN   TestFileKey/nonceForSegment/segment_0_is_last
+=== RUN   TestFileKey/nonceForSegment/segment_1
+=== RUN   TestFileKey/nonceForSegment/segment_1_is_last
+=== RUN   TestFileKey/nonceForSegment/segment_2000_is_last
+=== RUN   TestFileKey/deriveKey
+=== RUN   TestFileKey/headerMessage
+    filekey_test.go:129: 646170722e696f2f656e632f76310a7b22666f6f223a22626172227d0a
+=== RUN   TestFileKey/computeHeaderSignature
+--- PASS: TestFileKey (0.00s)
+    --- PASS: TestFileKey/getCipher (0.00s)
+        --- PASS: TestFileKey/getCipher/AES-GCM (0.00s)
+        --- PASS: TestFileKey/getCipher/CHACHA20-POLY1305 (0.00s)
+        --- PASS: TestFileKey/getCipher/invalid_cipher (0.00s)
+        --- PASS: TestFileKey/getCipher/with_invalid_AES-GCM_key (0.00s)
+        --- PASS: TestFileKey/getCipher/with_invalid_ChaCha20-Poly1305_key (0.00s)
+    --- PASS: TestFileKey/nonceForSegment (0.00s)
+        --- PASS: TestFileKey/nonceForSegment/segment_0 (0.00s)
+        --- PASS: TestFileKey/nonceForSegment/segment_0_is_last (0.00s)
+        --- PASS: TestFileKey/nonceForSegment/segment_1 (0.00s)
+        --- PASS: TestFileKey/nonceForSegment/segment_1_is_last (0.00s)
+        --- PASS: TestFileKey/nonceForSegment/segment_2000_is_last (0.00s)
+    --- PASS: TestFileKey/deriveKey (0.00s)
+    --- PASS: TestFileKey/headerMessage (0.00s)
+    --- PASS: TestFileKey/computeHeaderSignature (0.00s)
+=== RUN   TestManifestValidate
+=== RUN   TestManifestValidate/all_properties_included
+=== RUN   TestManifestValidate/key_name_is_optional
+=== RUN   TestManifestValidate/missing_key_wrapping_algorithm
+=== RUN   TestManifestValidate/missing_wrapped_file_key
+=== RUN   TestManifestValidate/missing_cipher
+=== RUN   TestManifestValidate/missing_nonce_prefix
+=== RUN   TestManifestValidate/nonce_prefix_too_short
+--- PASS: TestManifestValidate (0.00s)
+    --- PASS: TestManifestValidate/all_properties_included (0.00s)
+    --- PASS: TestManifestValidate/key_name_is_optional (0.00s)
+    --- PASS: TestManifestValidate/missing_key_wrapping_algorithm (0.00s)
+    --- PASS: TestManifestValidate/missing_wrapped_file_key (0.00s)
+    --- PASS: TestManifestValidate/missing_cipher (0.00s)
+    --- PASS: TestManifestValidate/missing_nonce_prefix (0.00s)
+    --- PASS: TestManifestValidate/nonce_prefix_too_short (0.00s)
+=== RUN   TestManifestJSON
+=== RUN   TestManifestJSON/without_key_name
+=== RUN   TestManifestJSON/with_key_name
+--- PASS: TestManifestJSON (0.00s)
+    --- PASS: TestManifestJSON/without_key_name (0.00s)
+    --- PASS: TestManifestJSON/with_key_name (0.00s)
+=== RUN   TestScheme
+=== RUN   TestScheme/encrypt_and_decrypt
+=== RUN   TestScheme/encrypt_and_decrypt/single-segment
+=== RUN   TestScheme/encrypt_and_decrypt/single-segment/with_AES-GCM
+=== RUN   TestScheme/encrypt_and_decrypt/single-segment/with_ChaCha20-Poly1305
+=== RUN   TestScheme/encrypt_and_decrypt/multi-segment
+=== RUN   TestScheme/encrypt_and_decrypt/multi-segment/with_AES-GCM
+=== RUN   TestScheme/encrypt_and_decrypt/multi-segment/with_ChaCha20-Poly1305
+=== RUN   TestScheme/encrypt_and_decrypt/one-full-segment
+=== RUN   TestScheme/encrypt_and_decrypt/one-full-segment/with_AES-GCM
+=== RUN   TestScheme/encrypt_and_decrypt/one-full-segment/with_ChaCha20-Poly1305
+=== RUN   TestScheme/encrypt_and_decrypt/two-full-segments
+=== RUN   TestScheme/encrypt_and_decrypt/two-full-segments/with_AES-GCM
+=== RUN   TestScheme/encrypt_and_decrypt/two-full-segments/with_ChaCha20-Poly1305
+=== RUN   TestScheme/encrypt_and_decrypt/large-file
+=== RUN   TestScheme/encrypt_and_decrypt/large-file/with_AES-GCM
+=== RUN   TestScheme/encrypt_and_decrypt/large-file/with_ChaCha20-Poly1305
+=== RUN   TestScheme/encrypt_and_decrypt/empty-message
+=== RUN   TestScheme/encrypt_and_decrypt/empty-message/with_AES-GCM
+=== RUN   TestScheme/encrypt_and_decrypt/empty-message/with_ChaCha20-Poly1305
+=== RUN   TestScheme/decrypt_test_data
+=== RUN   TestScheme/decrypt_test_data/single-segment
+=== RUN   TestScheme/decrypt_test_data/multi-segment
+=== RUN   TestScheme/decrypt_test_data/one-full-segment
+=== RUN   TestScheme/decrypt_test_data/two-full-segments
+=== RUN   TestScheme/decrypt_test_data/empty-message
+=== RUN   TestScheme/default_cipher_in_encryption_is_AES-GCM
+=== RUN   TestScheme/encryption_option_DecryptionKeyName
+=== RUN   TestScheme/encryption_option_OmitKeyName
+=== RUN   TestScheme/decryption_of_a_message_created_with_OmitKeyName_requires_passing_a_key_name
+=== RUN   TestScheme/decryption_of_a_message_created_with_OmitKeyName_fails_without_a_key_name
+=== RUN   TestScheme/wrapKeyFn_receives_the_key_name_and_algorithm
+=== RUN   TestScheme/override_key_name_in_decryption
+=== RUN   TestScheme/encryption_fails_with_input_stream_error
+=== RUN   TestScheme/wrapping_key_fails_in_Encrypt
+=== RUN   TestScheme/unwrapping_key_fails_in_Decrypt
+=== RUN   TestScheme/unwrapping_key_returns_different_key_in_Decrypt
+=== RUN   TestScheme/decryption_fails_with_scheme_name_not_found
+=== RUN   TestScheme/decryption_fails_with_scheme_name_not_matching
+=== RUN   TestScheme/decryption_fails_with_manifest_not_found
+=== RUN   TestScheme/decryption_fails_with_manifest_zero_bytes
+=== RUN   TestScheme/decryption_fails_with_manifest_not_valid_JSON
+=== RUN   TestScheme/decryption_fails_with_manifest_not_validating
+=== RUN   TestScheme/decryption_fails_with_MAC_not_found
+=== RUN   TestScheme/decryption_fails_with_MAC_zero_bytes
+=== RUN   TestScheme/decryption_fails_with_MAC_not_valid_Base64
+=== RUN   TestScheme/decryption_fails_with_header_too_long
+=== RUN   TestScheme/decryption_fails_with_input_stream_error_after_header
+=== RUN   TestScheme/decryption_fails_when_a_byte_is_changed_in_the_ciphertext
+=== RUN   TestScheme/decryption_fails_when_a_segment_is_removed_from_the_ciphertext
+=== RUN   TestScheme/decryption_fails_when_the_last_segment_is_removed_from_the_ciphertext
+=== RUN   TestScheme/init_errors_for_Encrypt
+=== RUN   TestScheme/init_errors_for_Encrypt/input_stream_is_nil
+=== RUN   TestScheme/init_errors_for_Encrypt/option_WrapKeyFn_is_empty
+=== RUN   TestScheme/init_errors_for_Encrypt/option_KeyName_is_empty
+=== RUN   TestScheme/init_errors_for_Encrypt/option_Algorithm_is_empty
+=== RUN   TestScheme/init_errors_for_Encrypt/option_Algorithm_is_invalid
+=== RUN   TestScheme/init_errors_for_Encrypt/option_Cipher_is_invalid
+=== RUN   TestScheme/init_errors_for_Decrypt
+=== RUN   TestScheme/init_errors_for_Decrypt/input_stream_is_nil
+=== RUN   TestScheme/init_errors_for_Decrypt/option_UnwrapKeyFn_is_empty
+--- PASS: TestScheme (0.06s)
+    --- PASS: TestScheme/encrypt_and_decrypt (0.03s)
+        --- PASS: TestScheme/encrypt_and_decrypt/single-segment (0.00s)
+            --- PASS: TestScheme/encrypt_and_decrypt/single-segment/with_AES-GCM (0.00s)
+            --- PASS: TestScheme/encrypt_and_decrypt/single-segment/with_ChaCha20-Poly1305 (0.00s)
+        --- PASS: TestScheme/encrypt_and_decrypt/multi-segment (0.01s)
+            --- PASS: TestScheme/encrypt_and_decrypt/multi-segment/with_AES-GCM (0.00s)
+            --- PASS: TestScheme/encrypt_and_decrypt/multi-segment/with_ChaCha20-Poly1305 (0.00s)
+        --- PASS: TestScheme/encrypt_and_decrypt/one-full-segment (0.00s)
+            --- PASS: TestScheme/encrypt_and_decrypt/one-full-segment/with_AES-GCM (0.00s)
+            --- PASS: TestScheme/encrypt_and_decrypt/one-full-segment/with_ChaCha20-Poly1305 (0.00s)
+        --- PASS: TestScheme/encrypt_and_decrypt/two-full-segments (0.01s)
+            --- PASS: TestScheme/encrypt_and_decrypt/two-full-segments/with_AES-GCM (0.00s)
+            --- PASS: TestScheme/encrypt_and_decrypt/two-full-segments/with_ChaCha20-Poly1305 (0.00s)
+        --- PASS: TestScheme/encrypt_and_decrypt/large-file (0.02s)
+            --- PASS: TestScheme/encrypt_and_decrypt/large-file/with_AES-GCM (0.00s)
+            --- PASS: TestScheme/encrypt_and_decrypt/large-file/with_ChaCha20-Poly1305 (0.01s)
+        --- PASS: TestScheme/encrypt_and_decrypt/empty-message (0.00s)
+            --- PASS: TestScheme/encrypt_and_decrypt/empty-message/with_AES-GCM (0.00s)
+            --- PASS: TestScheme/encrypt_and_decrypt/empty-message/with_ChaCha20-Poly1305 (0.00s)
+    --- PASS: TestScheme/decrypt_test_data (0.01s)
+        --- PASS: TestScheme/decrypt_test_data/single-segment (0.00s)
+        --- PASS: TestScheme/decrypt_test_data/multi-segment (0.00s)
+        --- PASS: TestScheme/decrypt_test_data/one-full-segment (0.00s)
+        --- PASS: TestScheme/decrypt_test_data/two-full-segments (0.01s)
+        --- PASS: TestScheme/decrypt_test_data/empty-message (0.00s)
+    --- PASS: TestScheme/default_cipher_in_encryption_is_AES-GCM (0.00s)
+    --- PASS: TestScheme/encryption_option_DecryptionKeyName (0.00s)
+    --- PASS: TestScheme/encryption_option_OmitKeyName (0.00s)
+    --- PASS: TestScheme/decryption_of_a_message_created_with_OmitKeyName_requires_passing_a_key_name (0.00s)
+    --- PASS: TestScheme/decryption_of_a_message_created_with_OmitKeyName_fails_without_a_key_name (0.00s)
+    --- PASS: TestScheme/wrapKeyFn_receives_the_key_name_and_algorithm (0.00s)
+    --- PASS: TestScheme/override_key_name_in_decryption (0.00s)
+    --- PASS: TestScheme/encryption_fails_with_input_stream_error (0.00s)
+    --- PASS: TestScheme/wrapping_key_fails_in_Encrypt (0.00s)
+    --- PASS: TestScheme/unwrapping_key_fails_in_Decrypt (0.00s)
+    --- PASS: TestScheme/unwrapping_key_returns_different_key_in_Decrypt (0.00s)
+    --- PASS: TestScheme/decryption_fails_with_scheme_name_not_found (0.00s)
+    --- PASS: TestScheme/decryption_fails_with_scheme_name_not_matching (0.00s)
+    --- PASS: TestScheme/decryption_fails_with_manifest_not_found (0.00s)
+    --- PASS: TestScheme/decryption_fails_with_manifest_zero_bytes (0.00s)
+    --- PASS: TestScheme/decryption_fails_with_manifest_not_valid_JSON (0.00s)
+    --- PASS: TestScheme/decryption_fails_with_manifest_not_validating (0.00s)
+    --- PASS: TestScheme/decryption_fails_with_MAC_not_found (0.00s)
+    --- PASS: TestScheme/decryption_fails_with_MAC_zero_bytes (0.00s)
+    --- PASS: TestScheme/decryption_fails_with_MAC_not_valid_Base64 (0.00s)
+    --- PASS: TestScheme/decryption_fails_with_header_too_long (0.00s)
+    --- PASS: TestScheme/decryption_fails_with_input_stream_error_after_header (0.00s)
+    --- PASS: TestScheme/decryption_fails_when_a_byte_is_changed_in_the_ciphertext (0.01s)
+    --- PASS: TestScheme/decryption_fails_when_a_segment_is_removed_from_the_ciphertext (0.00s)
+    --- PASS: TestScheme/decryption_fails_when_the_last_segment_is_removed_from_the_ciphertext (0.00s)
+    --- PASS: TestScheme/init_errors_for_Encrypt (0.00s)
+        --- PASS: TestScheme/init_errors_for_Encrypt/input_stream_is_nil (0.00s)
+        --- PASS: TestScheme/init_errors_for_Encrypt/option_WrapKeyFn_is_empty (0.00s)
+        --- PASS: TestScheme/init_errors_for_Encrypt/option_KeyName_is_empty (0.00s)
+        --- PASS: TestScheme/init_errors_for_Encrypt/option_Algorithm_is_empty (0.00s)
+        --- PASS: TestScheme/init_errors_for_Encrypt/option_Algorithm_is_invalid (0.00s)
+        --- PASS: TestScheme/init_errors_for_Encrypt/option_Cipher_is_invalid (0.00s)
+    --- PASS: TestScheme/init_errors_for_Decrypt (0.00s)
+        --- PASS: TestScheme/init_errors_for_Decrypt/input_stream_is_nil (0.00s)
+        --- PASS: TestScheme/init_errors_for_Decrypt/option_UnwrapKeyFn_is_empty (0.00s)
+=== RUN   TestReplaceReader
+=== RUN   TestReplaceReader/replace_bytes
+=== RUN   TestReplaceReader/remove_bytes
+=== RUN   TestReplaceReader/remove_at_the_end
+--- PASS: TestReplaceReader (0.00s)
+    --- PASS: TestReplaceReader/replace_bytes (0.00s)
+    --- PASS: TestReplaceReader/remove_bytes (0.00s)
+    --- PASS: TestReplaceReader/remove_at_the_end (0.00s)
+PASS
+ok  	github.com/dapr/kit/schemes/enc/v1	(cached)
+=== RUN   TestContext
+=== RUN   TestContext/SIGINT_should_cancel_context
+time="2026-08-13T14:11:53.917435471-03:00" level=info msg="Received signal; beginning shutdown" instance=peach scope=dapr.signals signal=interrupt type=log ver=unknown
+=== RUN   TestContext/SIGTERM_should_cancel_context
+time="2026-08-13T14:11:53.920673492-03:00" level=info msg="Received signal; beginning shutdown" instance=peach scope=dapr.signals signal=terminated type=log ver=unknown
+=== RUN   TestContext/context_cause_should_contain_signal_information
+time="2026-08-13T14:11:53.923612515-03:00" level=info msg="Received signal; beginning shutdown" instance=peach scope=dapr.signals signal=interrupt type=log ver=unknown
+--- PASS: TestContext (0.01s)
+    --- PASS: TestContext/SIGINT_should_cancel_context (0.00s)
+    --- PASS: TestContext/SIGTERM_should_cancel_context (0.00s)
+    --- PASS: TestContext/context_cause_should_contain_signal_information (0.00s)
+=== RUN   TestOnHUP
+=== RUN   TestOnHUP/SIGHUP_should_cancel_context
+time="2026-08-13T14:11:53.928642233-03:00" level=info msg="Received signal; restarting" instance=peach scope=dapr.signals signal=hangup type=log ver=unknown
+=== RUN   TestOnHUP/context_cause_should_contain_SIGHUP_information
+time="2026-08-13T14:11:53.931354174-03:00" level=info msg="Received signal; restarting" instance=peach scope=dapr.signals signal=hangup type=log ver=unknown
+=== RUN   TestOnHUP/parent_context_cancellation_should_cancel_derived_context
+=== RUN   TestOnHUP/multiple_SIGHUP_signals_yield_new_contexts
+time="2026-08-13T14:11:53.93641385-03:00" level=info msg="Received signal; restarting" instance=peach scope=dapr.signals signal=hangup type=log ver=unknown
+time="2026-08-13T14:11:53.936513599-03:00" level=info msg="Received signal; restarting" instance=peach scope=dapr.signals signal=hangup type=log ver=unknown
+=== RUN   TestOnHUP/multiple_OnHUP_channels_receive_same_signal
+time="2026-08-13T14:11:53.938629252-03:00" level=info msg="Received signal; restarting" instance=peach scope=dapr.signals signal=hangup type=log ver=unknown
+time="2026-08-13T14:11:53.93864271-03:00" level=info msg="Received signal; restarting" instance=peach scope=dapr.signals signal=hangup type=log ver=unknown
+=== RUN   TestOnHUP/SignalReload_should_cancel_context_via_SIGHUP
+time="2026-08-13T14:11:53.940949737-03:00" level=info msg="Received signal; restarting" instance=peach scope=dapr.signals signal=hangup type=log ver=unknown
+=== RUN   TestOnHUP/channel_should_be_closed_when_main_context_is_cancelled
+--- PASS: TestOnHUP (0.02s)
+    --- PASS: TestOnHUP/SIGHUP_should_cancel_context (0.00s)
+    --- PASS: TestOnHUP/context_cause_should_contain_SIGHUP_information (0.00s)
+    --- PASS: TestOnHUP/parent_context_cancellation_should_cancel_derived_context (0.00s)
+    --- PASS: TestOnHUP/multiple_SIGHUP_signals_yield_new_contexts (0.00s)
+    --- PASS: TestOnHUP/multiple_OnHUP_channels_receive_same_signal (0.00s)
+    --- PASS: TestOnHUP/SignalReload_should_cancel_context_via_SIGHUP (0.00s)
+    --- PASS: TestOnHUP/channel_should_be_closed_when_main_context_is_cancelled (0.00s)
+PASS
+ok  	github.com/dapr/kit/signals	(cached)
+=== RUN   Test_Deduplicate
+=== RUN   Test_Deduplicate/[1_2_3]
+=== RUN   Test_Deduplicate/[1_2_2_3_1]
+=== RUN   Test_Deduplicate/[5_5_5_5]
+=== RUN   Test_Deduplicate/[]
+=== RUN   Test_Deduplicate/[42]
+--- PASS: Test_Deduplicate (0.00s)
+    --- PASS: Test_Deduplicate/[1_2_3] (0.00s)
+    --- PASS: Test_Deduplicate/[1_2_2_3_1] (0.00s)
+    --- PASS: Test_Deduplicate/[5_5_5_5] (0.00s)
+    --- PASS: Test_Deduplicate/[] (0.00s)
+    --- PASS: Test_Deduplicate/[42] (0.00s)
+PASS
+ok  	github.com/dapr/kit/slices	(cached)
+=== RUN   TestLimitReadCloser
+=== RUN   TestLimitReadCloser/stream_shorter_than_limit
+=== RUN   TestLimitReadCloser/stream_has_same_length_as_limit
+=== RUN   TestLimitReadCloser/stream_longer_than_limit
+=== RUN   TestLimitReadCloser/stream_longer_than_limit,_read_with_byte_slice
+=== RUN   TestLimitReadCloser/read_in_two_segments
+=== RUN   TestLimitReadCloser/close_early
+=== RUN   TestLimitReadCloser/stream_is_nil
+--- PASS: TestLimitReadCloser (0.00s)
+    --- PASS: TestLimitReadCloser/stream_shorter_than_limit (0.00s)
+    --- PASS: TestLimitReadCloser/stream_has_same_length_as_limit (0.00s)
+    --- PASS: TestLimitReadCloser/stream_longer_than_limit (0.00s)
+    --- PASS: TestLimitReadCloser/stream_longer_than_limit,_read_with_byte_slice (0.00s)
+    --- PASS: TestLimitReadCloser/read_in_two_segments (0.00s)
+    --- PASS: TestLimitReadCloser/close_early (0.00s)
+    --- PASS: TestLimitReadCloser/stream_is_nil (0.00s)
+=== RUN   TestUppercaseTransformer
+=== RUN   TestUppercaseTransformer/empty_string
+=== RUN   TestUppercaseTransformer/hello_world
+=== RUN   TestUppercaseTransformer/UPPERCASE
+=== RUN   TestUppercaseTransformer/Dante's_verses_(mixed_case_+_unicode)
+=== RUN   TestUppercaseTransformer/emojis
+--- PASS: TestUppercaseTransformer (0.00s)
+    --- PASS: TestUppercaseTransformer/empty_string (0.00s)
+    --- PASS: TestUppercaseTransformer/hello_world (0.00s)
+    --- PASS: TestUppercaseTransformer/UPPERCASE (0.00s)
+    --- PASS: TestUppercaseTransformer/Dante's_verses_(mixed_case_+_unicode) (0.00s)
+    --- PASS: TestUppercaseTransformer/emojis (0.00s)
+PASS
+ok  	github.com/dapr/kit/streams	(cached)
+?   	github.com/dapr/kit/strings	[no test files]
+=== RUN   TestParseDuration
+=== RUN   TestParseDuration/parse_time.Duration
+=== RUN   TestParseDuration/parse_ISO_8601_duration_with_repetition
+=== RUN   TestParseDuration/parse_ISO_8601_duration_without_repetition
+=== RUN   TestParseDuration/parse_ISO_8601_duration_with_repetition_only
+=== RUN   TestParseDuration/parse_ISO8610_and_calculate_with_leap_year
+=== RUN   TestParseDuration/parse_RFC3339_datetime
+=== RUN   TestParseDuration/parse_empty_string
+=== RUN   TestParseDuration/invalid_ISO8601_duration
+--- PASS: TestParseDuration (0.00s)
+    --- PASS: TestParseDuration/parse_time.Duration (0.00s)
+    --- PASS: TestParseDuration/parse_ISO_8601_duration_with_repetition (0.00s)
+    --- PASS: TestParseDuration/parse_ISO_8601_duration_without_repetition (0.00s)
+    --- PASS: TestParseDuration/parse_ISO_8601_duration_with_repetition_only (0.00s)
+    --- PASS: TestParseDuration/parse_ISO8610_and_calculate_with_leap_year (0.00s)
+    --- PASS: TestParseDuration/parse_RFC3339_datetime (0.00s)
+    --- PASS: TestParseDuration/parse_empty_string (0.00s)
+    --- PASS: TestParseDuration/invalid_ISO8601_duration (0.00s)
+=== RUN   TestParseTime
+=== RUN   TestParseTime/parse_time.Duration_without_offset
+=== RUN   TestParseTime/parse_time.Duration_with_offset
+=== RUN   TestParseTime/parse_ISO_8601_duration_with_repetition
+=== RUN   TestParseTime/parse_ISO_8601_duration_without_repetition
+=== RUN   TestParseTime/parse_RFC3339_datetime
+=== RUN   TestParseTime/parse_RFC3339nano_datetime
+=== RUN   TestParseTime/parse_empty_string
+--- PASS: TestParseTime (0.00s)
+    --- PASS: TestParseTime/parse_time.Duration_without_offset (0.00s)
+    --- PASS: TestParseTime/parse_time.Duration_with_offset (0.00s)
+    --- PASS: TestParseTime/parse_ISO_8601_duration_with_repetition (0.00s)
+    --- PASS: TestParseTime/parse_ISO_8601_duration_without_repetition (0.00s)
+    --- PASS: TestParseTime/parse_RFC3339_datetime (0.00s)
+    --- PASS: TestParseTime/parse_RFC3339nano_datetime (0.00s)
+    --- PASS: TestParseTime/parse_empty_string (0.00s)
+PASS
+ok  	github.com/dapr/kit/time	(cached)
+=== RUN   TestCache
+--- PASS: TestCache (0.40s)
+PASS
+ok  	github.com/dapr/kit/ttlcache	(cached)
+FAIL

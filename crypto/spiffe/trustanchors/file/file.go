@@ -51,7 +51,7 @@ type Options struct {
 // file is a TrustAnchors implementation that uses a file as the source of trust
 // anchors. The trust anchors will be updated when the file changes.
 type file struct {
-	log        logger.Logger
+	log        *logger.Log
 	caPath     string
 	jwksPath   *string
 	x509Bundle *x509bundle.Bundle
@@ -77,7 +77,7 @@ func From(opts Options) trustanchors.Interface {
 	return &file{
 		initFileWatchInterval: time.Second,
 
-		log:      opts.Log,
+		log:      logger.FromLogger(opts.Log),
 		caPath:   opts.CAPath,
 		jwksPath: opts.JwksPath,
 		clock:    clock.RealClock{},
@@ -114,11 +114,11 @@ func (f *file) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			return fmt.Errorf("failed to find trust anchors file '%s': %w", f.caPath, ctx.Err())
 		case <-f.clock.After(f.initFileWatchInterval):
-			f.log.Warnf("Trust anchors file '%s' not found, waiting...", f.caPath)
+			f.log.Warn("Trust anchors file not found, waiting", "path", f.caPath)
 		}
 	}
 
-	f.log.Infof("Trust anchors file '%s' found", f.caPath)
+	f.log.Info("Trust anchors file found", "path", f.caPath)
 
 	err := f.updateAnchors(ctx)
 	if err != nil {
@@ -139,10 +139,10 @@ func (f *file) Run(ctx context.Context) error {
 
 	close(f.readyCh)
 
-	f.log.Infof("Watching trust anchors file '%s' for changes", f.caPath)
+	f.log.Info("Watching trust anchors file for changes", "path", f.caPath)
 
 	if f.jwksPath != nil {
-		f.log.Infof("Watching JWT bundle file '%s' for changes", *f.jwksPath)
+		f.log.Info("Watching JWT bundle file for changes", "path", *f.jwksPath)
 	}
 
 	return concurrency.NewRunnerManager(

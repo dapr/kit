@@ -60,7 +60,9 @@ type RunnerCloserManager struct {
 // NewRunnerCloserManager creates a new RunnerCloserManager with the given
 // grace period and runners.
 // If gracePeriod is nil, the grace period is infinite.
-func NewRunnerCloserManager(log logger.Logger, gracePeriod *time.Duration, runners ...Runner) *RunnerCloserManager {
+func NewRunnerCloserManager(l logger.Logger, gracePeriod *time.Duration, runners ...Runner) *RunnerCloserManager {
+	log := logger.FromLogger(l)
+
 	c := &RunnerCloserManager{
 		mngr:               NewRunnerManager(runners...),
 		clock:              clock.RealClock{},
@@ -79,7 +81,7 @@ func NewRunnerCloserManager(log logger.Logger, gracePeriod *time.Duration, runne
 	}
 
 	c.AddCloser(func() {
-		log.Debugf("Graceful shutdown timeout: %s", *gracePeriod)
+		log.Debug("Graceful shutdown timeout", "grace_period", *gracePeriod)
 
 		t := c.clock.NewTimer(*gracePeriod)
 		defer t.Stop()

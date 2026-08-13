@@ -121,7 +121,7 @@ type SPIFFE struct {
 
 	keyAlgorithm KeyAlgorithm
 
-	log     logger.Logger
+	log     *logger.Log
 	lock    sync.RWMutex
 	clock   clock.Clock
 	running atomic.Bool
@@ -147,7 +147,7 @@ func New(opts Options) *SPIFFE {
 		dir:           sdir,
 		trustAnchors:  opts.TrustAnchors,
 		keyAlgorithm:  keyAlg,
-		log:           opts.Log,
+		log:           logger.FromLogger(opts.Log),
 		clock:         clock.RealClock{},
 		readyCh:       make(chan struct{}),
 	}
@@ -175,7 +175,7 @@ func (s *SPIFFE) Run(ctx context.Context) error {
 	close(s.readyCh)
 	s.lock.Unlock()
 
-	s.log.Infof("Security is initialized successfully")
+	s.log.Info("Security is initialized successfully")
 	s.runRotation(ctx)
 
 	return nil
@@ -202,22 +202,17 @@ func (s *SPIFFE) JWTSVIDSource() jwtsvid.Source {
 
 // logIdentityInfo creates a log message with expiry details for both X.509 and JWT SVIDs
 func (s *SPIFFE) logIdentityInfo(prefix string, cert *x509.Certificate, jwtSVID *jwtsvid.SVID, renewTime *time.Time) {
-	msg := prefix + "; cert expires on: %s"
-	args := []any{cert.NotAfter.String()}
+	attrs := []any{"cert_expires_at", cert.NotAfter.String()}
 
 	if jwtSVID != nil {
-		msg += ", jwt expires on: %s"
-
-		args = append(args, jwtSVID.Expiry.String())
+		attrs = append(attrs, "jwt_expires_at", jwtSVID.Expiry.String())
 	}
 
 	if renewTime != nil {
-		msg += ", renewal at: %s"
-
-		args = append(args, renewTime.String())
+		attrs = append(attrs, "renews_at", renewTime.String())
 	}
 
-	s.log.Infof(msg, args...)
+	s.log.Info(prefix, attrs...)
 }
 
 // runRotation starts up the manager responsible for renewing the workload identity
@@ -243,7 +238,7 @@ func (s *SPIFFE) runRotation(ctx context.Context) {
 
 			identity, err := s.fetchIdentity(ctx)
 			if err != nil {
-				s.log.Errorf("Error renewing identity, trying again in 10 seconds: %s", err)
+				s.log.Error("Error renewing identity, trying again in 10 seconds", logger.Err(err))
 
 				select {
 				case <-s.clock.After(10 * time.Second):
@@ -322,7 +317,7 @@ func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 		}
 
 		identity.JWTSVID = jwtSvid
-		s.log.Infof("Successfully received JWT SVID with expiry: %s", jwtSvid.Expiry.String())
+		s.log.Info("Successfully received JWT SVID", "expires_at", jwtSvid.Expiry.String())
 	}
 
 	for aud, token := range svidResponse.PerAudienceJWT {
@@ -336,7 +331,7 @@ func (s *SPIFFE) fetchIdentity(ctx context.Context) (*Identity, error) {
 		}
 
 		identity.PerAudienceJWTSVID[aud] = jwtSvid
-		s.log.Infof("Successfully received per-audience JWT SVID for audience %s with expiry: %s", aud, jwtSvid.Expiry.String())
+		s.log.Info("Successfully received per-audience JWT SVID", "audience", aud, "expires_at", jwtSvid.Expiry.String())
 	}
 
 	if s.dir != nil {

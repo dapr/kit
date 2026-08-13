@@ -14,163 +14,170 @@ limitations under the License.
 package logger
 
 import (
+	"context"
+	"fmt"
 	"io"
-	"os"
-	"time"
-
-	"github.com/sirupsen/logrus"
+	"log/slog"
+	"slices"
 )
 
-// daprLogger is the implemention for logrus.
-type daprLogger struct {
-	// name is the name of logger that is published to log as a scope
-	name string
-	// loger is the instance of logrus logger
-	logger *logrus.Entry
-}
-
+// DaprVersion is the version reported in the ver field. It is set at link time
+// via -X github.com/dapr/kit/logger.DaprVersion=<version>.
 var DaprVersion = "unknown"
 
+// daprLogger implements the deprecated printf-style [Logger] interface on top
+// of slog.
+//
+// It exists so that the ~1700 call sites across dapr and components-contrib,
+// and the third-party interfaces Dapr satisfies structurally (durabletask-go's
+// backend.Logger, dubbo-go's logger.Logger), keep working unchanged while call
+// sites migrate to [Log].
+type daprLogger struct {
+	name    string
+	state   *state
+	handler *handler
+	log     *slog.Logger
+}
+
 func newDaprLogger(name string) *daprLogger {
-	newLogger := logrus.New()
-	newLogger.SetOutput(os.Stdout)
+	return newDaprLoggerState(name, sharedState(name))
+}
 
-	dl := &daprLogger{
-		name: name,
-		logger: newLogger.WithFields(logrus.Fields{
-			logFieldScope: name,
-			logFieldType:  LogTypeLog,
-		}),
+func newDaprLoggerState(name string, s *state) *daprLogger {
+	h := newHandler(s, name)
+
+	return &daprLogger{
+		name:    name,
+		state:   s,
+		handler: h,
+		log:     slog.New(h),
 	}
-
-	dl.EnableJSONOutput(defaultJSONOutput)
-
-	return dl
 }
 
 // EnableJSONOutput enables JSON formatted output log.
 func (l *daprLogger) EnableJSONOutput(enabled bool) {
-	var formatter logrus.Formatter
-
-	fieldMap := logrus.FieldMap{
-		// If time field name is conflicted, logrus adds "fields." prefix.
-		// So rename to unused field @time to avoid the confliction.
-		logrus.FieldKeyTime:  logFieldTimeStamp,
-		logrus.FieldKeyLevel: logFieldLevel,
-		logrus.FieldKeyMsg:   logFieldMessage,
-	}
-
-	hostname, _ := os.Hostname()
-	l.logger.Data = logrus.Fields{
-		logFieldScope:    l.logger.Data[logFieldScope],
-		logFieldType:     LogTypeLog,
-		logFieldInstance: hostname,
-		logFieldDaprVer:  DaprVersion,
-	}
-
-	if enabled {
-		formatter = &logrus.JSONFormatter{ //nolint: exhaustruct
-			TimestampFormat: time.RFC3339Nano,
-			FieldMap:        fieldMap,
-		}
-	} else {
-		formatter = &logrus.TextFormatter{ //nolint: exhaustruct
-			TimestampFormat: time.RFC3339Nano,
-			FieldMap:        fieldMap,
-		}
-	}
-
-	l.logger.Logger.SetFormatter(formatter)
+	l.state.setJSON(enabled)
 }
 
 // SetAppID sets app_id field in the log. Default value is empty string.
 func (l *daprLogger) SetAppID(id string) {
-	l.logger = l.logger.WithField(logFieldAppID, id)
-}
-
-func toLogrusLevel(lvl LogLevel) logrus.Level {
-	// ignore error because it will never happen
-	l, _ := logrus.ParseLevel(string(lvl))
-	return l
+	l.state.setAppID(id)
 }
 
 // SetOutputLevel sets log output level.
 func (l *daprLogger) SetOutputLevel(outputLevel LogLevel) {
-	l.logger.Logger.SetLevel(toLogrusLevel(outputLevel))
+	l.state.setLevel(toSlogLevel(outputLevel))
 }
 
 // IsOutputLevelEnabled returns true if the logger will output this LogLevel.
 func (l *daprLogger) IsOutputLevelEnabled(level LogLevel) bool {
-	return l.logger.Logger.IsLevelEnabled(toLogrusLevel(level))
+	return l.state.enabled(toSlogLevel(level))
 }
 
 // SetOutput sets the destination for the logs.
 func (l *daprLogger) SetOutput(dst io.Writer) {
-	l.logger.Logger.SetOutput(dst)
+	l.state.setOutput(dst)
 }
 
 // WithLogType specify the log_type field in log. Default value is LogTypeLog.
 func (l *daprLogger) WithLogType(logType string) Logger {
-	return &daprLogger{
-		name:   l.name,
-		logger: l.logger.WithField(logFieldType, logType),
-	}
+	return l.derive(l.handler.withLogType(logType))
 }
 
 // WithFields returns a logger with the added structured fields.
 func (l *daprLogger) WithFields(fields map[string]any) Logger {
-	return &daprLogger{
-		name:   l.name,
-		logger: l.logger.WithFields(fields),
+	if len(fields) == 0 {
+		return l
+	}
+
+	// Sort so that repeated calls with the same map produce a stable handler;
+	// the encoder sorts by key anyway, but this keeps derived handlers
+	// deterministic and comparable in tests.
+	keys := make([]string, 0, len(fields))
+	for k := range fields {
+		keys = append(keys, k)
+	}
+
+	slices.Sort(keys)
+
+	attrs := make([]slog.Attr, 0, len(keys))
+	for _, k := range keys {
+		attrs = append(attrs, slog.Any(k, fields[k]))
+	}
+
+	h, _ := l.handler.WithAttrs(attrs).(*handler)
+
+	return l.derive(h)
+}
+
+// Structured returns this logger as a [Log], for call sites that have migrated
+// to structured attributes but receive a [Logger].
+func (l *daprLogger) Structured() *Log {
+	return &Log{
+		Logger:  l.log,
+		name:    l.name,
+		state:   l.state,
+		handler: l.handler,
 	}
 }
 
 // Info logs a message at level Info.
-func (l *daprLogger) Info(args ...any) {
-	l.logger.Log(logrus.InfoLevel, args...)
-}
+func (l *daprLogger) Info(args ...any) { l.emitSprint(LevelInfo, args...) }
 
 // Infof logs a message at level Info.
-func (l *daprLogger) Infof(format string, args ...any) {
-	l.logger.Logf(logrus.InfoLevel, format, args...)
-}
+func (l *daprLogger) Infof(format string, args ...any) { l.emitf(LevelInfo, format, args...) }
 
 // Debug logs a message at level Debug.
-func (l *daprLogger) Debug(args ...any) {
-	l.logger.Log(logrus.DebugLevel, args...)
-}
+func (l *daprLogger) Debug(args ...any) { l.emitSprint(LevelDebug, args...) }
 
 // Debugf logs a message at level Debug.
-func (l *daprLogger) Debugf(format string, args ...any) {
-	l.logger.Logf(logrus.DebugLevel, format, args...)
-}
+func (l *daprLogger) Debugf(format string, args ...any) { l.emitf(LevelDebug, format, args...) }
 
 // Warn logs a message at level Warn.
-func (l *daprLogger) Warn(args ...any) {
-	l.logger.Log(logrus.WarnLevel, args...)
-}
+func (l *daprLogger) Warn(args ...any) { l.emitSprint(LevelWarn, args...) }
 
 // Warnf logs a message at level Warn.
-func (l *daprLogger) Warnf(format string, args ...any) {
-	l.logger.Logf(logrus.WarnLevel, format, args...)
-}
+func (l *daprLogger) Warnf(format string, args ...any) { l.emitf(LevelWarn, format, args...) }
 
 // Error logs a message at level Error.
-func (l *daprLogger) Error(args ...any) {
-	l.logger.Log(logrus.ErrorLevel, args...)
-}
+func (l *daprLogger) Error(args ...any) { l.emitSprint(LevelError, args...) }
 
 // Errorf logs a message at level Error.
-func (l *daprLogger) Errorf(format string, args ...any) {
-	l.logger.Logf(logrus.ErrorLevel, format, args...)
-}
+func (l *daprLogger) Errorf(format string, args ...any) { l.emitf(LevelError, format, args...) }
 
 // Fatal logs a message at level Fatal then the process will exit with status set to 1.
 func (l *daprLogger) Fatal(args ...any) {
-	l.logger.Fatal(args...)
+	l.emitSprint(LevelFatal, args...)
+	exit(1)
 }
 
 // Fatalf logs a message at level Fatal then the process will exit with status set to 1.
 func (l *daprLogger) Fatalf(format string, args ...any) {
-	l.logger.Fatalf(format, args...)
+	l.emitf(LevelFatal, format, args...)
+	exit(1)
+}
+
+func (l *daprLogger) derive(h *handler) *daprLogger {
+	return &daprLogger{
+		name:    l.name,
+		state:   l.state,
+		handler: h,
+		log:     slog.New(h),
+	}
+}
+
+func (l *daprLogger) emitSprint(level slog.Level, args ...any) {
+	if !l.state.enabled(level) {
+		return
+	}
+
+	l.log.Log(context.Background(), level, fmtSprint(args...))
+}
+
+func (l *daprLogger) emitf(level slog.Level, format string, args ...any) {
+	if !l.state.enabled(level) {
+		return
+	}
+
+	l.log.Log(context.Background(), level, fmt.Sprintf(format, args...))
 }

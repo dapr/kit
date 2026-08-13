@@ -17,24 +17,48 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"os"
+	"log/slog"
 	"regexp"
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const fakeLoggerName = "fakeLogger"
 
+// getTestLogger returns a logger with configuration isolated from the global
+// registry, so that adjusting the level in one test cannot affect another.
 func getTestLogger(buf io.Writer) *daprLogger {
-	l := newDaprLogger(fakeLoggerName)
+	l := newDaprLoggerState(fakeLoggerName, newState())
 	l.SetOutput(buf)
-	l.logger.Logger.ExitFunc = func(i int) {} // don't quit the test
 
 	return l
+}
+
+// noExit stops Fatal from terminating the test binary and reports whether it
+// was called.
+func noExit(t *testing.T) *bool {
+	t.Helper()
+
+	called := false
+	prev := exit
+	exit = func(int) { called = true }
+
+	t.Cleanup(func() { exit = prev })
+
+	return &called
+}
+
+// setHostname overrides the instance field for the duration of a test.
+func setHostname(t *testing.T, h string) {
+	t.Helper()
+
+	prev := hostname
+	hostname = h
+
+	t.Cleanup(func() { hostname = prev })
 }
 
 func TestEnableJSON(t *testing.T) {
@@ -42,21 +66,27 @@ func TestEnableJSON(t *testing.T) {
 
 	testLogger := getTestLogger(&buf)
 
-	expectedHost, _ := os.Hostname()
+	setHostname(t, "test-host")
 
 	testLogger.EnableJSONOutput(true)
-	_, okJSON := testLogger.logger.Logger.Formatter.(*logrus.JSONFormatter)
-	assert.True(t, okJSON)
-	assert.Equal(t, "fakeLogger", testLogger.logger.Data[logFieldScope])
-	assert.Equal(t, LogTypeLog, testLogger.logger.Data[logFieldType])
-	assert.Equal(t, expectedHost, testLogger.logger.Data[logFieldInstance])
+	testLogger.Info("hello")
+
+	var o map[string]any
+	require.NoError(t, json.Unmarshal(buf.Bytes(), &o))
+	assert.Equal(t, fakeLoggerName, o[logFieldScope])
+	assert.Equal(t, LogTypeLog, o[logFieldType])
+	assert.Equal(t, "test-host", o[logFieldInstance])
+
+	buf.Reset()
 
 	testLogger.EnableJSONOutput(false)
-	_, okText := testLogger.logger.Logger.Formatter.(*logrus.TextFormatter)
-	assert.True(t, okText)
-	assert.Equal(t, "fakeLogger", testLogger.logger.Data[logFieldScope])
-	assert.Equal(t, LogTypeLog, testLogger.logger.Data[logFieldType])
-	assert.Equal(t, expectedHost, testLogger.logger.Data[logFieldInstance])
+	testLogger.Info("hello")
+
+	line := buf.String()
+	assert.False(t, json.Valid(bytes.TrimSpace(buf.Bytes())), "expected text output")
+	assert.Contains(t, line, "scope="+fakeLoggerName)
+	assert.Contains(t, line, "type="+LogTypeLog)
+	assert.Contains(t, line, "instance=test-host")
 }
 
 func TestJSONLoggerFields(t *testing.T) {
@@ -135,18 +165,30 @@ func TestJSONLoggerFields(t *testing.T) {
 				l.Errorf("%s", msg)
 			},
 		},
+		{
+			"warn()",
+			InfoLevel,
+			"warning",
+			"dapr_app",
+			"King Dapr",
+			"dapr-pod",
+			func(l *daprLogger, msg string) {
+				l.Warn(msg)
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var buf bytes.Buffer
 
+			setHostname(t, tt.instance)
+
 			testLogger := getTestLogger(&buf)
 			testLogger.EnableJSONOutput(true)
 			testLogger.SetAppID(tt.appID)
 			DaprVersion = tt.appID
 			testLogger.SetOutputLevel(tt.outputLevel)
-			testLogger.logger.Data[logFieldInstance] = tt.instance
 
 			tt.fn(testLogger, tt.message)
 
@@ -162,6 +204,7 @@ func TestJSONLoggerFields(t *testing.T) {
 			assert.Equal(t, LogTypeLog, o[logFieldType])
 			assert.Equal(t, fakeLoggerName, o[logFieldScope])
 			assert.Equal(t, tt.message, o[logFieldMessage])
+			assert.Equal(t, tt.appID, o[logFieldDaprVer])
 			_, err := time.Parse(time.RFC3339, o[logFieldTimeStamp].(string))
 			require.NoError(t, err)
 		})
@@ -235,6 +278,8 @@ func TestOutputLevel(t *testing.T) {
 		},
 	}
 
+	noExit(t)
+
 	for _, tt := range tests {
 		t.Run(string(tt.outputLevel), func(t *testing.T) {
 			for l, want := range tt.expectedOutputLevels {
@@ -256,6 +301,7 @@ func TestOutputLevel(t *testing.T) {
 					testLogger.Error("")
 				case FatalLevel:
 					testLogger.Fatal("")
+				case UndefinedLevel:
 				}
 
 				if want {
@@ -266,6 +312,33 @@ func TestOutputLevel(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestFatalExits pins that both Fatal forms terminate the process after
+// logging, which callers rely on.
+func TestFatalExits(t *testing.T) {
+	t.Run("Fatal", func(t *testing.T) {
+		var buf bytes.Buffer
+
+		called := noExit(t)
+
+		getTestLogger(&buf).Fatal("boom")
+
+		assert.True(t, *called)
+		assert.Contains(t, buf.String(), "level=fatal")
+		assert.Contains(t, buf.String(), "msg=boom")
+	})
+
+	t.Run("Fatalf", func(t *testing.T) {
+		var buf bytes.Buffer
+
+		called := noExit(t)
+
+		getTestLogger(&buf).Fatalf("boom %d", 2)
+
+		assert.True(t, *called)
+		assert.Contains(t, buf.String(), `msg="boom 2"`)
+	})
 }
 
 func TestWithTypeFields(t *testing.T) {
@@ -398,24 +471,36 @@ func TestWithFields(t *testing.T) {
 	})
 }
 
-func TestToLogrusLevel(t *testing.T) {
-	t.Run("Dapr DebugLevel to Logrus.DebugLevel", func(t *testing.T) {
-		assert.Equal(t, logrus.DebugLevel, toLogrusLevel(DebugLevel))
-	})
+func TestToSlogLevel(t *testing.T) {
+	tests := map[LogLevel]slog.Level{
+		DebugLevel:     LevelDebug,
+		InfoLevel:      LevelInfo,
+		WarnLevel:      LevelWarn,
+		ErrorLevel:     LevelError,
+		FatalLevel:     LevelFatal,
+		UndefinedLevel: LevelUndefined,
+	}
 
-	t.Run("Dapr InfoLevel to Logrus.InfoLevel", func(t *testing.T) {
-		assert.Equal(t, logrus.InfoLevel, toLogrusLevel(InfoLevel))
-	})
+	for in, want := range tests {
+		t.Run(string(in), func(t *testing.T) {
+			assert.Equal(t, want, toSlogLevel(in))
+		})
+	}
+}
 
-	t.Run("Dapr WarnLevel to Logrus.WarnLevel", func(t *testing.T) {
-		assert.Equal(t, logrus.WarnLevel, toLogrusLevel(WarnLevel))
-	})
+// TestLevelString pins the level labels. These are part of the documented log
+// schema and are matched by user log pipelines, so they must not drift to
+// slog's own upper-case names.
+func TestLevelString(t *testing.T) {
+	tests := map[slog.Level]string{
+		LevelDebug: "debug",
+		LevelInfo:  "info",
+		LevelWarn:  "warning",
+		LevelError: "error",
+		LevelFatal: "fatal",
+	}
 
-	t.Run("Dapr ErrorLevel to Logrus.ErrorLevel", func(t *testing.T) {
-		assert.Equal(t, logrus.ErrorLevel, toLogrusLevel(ErrorLevel))
-	})
-
-	t.Run("Dapr FatalLevel to Logrus.FatalLevel", func(t *testing.T) {
-		assert.Equal(t, logrus.FatalLevel, toLogrusLevel(FatalLevel))
-	})
+	for in, want := range tests {
+		assert.Equal(t, want, levelString(in))
+	}
 }

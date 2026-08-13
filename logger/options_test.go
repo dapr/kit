@@ -14,6 +14,9 @@ limitations under the License.
 package logger
 
 import (
+	"bytes"
+	"encoding/json"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
@@ -91,15 +94,43 @@ func TestApplyOptionsToLoggers(t *testing.T) {
 	require.NoError(t, ApplyOptionsToLoggers(&testOptions))
 
 	for _, l := range testLoggers {
-		assert.Equal(
-			t,
-			"dapr-app",
-			(l.(*daprLogger)).logger.Data[logFieldAppID])
-		assert.Equal(
-			t,
-			toLogrusLevel(DebugLevel),
-			(l.(*daprLogger)).logger.Logger.GetLevel())
+		dl, ok := l.(*daprLogger)
+		require.True(t, ok)
+
+		assert.Equal(t, "dapr-app", dl.state.getAppID())
+		assert.Equal(t, LevelDebug, slog.Level(dl.state.level.Load()))
+		assert.True(t, dl.state.json.Load())
+		assert.True(t, l.IsOutputLevelEnabled(DebugLevel))
 	}
+}
+
+// TestApplyOptionsToLoggersLateCreated pins that a logger created after the
+// options were applied inherits them. The logrus implementation only pushed
+// options into the loggers that already existed, so anything constructed later
+// silently kept text output at info level.
+func TestApplyOptionsToLoggersLateCreated(t *testing.T) {
+	require.NoError(t, ApplyOptionsToLoggers(&Options{
+		JSONFormatEnabled: true,
+		appID:             "late-app",
+		OutputLevel:       "debug",
+	}))
+
+	t.Cleanup(func() {
+		require.NoError(t, ApplyOptionsToLoggers(&Options{OutputLevel: "info"}))
+	})
+
+	var buf bytes.Buffer
+
+	l := NewLogger("testLoggerCreatedAfterApply")
+	l.SetOutput(&buf)
+	l.Debug("late")
+
+	var o map[string]any
+	require.NoError(t, json.Unmarshal(buf.Bytes(), &o))
+
+	assert.Equal(t, "debug", o[logFieldLevel])
+	assert.Equal(t, "late-app", o[logFieldAppID])
+	assert.Equal(t, "late", o[logFieldMessage])
 }
 
 func TestApplyOptionsToLoggersFileOutput(t *testing.T) {
@@ -122,7 +153,11 @@ func TestApplyOptionsToLoggersFileOutput(t *testing.T) {
 
 	dl, ok := l.(*daprLogger)
 	require.True(t, ok)
-	fileOut, ok := dl.logger.Logger.Out.(*os.File)
+
+	dl.state.outMu.RLock()
+	fileOut, ok := dl.state.out.(*os.File)
+	dl.state.outMu.RUnlock()
+
 	require.True(t, ok)
 	assert.Equal(t, logPath, fileOut.Name())
 

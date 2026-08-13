@@ -21,6 +21,12 @@ import (
 
 type nopLogger struct{}
 
+// NewNop returns a Logger that discards everything written to it. It is useful
+// in tests and wherever a Logger is required but no output is wanted.
+func NewNop() Logger {
+	return &nopLogger{}
+}
+
 // EnableJSONOutput enables JSON formatted output log.
 func (n *nopLogger) EnableJSONOutput(_ bool) {}
 
