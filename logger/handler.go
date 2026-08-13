@@ -21,6 +21,7 @@ import (
 	"os"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 	"unicode/utf8"
@@ -86,8 +87,10 @@ func (h *handler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	n := *h
 	n.attrs = slices.Clip(h.attrs)
 
+	// Flattening eagerly here keeps Handle simple and pays the resolution
+	// cost once, at derivation time, rather than on every record.
 	for _, a := range attrs {
-		n.attrs = append(n.attrs, h.qualify(a))
+		n.attrs = appendFlattened(n.attrs, h.groupPrefix(), a)
 	}
 
 	return &n
@@ -103,10 +106,6 @@ func (h *handler) WithGroup(name string) slog.Handler {
 
 	return &n
 }
-
-// withLogType returns a handler emitting a different type field.
-
-// qualify prefixes an attribute key with the open group stack.
 
 func (h *handler) Handle(_ context.Context, r slog.Record) error {
 	bufp, _ := bufPool.Get().(*[]byte)
@@ -139,12 +138,13 @@ func (h *handler) Handle(_ context.Context, r slog.Record) error {
 
 	fields = append(fields, h.attrs...)
 
+	prefix := h.groupPrefix()
+
 	r.Attrs(func(a slog.Attr) bool {
-		fields = append(fields, h.qualify(a))
+		fields = appendFlattened(fields, prefix, a)
 		return true
 	})
 
-	fields = resolve(fields)
 	slices.SortStableFunc(fields, func(a, b slog.Attr) int {
 		return cmpString(a.Key, b.Key)
 	})
@@ -163,41 +163,43 @@ func (h *handler) Handle(_ context.Context, r slog.Record) error {
 	return h.state.write(buf)
 }
 
-// resolve flattens groups and evaluates LogValuers, dropping empty attributes.
-// Deferring this until a record is actually being emitted is what makes
-// slog.LogValuer worthwhile on hot paths: the cost is only paid when the
-// record survives the level check.
-func resolve(in []slog.Attr) []slog.Attr {
-	out := in[:0]
+// appendFlattened resolves a and appends it to dst, expanding groups into
+// dotted keys recursively so arbitrarily nested groups, and LogValuers inside
+// them, all end up as scalar attributes. Empty attributes are dropped.
+//
+// dst must never share backing storage with a slice being iterated: a group
+// appends more attributes than were read, which would overwrite entries the
+// caller has not visited yet.
+func appendFlattened(dst []slog.Attr, prefix string, a slog.Attr) []slog.Attr {
+	a.Value = a.Value.Resolve()
 
-	for _, a := range in {
-		a.Value = a.Value.Resolve()
-
-		if a.Equal(slog.Attr{}) {
-			continue
-		}
-
-		if a.Value.Kind() == slog.KindGroup {
-			g := a.Value.Group()
-			if len(g) == 0 {
-				continue
-			}
-
-			for _, ga := range g {
-				if a.Key != "" {
-					ga.Key = a.Key + "." + ga.Key
-				}
-
-				out = append(out, ga)
-			}
-
-			continue
-		}
-
-		out = append(out, a)
+	if a.Equal(slog.Attr{}) {
+		return dst
 	}
 
-	return out
+	if a.Value.Kind() == slog.KindGroup {
+		p := prefix
+
+		if a.Key != "" {
+			if p != "" {
+				p += "."
+			}
+
+			p += a.Key
+		}
+
+		for _, ga := range a.Value.Group() {
+			dst = appendFlattened(dst, p, ga)
+		}
+
+		return dst
+	}
+
+	if prefix != "" {
+		a.Key = prefix + "." + a.Key
+	}
+
+	return append(dst, a)
 }
 
 func cmpString(a, b string) int {
@@ -239,6 +241,13 @@ func appendText(buf []byte, ts time.Time, lvl slog.Level, msg string, fields []s
 	)
 
 	for _, f := range fields {
+		// The three fixed keys were already written above and are not part of
+		// fields, so the duplicate check below cannot protect them; skip any
+		// caller attribute reusing their names.
+		if f.Key == logFieldTimeStamp || f.Key == logFieldLevel || f.Key == logFieldMessage {
+			continue
+		}
+
 		if !first && f.Key == last {
 			// Keys are sorted and the reserved schema fields are appended
 			// first, so the survivor of a collision is the schema field. A
@@ -325,7 +334,10 @@ func appendJSONValue(buf []byte, v slog.Value) []byte {
 
 		return strconv.AppendFloat(buf, f, 'g', -1, 64)
 	case slog.KindDuration:
-		return appendJSONString(buf, v.Duration().String())
+		// encoding/json marshals time.Duration as integer nanoseconds, so
+		// that is what logrus emitted; the text encoding keeps the readable
+		// "1m30s" form via valueString.
+		return strconv.AppendInt(buf, int64(v.Duration()), 10)
 	case slog.KindTime:
 		return appendJSONString(buf, v.Time().Format(time.RFC3339Nano))
 	case slog.KindAny, slog.KindGroup, slog.KindLogValuer:
@@ -379,6 +391,10 @@ func appendJSONString(buf []byte, s string) []byte {
 				buf = append(buf, '\\', 'r')
 			case '\t':
 				buf = append(buf, '\\', 't')
+			case '\b':
+				buf = append(buf, '\\', 'b')
+			case '\f':
+				buf = append(buf, '\\', 'f')
 			default:
 				// Control characters, plus <, > and & which encoding/json
 				// escapes by default so that output is safe to embed in HTML.
@@ -474,17 +490,7 @@ func (h *handler) withLogType(t string) *handler {
 	return &n
 }
 
-func (h *handler) qualify(a slog.Attr) slog.Attr {
-	if len(h.groups) == 0 {
-		return a
-	}
-
-	key := a.Key
-	for i := len(h.groups) - 1; i >= 0; i-- {
-		key = h.groups[i] + "." + key
-	}
-
-	a.Key = key
-
-	return a
+// groupPrefix returns the open group stack as a dotted key prefix.
+func (h *handler) groupPrefix() string {
+	return strings.Join(h.groups, ".")
 }

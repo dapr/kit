@@ -154,9 +154,9 @@ func TestApplyOptionsToLoggersFileOutput(t *testing.T) {
 	dl, ok := l.(*daprLogger)
 	require.True(t, ok)
 
-	dl.state.outMu.RLock()
+	dl.state.outMu.Lock()
 	fileOut, ok := dl.state.out.(*os.File)
-	dl.state.outMu.RUnlock()
+	dl.state.outMu.Unlock()
 
 	require.True(t, ok)
 	assert.Equal(t, logPath, fileOut.Name())

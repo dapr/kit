@@ -19,6 +19,8 @@ import (
 	"net"
 	"os"
 	"time"
+
+	"github.com/dapr/kit/logger"
 )
 
 var shutdownSignals = []os.Signal{os.Interrupt}
@@ -40,7 +42,7 @@ func OnHUP(ctx context.Context) <-chan context.Context {
 		pipeName := ReloadPipeName(os.Getpid())
 		listener, err := listenPipe(pipeName)
 		if err != nil {
-			log.Errorf("Failed to create reload named pipe %s: %v", pipeName, err)
+			log.Error("Failed to create reload named pipe", "pipe", pipeName, logger.Err(err))
 			// Fall back to the old no-op behavior: send ctx once, wait for
 			// cancellation.
 			ctxhupCh <- ctx
@@ -48,7 +50,7 @@ func OnHUP(ctx context.Context) <-chan context.Context {
 			return
 		}
 
-		log.Infof("Listening for reload signals on named pipe %s", pipeName)
+		log.Info("Listening for reload signals on named pipe", "pipe", pipeName)
 
 		go func() {
 			<-ctx.Done()
@@ -79,11 +81,11 @@ func OnHUP(ctx context.Context) <-chan context.Context {
 					// If the listener is permanently closed, exit rather
 					// than spinning in a tight retry loop.
 					if errors.Is(err, net.ErrClosed) {
-						log.Errorf("Reload pipe listener closed unexpectedly: %v", err)
+						log.Error("Reload pipe listener closed unexpectedly", logger.Err(err))
 						cancel(errors.New("reload pipe listener closed"))
 						return
 					}
-					log.Warnf("Error accepting reload pipe connection, retrying in 1s: %v", err)
+					log.Warn("Error accepting reload pipe connection, retrying in 1s", logger.Err(err))
 					time.Sleep(time.Second)
 					continue
 				}

@@ -46,9 +46,11 @@ type state struct {
 	// appID is the app_id field value. Empty until SetAppID is called.
 	appID atomic.Pointer[string]
 
-	// outMu guards out. It is held for reading while a record is written so a
-	// concurrent SetOutput cannot swap the writer mid-line.
-	outMu sync.RWMutex
+	// outMu guards out, and is held exclusively for the duration of each
+	// write: io.Writer implementations handed to SetOutput (a bytes.Buffer in
+	// tests, a file) are not required to be safe for concurrent use, so
+	// records are fully serialised, as they were under logrus.
+	outMu sync.Mutex
 	out   io.Writer
 }
 
@@ -118,11 +120,11 @@ func (s *state) setOutput(w io.Writer) {
 }
 
 // write emits one complete, already-encoded record. The lock is held for the
-// duration of the Write so records are never interleaved or torn by a
-// concurrent setOutput.
+// duration of the Write so records are never interleaved with each other or
+// torn by a concurrent setOutput.
 func (s *state) write(b []byte) error {
-	s.outMu.RLock()
-	defer s.outMu.RUnlock()
+	s.outMu.Lock()
+	defer s.outMu.Unlock()
 
 	_, err := s.out.Write(b)
 

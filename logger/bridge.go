@@ -47,7 +47,7 @@ func (h *bridgeHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	n.attrs = slices.Clip(h.attrs)
 
 	for _, a := range attrs {
-		n.attrs = append(n.attrs, h.qualify(a))
+		n.attrs = appendFlattened(n.attrs, strings.Join(h.groups, "."), a)
 	}
 
 	return &n
@@ -68,12 +68,13 @@ func (h *bridgeHandler) Handle(_ context.Context, r slog.Record) error {
 	attrs := make([]slog.Attr, 0, len(h.attrs)+r.NumAttrs())
 	attrs = append(attrs, h.attrs...)
 
+	prefix := strings.Join(h.groups, ".")
+
 	r.Attrs(func(a slog.Attr) bool {
-		attrs = append(attrs, h.qualify(a))
+		attrs = appendFlattened(attrs, prefix, a)
 		return true
 	})
 
-	attrs = resolve(attrs)
 	slices.SortStableFunc(attrs, func(a, b slog.Attr) int {
 		return cmpString(a.Key, b.Key)
 	})
@@ -120,14 +121,4 @@ func fromSlogLevel(l slog.Level) LogLevel {
 	default:
 		return FatalLevel
 	}
-}
-
-func (h *bridgeHandler) qualify(a slog.Attr) slog.Attr {
-	if len(h.groups) == 0 {
-		return a
-	}
-
-	a.Key = strings.Join(h.groups, ".") + "." + a.Key
-
-	return a
 }

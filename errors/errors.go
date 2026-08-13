@@ -172,7 +172,7 @@ func (e *Error) GRPCStatus() *status.Status {
 
 		stat, err = stat.WithDetails(convertedDetails...)
 		if err != nil {
-			log.Debug("Failed to add error details to status", "error", err.Error(), "status", stat)
+			log.Debug("Failed to add error details to status", "error", err.Error(), "status", stat.String())
 		}
 	}
 

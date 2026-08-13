@@ -17,7 +17,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -220,4 +222,92 @@ type recordingLogger struct {
 
 func (r *recordingLogger) Warn(args ...any) {
 	r.warns = append(r.warns, fmtSprint(args...))
+}
+
+// TestGroupFollowedByAttr pins the fix for an aliasing bug: flattening a group
+// in place could overwrite attributes that had not been read yet, losing the
+// attribute after the group and duplicating a group member.
+func TestGroupFollowedByAttr(t *testing.T) {
+	var buf bytes.Buffer
+
+	l := testLog(t, &buf)
+
+	// Mixing an Attr group with key-value pairs is deliberate: this exact
+	// shape triggered the overwrite.
+	//nolint:sloglint
+	l.Info("m", slog.Group("g", "a", 1, "b", 2), "after", "survived")
+
+	o := decode(t, &buf)
+	assert.InDelta(t, float64(1), o["g.a"], 0.001)
+	assert.InDelta(t, float64(2), o["g.b"], 0.001)
+	assert.Equal(t, "survived", o["after"])
+}
+
+// TestNestedGroupsFlatten pins that groups flatten recursively into dotted
+// keys at any depth, rather than only one level deep.
+func TestNestedGroupsFlatten(t *testing.T) {
+	var buf bytes.Buffer
+
+	l := testLog(t, &buf)
+	l.Info("m", slog.Group("outer", slog.Group("inner", "k", "v")))
+
+	o := decode(t, &buf)
+	assert.Equal(t, "v", o["outer.inner.k"])
+}
+
+// TestReservedKeysNotShadowedText covers the text encoding, where the fixed
+// time/level/msg keys are written separately from the sorted field list and
+// need their own protection against caller attributes.
+func TestReservedKeysNotShadowedText(t *testing.T) {
+	var buf bytes.Buffer
+
+	l := testLog(t, &buf)
+	l.EnableJSONOutput(false)
+	//nolint:sloglint
+	l.Info("real message", "level", "hijacked", "msg", "hijacked", "time", "hijacked")
+
+	line := buf.String()
+	assert.Contains(t, line, `msg="real message"`)
+	assert.Contains(t, line, "level=info")
+	assert.NotContains(t, line, "hijacked")
+}
+
+// TestDurationJSONNanos pins that a time.Duration is emitted as integer
+// nanoseconds in JSON, which is what encoding/json (and therefore logrus)
+// produced, while the text encoding keeps the readable form.
+func TestDurationJSONNanos(t *testing.T) {
+	var buf bytes.Buffer
+
+	l := testLog(t, &buf)
+	l.Info("m", "elapsed", 90*time.Second)
+
+	o := decode(t, &buf)
+	assert.InDelta(t, float64(90_000_000_000), o["elapsed"], 0.001)
+
+	buf.Reset()
+	l.EnableJSONOutput(false)
+	l.Info("m", "elapsed", 90*time.Second)
+	assert.Contains(t, buf.String(), "elapsed=1m30s")
+}
+
+// TestJSONEscapesMatchStdlib pins that the hand-rolled string encoder produces
+// exactly what encoding/json produces, escape for escape.
+func TestJSONEscapesMatchStdlib(t *testing.T) {
+	cases := []string{
+		"plain",
+		"a\bb\fc",
+		"tab\there",
+		"new\nline",
+		"quote\"back\\slash",
+		"html <b> & co",
+		"ctrl\x01\x1f",
+		"unicode     snowman ☃",
+		"invalid \xff utf8",
+	}
+
+	for _, tc := range cases {
+		want, err := json.Marshal(tc)
+		require.NoError(t, err)
+		assert.Equal(t, string(want), string(appendJSONString(nil, tc)), "input %q", tc)
+	}
 }
