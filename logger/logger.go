@@ -16,7 +16,6 @@ package logger
 import (
 	"context"
 	"io"
-	"maps"
 	"strings"
 	"sync"
 )
@@ -70,7 +69,60 @@ var (
 	defaultOpLogger   = &nopLogger{}
 )
 
+// globalStates holds one configuration per logger name, shared between the
+// [Logger] and the [Log] of that name so that configuring either configures
+// both. Each name gets its own state, matching the previous implementation
+// where every named logger owned a separate logrus.Logger.
+var (
+	globalStates     = map[string]*state{}
+	globalStatesLock = sync.Mutex{}
+)
+
+// sharedState returns the configuration for name, creating it if necessary.
+func sharedState(name string) *state {
+	globalStatesLock.Lock()
+	defer globalStatesLock.Unlock()
+
+	s, ok := globalStates[name]
+	if !ok {
+		s = newState()
+		globalStates[name] = s
+	}
+
+	return s
+}
+
+// getStates returns a snapshot of every registered logger's configuration.
+func getStates() []*state {
+	globalStatesLock.Lock()
+	defer globalStatesLock.Unlock()
+
+	out := make([]*state, 0, len(globalStates))
+	for _, s := range globalStates {
+		out = append(out, s)
+	}
+
+	return out
+}
+
 // Logger includes the logging api sets.
+//
+// Prefer [Log] and [New] for new code, which take structured attributes rather
+// than printf format strings:
+//
+//	log := logger.New("dapr.runtime")
+//	log.Info("component loaded", "component", name)
+//	log.Error("failed to load component", logger.Err(err))
+//
+// This interface is not itself deprecated: it remains the parameter type of
+// public constructors across the Dapr ecosystem, notably every
+// components-contrib component, and third-party code satisfies it
+// structurally. Use [FromLogger] to get a [Log] from one.
+//
+// Its printf-style logging methods are deprecated. They build the message
+// eagerly, box their arguments before the level is checked, and produce output
+// that cannot be filtered on by field. They will be removed in a future major
+// release.
 type Logger interface { //nolint: interfacebloat
 	// EnableJSONOutput enables JSON formatted output log
 	EnableJSONOutput(enabled bool)
@@ -93,24 +145,44 @@ type Logger interface { //nolint: interfacebloat
 	WithFields(fields map[string]any) Logger
 
 	// Info logs a message at level Info.
+	//
+	// Deprecated: use [Log.Info] with structured attributes.
 	Info(args ...any)
 	// Infof logs a message at level Info.
+	//
+	// Deprecated: use [Log.Info] with structured attributes.
 	Infof(format string, args ...any)
 	// Debug logs a message at level Debug.
+	//
+	// Deprecated: use [Log.Debug] with structured attributes.
 	Debug(args ...any)
 	// Debugf logs a message at level Debug.
+	//
+	// Deprecated: use [Log.Debug] with structured attributes.
 	Debugf(format string, args ...any)
 	// Warn logs a message at level Warn.
+	//
+	// Deprecated: use [Log.Warn] with structured attributes.
 	Warn(args ...any)
 	// Warnf logs a message at level Warn.
+	//
+	// Deprecated: use [Log.Warn] with structured attributes.
 	Warnf(format string, args ...any)
 	// Error logs a message at level Error.
+	//
+	// Deprecated: use [Log.Error] with structured attributes.
 	Error(args ...any)
 	// Errorf logs a message at level Error.
+	//
+	// Deprecated: use [Log.Error] with structured attributes.
 	Errorf(format string, args ...any)
 	// Fatal logs a message at level Fatal then the process will exit with status set to 1.
+	//
+	// Deprecated: use [Log.Fatal] with structured attributes.
 	Fatal(args ...any)
 	// Fatalf logs a message at level Fatal then the process will exit with status set to 1.
+	//
+	// Deprecated: use [Log.Fatal] with structured attributes.
 	Fatalf(format string, args ...any)
 }
 
@@ -134,6 +206,11 @@ func toLogLevel(level string) LogLevel {
 }
 
 // NewLogger creates new Logger instance.
+//
+// Prefer [New], which returns a [Log] taking structured attributes. This
+// constructor is retained, and not deprecated, because a [Logger] is still
+// required wherever it is a parameter type of a public API. It shares its
+// configuration with the [Log] of the same name.
 func NewLogger(name string) Logger {
 	globalLoggersLock.Lock()
 	defer globalLoggersLock.Unlock()
@@ -145,16 +222,6 @@ func NewLogger(name string) Logger {
 	}
 
 	return logger
-}
-
-func getLoggers() map[string]Logger {
-	globalLoggersLock.RLock()
-	defer globalLoggersLock.RUnlock()
-
-	l := make(map[string]Logger, len(globalLoggers))
-	maps.Copy(l, globalLoggers)
-
-	return l
 }
 
 // NewContext returns a new Context, derived from ctx, which carries the

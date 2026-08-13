@@ -31,7 +31,7 @@ func (d *Dir) switchTo(newDir string) (*string, error) {
 		return nil, err
 	}
 
-	d.log.Debugf("Symlink %s -> %s", tmpLink, newDir)
+	d.log.Debug("Symlink", "from", tmpLink, "to", newDir)
 
 	// Atomically replace the target symlink (or create it if missing)
 	// On POSIX, rename on the same filesystem is atomic.
@@ -42,7 +42,7 @@ func (d *Dir) switchTo(newDir string) (*string, error) {
 		return nil, err
 	}
 
-	d.log.Debugf("Atomic write to %s", d.target)
+	d.log.Debug("Atomic write", "target", d.target)
 
 	// On Unix we keep versioned dirs and delete the *previous* version on next run.
 	return &newDir, nil

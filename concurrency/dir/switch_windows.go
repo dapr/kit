@@ -41,7 +41,7 @@ func (d *Dir) switchTo(newDir string) (*string, error) {
 		if err := os.Rename(d.target, bak); err != nil {
 			return nil, err
 		}
-		d.log.Debugf("Renamed existing %s to backup %s", d.target, bak)
+		d.log.Debug("Renamed existing target to backup", "target", d.target, "backup", bak)
 		backup = &bak
 	}
 
@@ -54,7 +54,7 @@ func (d *Dir) switchTo(newDir string) (*string, error) {
 		return nil, err
 	}
 
-	d.log.Debugf("Replaced directory at %s (Windows best-effort atomicity)", d.target)
+	d.log.Debug("Replaced directory (Windows best-effort atomicity)", "target", d.target)
 
 	// On Windows we delete the backup on the *next* run (so we don't risk losing data if a crash happens now).
 	return backup, nil

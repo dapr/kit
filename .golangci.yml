@@ -64,11 +64,46 @@ linters:
     - wrapcheck
     - wsl
   settings:
+    sloglint:
+      # Keep attribute usage uniform across the codebase. The whole point of
+      # moving off printf logging is that fields are machine-filterable, which
+      # only holds if the same concept is always logged under the same key in
+      # the same shape.
+      no-mixed-args: true
+      kv-only: false
+      attr-only: false
+      # A package-level logger named for its scope is the established Dapr
+      # pattern and is how the scope field gets set, so global loggers are
+      # expected here.
+      no-global: ""
+      # Context-aware logging is deliberately out of scope for now; enabling
+      # this would demand XxxContext at every call site for no present gain.
+      context: ""
+      static-msg: false
+      no-raw-keys: false
+      key-naming-case: snake
+      forbidden-keys:
+        # Reserved by the Dapr log schema. A record carrying one of these as a
+        # per-call attribute would collide with the schema field of the same
+        # name and be silently dropped by the encoder.
+        - time
+        - level
+        - msg
+        - scope
+        - type
+        - instance
+        - ver
+      args-on-sep-lines: false
     depguard:
       rules:
         main:
           deny:
+            # Both spellings: logrus was github.com/Sirupsen/logrus before it
+            # was renamed, and only the lower-case path resolves today, so the
+            # original rule never matched anything.
             - pkg: github.com/Sirupsen/logrus
+              desc: must use github.com/dapr/kit/logger
+            - pkg: github.com/sirupsen/logrus
               desc: must use github.com/dapr/kit/logger
             - pkg: github.com/agrea/ptr
               desc: must use github.com/dapr/kit/ptr

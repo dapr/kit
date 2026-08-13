@@ -29,7 +29,7 @@ type Options struct {
 
 // Dir atomically (best-effort on Windows) writes files to a given directory.
 type Dir struct {
-	log logger.Logger
+	log *logger.Log
 
 	base      string
 	target    string
@@ -43,7 +43,7 @@ type Dir struct {
 
 func New(opts Options) *Dir {
 	return &Dir{
-		log:       opts.Log,
+		log:       logger.FromLogger(opts.Log),
 		base:      filepath.Dir(opts.Target),
 		target:    opts.Target,
 		targetDir: filepath.Base(opts.Target),
@@ -78,7 +78,7 @@ func (d *Dir) Write(files map[string][]byte) error {
 			return err
 		}
 
-		d.log.Infof("Written file %s", file)
+		d.log.Info("Written file", "file", file)
 	}
 
 	// Platform-specific switch into place. It returns what we should delete on the NEXT run.
@@ -87,7 +87,7 @@ func (d *Dir) Write(files map[string][]byte) error {
 		return err
 	}
 
-	d.log.Infof("Atomic write to %s", d.target)
+	d.log.Info("Atomic write", "target", d.target)
 
 	// Best-effort cleanup from the *previous* run
 	if d.prev != nil {

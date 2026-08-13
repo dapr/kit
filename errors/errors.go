@@ -36,7 +36,7 @@ const (
 	typeGoogleAPI = "type.googleapis.com/"
 )
 
-var log = logger.NewLogger("dapr.kit")
+var log = logger.New("dapr.kit")
 
 // Error implements the Error interface and the interface that complies with "google.golang.org/grpc/status".FromError().
 // It can be used to send errors to HTTP and gRPC servers, indicating the correct status code for each.
@@ -163,7 +163,7 @@ func (e *Error) GRPCStatus() *status.Status {
 		if v1, ok := detail.(protoiface.MessageV1); ok {
 			convertedDetails = append(convertedDetails, v1)
 		} else {
-			log.Debugf("Failed to convert error details: %s", detail)
+			log.Debug("Failed to convert error details", "detail", detail)
 		}
 	}
 
@@ -172,7 +172,7 @@ func (e *Error) GRPCStatus() *status.Status {
 
 		stat, err = stat.WithDetails(convertedDetails...)
 		if err != nil {
-			log.Debugf("Failed to add error details: %s to status: %s", err, stat)
+			log.Debug("Failed to add error details to status", "error", err.Error(), "status", stat.String())
 		}
 	}
 
@@ -360,7 +360,7 @@ func convertErrorDetails(detail any, e Error) (map[string]any, string) {
 
 		return detailMap, ""
 	default:
-		log.Debugf("Failed to convert error details due to incorrect type. \nSee types here: https://github.com/googleapis/googleapis/blob/master/google/rpc/error_details.proto. \nDetail: %s", detail)
+		log.Debug("Failed to convert error details due to incorrect type. See https://github.com/googleapis/googleapis/blob/master/google/rpc/error_details.proto for supported types", "detail", detail)
 		// Handle unknown detail types
 		unknownDetail := map[string]any{
 			"unknownDetailType": fmt.Sprintf("%T", typedDetail),
@@ -470,7 +470,7 @@ func (b *ErrorBuilder) Build() error {
 	}
 
 	if !containsErrorInfo {
-		log.Errorf("Must include ErrorInfo in error details. Error: %s", b.err.Error())
+		log.Error("Must include ErrorInfo in error details", logger.Err(b.err))
 		panic("Must include ErrorInfo in error details.")
 	}
 

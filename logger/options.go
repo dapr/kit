@@ -27,8 +27,12 @@ const (
 )
 
 var (
-	// logOutputMu protects logOutputFile from concurrent access.
-	logOutputMu   sync.Mutex
+	// applyMu serialises ApplyOptionsToLoggers. The open-file, redirect
+	// loggers, close-previous-file sequence must be one transaction: two
+	// interleaved calls could otherwise close a file that loggers were just
+	// pointed at.
+	applyMu sync.Mutex
+	// logOutputFile is the file loggers are currently writing to, if any.
 	logOutputFile *os.File
 )
 
@@ -101,70 +105,71 @@ func DefaultOptions() Options {
 }
 
 // ApplyOptionsToLoggers applys options to all registered loggers.
+//
+// The options are also recorded as the defaults for loggers created after this
+// call. The previous implementation only reached the loggers that already
+// existed, so any logger constructed later silently kept the built-in defaults
+// of text output at info level.
 func ApplyOptionsToLoggers(options *Options) error {
-	internalLoggers := getLoggers()
-
-	// Apply formatting options first
-	for _, v := range internalLoggers {
-		v.EnableJSONOutput(options.JSONFormatEnabled)
-
-		if options.appID != undefinedAppID {
-			v.SetAppID(options.appID)
-		}
-	}
+	applyMu.Lock()
+	defer applyMu.Unlock()
 
 	daprLogLevel := toLogLevel(options.OutputLevel)
 	if daprLogLevel == UndefinedLevel {
 		return fmt.Errorf("invalid value for --log-level: %s", options.OutputLevel)
 	}
 
-	for _, v := range internalLoggers {
-		v.SetOutputLevel(daprLogLevel)
-	}
-
-	err := setLogOutput(options.OutputFile, internalLoggers)
+	out, newFile, err := logOutput(options.OutputFile)
 	if err != nil {
 		return err
 	}
 
-	return nil
-}
+	level := toSlogLevel(daprLogLevel)
 
-// setLogOutput configures log output destination. If path is non-empty, logs
-// are written to the file at that path. If empty, output reverts to stdout.
-// The new file is opened before closing the previous one so that loggers are
-// never left pointing at a closed file descriptor.
-func setLogOutput(path string, loggers map[string]Logger) error {
-	logOutputMu.Lock()
-	defer logOutputMu.Unlock()
+	defaults.mu.Lock()
+	defaults.level = level
+	defaults.json = options.JSONFormatEnabled
+	defaults.out = out
 
-	var (
-		out     io.Writer = os.Stdout
-		newFile *os.File
-	)
+	if options.appID != undefinedAppID {
+		defaults.appID = options.appID
+	}
+	defaults.mu.Unlock()
 
-	if path != "" {
-		var err error
+	for _, s := range getStates() {
+		s.setJSON(options.JSONFormatEnabled)
 
-		newFile, err = os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-		if err != nil {
-			return fmt.Errorf("failed to open log file %q: %w", path, err)
+		if options.appID != undefinedAppID {
+			s.setAppID(options.appID)
 		}
 
-		out = newFile
+		s.setLevel(level)
+		s.setOutput(out)
 	}
 
-	// Switch all loggers to the new output before closing the old file.
-	for _, v := range loggers {
-		v.SetOutput(out)
-	}
-
-	// Close the previous log file after loggers have been redirected.
-	if logOutputFile != nil {
+	// Close the previous log file only after every logger has been
+	// redirected, so none is ever left holding a closed descriptor.
+	if logOutputFile != nil && logOutputFile != newFile {
 		logOutputFile.Close()
 	}
 
 	logOutputFile = newFile
 
 	return nil
+}
+
+// logOutput resolves the log destination, called with applyMu held. If path
+// is non-empty, logs are written to the file at that path and the opened file
+// is returned alongside; if empty, output reverts to stdout.
+func logOutput(path string) (io.Writer, *os.File, error) {
+	if path == "" {
+		return os.Stdout, nil, nil
+	}
+
+	newFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to open log file %q: %w", path, err)
+	}
+
+	return newFile, newFile, nil
 }

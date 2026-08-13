@@ -58,7 +58,7 @@ type JWKSCache struct {
 	caCertificate      string
 
 	jwks    jwk.Set
-	logger  logger.Logger
+	logger  *logger.Log
 	lock    sync.RWMutex
 	client  *http.Client
 	running atomic.Bool
@@ -66,10 +66,10 @@ type JWKSCache struct {
 }
 
 // NewJWKSCache creates a new JWKSCache object.
-func NewJWKSCache(location string, logger logger.Logger) *JWKSCache {
+func NewJWKSCache(location string, l logger.Logger) *JWKSCache {
 	return &JWKSCache{
 		location: location,
-		logger:   logger,
+		logger:   logger.FromLogger(l),
 
 		requestTimeout:     defaultRequestTimeout,
 		minRefreshInterval: defaultMinRefreshInterval,
@@ -188,7 +188,7 @@ func (c *JWKSCache) initJWKSFromURL(ctx context.Context, url string) error {
 	// Create the JWKS cache
 	cache := jwk.NewCache(ctx,
 		jwk.WithErrSink(httprc.ErrSinkFunc(func(err error) {
-			c.logger.Warnf("Error while refreshing JWKS cache: %v", err)
+			c.logger.Warn("Error while refreshing JWKS cache", logger.Err(err))
 		})),
 	)
 
@@ -259,13 +259,13 @@ func (c *JWKSCache) initJWKSFromFile(ctx context.Context, file string) error {
 			Targets: []string{path},
 		})
 		if err != nil {
-			c.logger.Errorf("Error while watching for changes to the local JWKS file: %v", err)
+			c.logger.Error("Error while watching for changes to the local JWKS file", logger.Err(err))
 			return
 		}
 
 		err = fw.Run(ctx, eventCh)
 		if err != nil {
-			c.logger.Errorf("Error while watching for changes to the local JWKS file: %v", err)
+			c.logger.Error("Error while watching for changes to the local JWKS file", logger.Err(err))
 		}
 	}()
 	go func() {
@@ -291,7 +291,7 @@ func (c *JWKSCache) initJWKSFromFile(ctx context.Context, file string) error {
 					firstDone = true
 				} else if err != nil {
 					// Log errors only
-					c.logger.Errorf("Error reading JWKS from disk: %v", err)
+					c.logger.Error("Error reading JWKS from disk", logger.Err(err))
 				}
 			case <-ctx.Done():
 				return

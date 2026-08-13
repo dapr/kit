@@ -54,7 +54,7 @@ func OnHUP(ctx context.Context) <-chan context.Context {
 
 			select {
 			case sig := <-sigCh:
-				log.Infof(`Received signal '%s'; restarting`, sig)
+				log.Info("Received signal; restarting", "signal", sig.String())
 				cancel(errors.New("received SIGHUP"))
 			case <-ctx.Done():
 				cancel(ctx.Err())

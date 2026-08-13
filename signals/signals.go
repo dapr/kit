@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	log = logger.NewLogger("dapr.signals")
+	log = logger.New("dapr.signals")
 
 	// Inspired by
 	// https://github.com/kubernetes-sigs/controller-runtime/blob/8499b67e316a03b260c73f92d0380de8cd2e97a1/pkg/manager/signals/signal.go#L25
@@ -44,14 +44,11 @@ func Context() context.Context {
 
 	go func() {
 		sig := <-sigCh
-		log.Infof(`Received signal '%s'; beginning shutdown`, sig)
+		log.Info("Received signal; beginning shutdown", "signal", sig.String())
 		//nolint:err113
 		cancel(errors.New("cancelling context, received signal " + sig.String()))
 		sig = <-sigCh
-		log.Fatalf(
-			`Received signal '%s' during shutdown; exiting immediately`,
-			sig,
-		)
+		log.Fatal("Received signal during shutdown; exiting immediately", "signal", sig.String())
 	}()
 
 	return ctx
