@@ -22,6 +22,7 @@ require (
 	google.golang.org/grpc v1.82.1
 	google.golang.org/grpc/examples v0.0.0-20250407062114-b368379ef8f6
 	google.golang.org/protobuf v1.36.11
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	k8s.io/apimachinery v0.26.9
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 )
