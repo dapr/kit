@@ -100,7 +100,7 @@ func TestProcessor_ConcurrentEnqueueNoLostWakeup(t *testing.T) {
 		return processor.queue.Len(), len(processor.processorRunningCh) == 0
 	}
 
-	var waves, executed int
+	var waves int
 
 	end := time.Now().Add(duration)
 	for time.Now().Before(end) {
@@ -121,7 +121,6 @@ func TestProcessor_ConcurrentEnqueueNoLostWakeup(t *testing.T) {
 
 		collect(expected, 500*time.Millisecond)
 
-		executed += producers - len(expected)
 		if len(expected) == 0 {
 			continue
 		}
@@ -133,9 +132,5 @@ func TestProcessor_ConcurrentEnqueueNoLostWakeup(t *testing.T) {
 
 		collect(expected, 5*time.Second)
 		require.Empty(t, expected, "wave %d: items not executed, loop running", waves)
-
-		executed += producers
 	}
-
-	t.Logf("%d waves, %d items executed, no lost wakeups", waves, executed)
 }
