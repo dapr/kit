@@ -144,11 +144,7 @@ func (p *Processor[K, T]) process(isNext bool) {
 
 // Processing loop.
 func (p *Processor[K, T]) processLoop() {
-	defer func() {
-		// Release the channel when exiting
-		<-p.processorRunningCh
-	}()
-
+	// processorRunningCh is drained on each exit path, not in a defer.
 	var (
 		r             T
 		ok            bool
@@ -160,18 +156,23 @@ func (p *Processor[K, T]) processLoop() {
 	for {
 		// Continue processing items until the queue is empty
 		p.lock.Lock()
-		r, ok = p.queue.Peek()
-		p.lock.Unlock()
 
+		r, ok = p.queue.Peek()
 		if !ok {
+			// Drain under the lock so a concurrent Enqueue starts a new loop.
+			<-p.processorRunningCh
+			p.lock.Unlock()
+
 			return
 		}
+		p.lock.Unlock()
 
 		// Check if after obtaining the lock we have a stop or reset signals
 		// Do this before we create a timer
 		select {
 		case <-p.stopCh:
 			// Exit on stop signals
+			<-p.processorRunningCh
 			return
 		case <-p.resetCh:
 			// Restart the loop on reset signals
@@ -207,6 +208,8 @@ func (p *Processor[K, T]) processLoop() {
 			if !t.Stop() {
 				<-t.C()
 			}
+
+			<-p.processorRunningCh
 
 			return
 		}
