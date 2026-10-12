@@ -42,6 +42,13 @@ var (
 	ErrFailedToReadTrustAnchorsFile = errors.New("failed to read trust anchors file")
 )
 
+const (
+	// A change event can arrive while the writer is still part way through
+	// the file, so a failed reload is retried briefly before giving up.
+	reloadAttempts   = 5
+	reloadRetryDelay = 20 * time.Millisecond
+)
+
 type Options struct {
 	Log      logger.Logger
 	CAPath   string
@@ -157,9 +164,9 @@ func (f *file) Run(ctx context.Context) error {
 				case <-f.caEvent:
 					f.log.Info("Trust anchors file changed, reloading trust anchors")
 
-					err = f.updateAnchors(ctx)
-					if err != nil {
-						return fmt.Errorf("%w: '%s': %v", ErrFailedToReadTrustAnchorsFile, f.caPath, err)
+					err := f.reload(ctx)
+					if err != nil && ctx.Err() == nil {
+						f.log.Warnf("%s '%s', keeping the previous trust anchors: %v", ErrFailedToReadTrustAnchorsFile, f.caPath, err)
 					}
 				}
 			}
@@ -242,6 +249,27 @@ func (f *file) Watch(ctx context.Context, ch chan<- []byte) {
 	}
 }
 
+func (f *file) reload(ctx context.Context) error {
+	var err error
+
+	for attempt := range reloadAttempts {
+		if attempt > 0 {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-f.clock.After(reloadRetryDelay):
+			}
+		}
+
+		err = f.updateAnchors(ctx)
+		if err == nil {
+			return nil
+		}
+	}
+
+	return err
+}
+
 func (f *file) updateAnchors(ctx context.Context) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
@@ -256,8 +284,7 @@ func (f *file) updateAnchors(ctx context.Context) error {
 		return fmt.Errorf("failed to decode trust anchors: %w", err)
 	}
 
-	f.rootPEM = rootPEMs
-	f.x509Bundle = x509bundle.FromX509Authorities(spiffeid.TrustDomain{}, trustAnchorCerts)
+	var jwtBundle *jwtbundle.Bundle
 
 	if f.jwksPath != nil {
 		jwks, err := os.ReadFile(*f.jwksPath)
@@ -265,11 +292,18 @@ func (f *file) updateAnchors(ctx context.Context) error {
 			return fmt.Errorf("failed to read JWT bundle file '%s': %w", *f.jwksPath, err)
 		}
 
-		jwtBundle, err := jwtbundle.Parse(spiffeid.TrustDomain{}, jwks)
+		jwtBundle, err = jwtbundle.Parse(spiffeid.TrustDomain{}, jwks)
 		if err != nil {
 			return fmt.Errorf("failed to parse JWT bundle: %w", err)
 		}
+	}
 
+	// Apply only once everything parsed, so a failed reload keeps the
+	// previous anchors whole.
+	f.rootPEM = rootPEMs
+	f.x509Bundle = x509bundle.FromX509Authorities(spiffeid.TrustDomain{}, trustAnchorCerts)
+
+	if jwtBundle != nil {
 		f.jwtBundle = jwtBundle
 	}
 

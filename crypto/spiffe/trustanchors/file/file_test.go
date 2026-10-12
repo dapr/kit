@@ -282,12 +282,10 @@ func TestFile_Run(t *testing.T) {
 		assert.Equal(t, roots, b)
 	})
 
-	t.Run("writing a bad root PEM file should make Run return error", func(t *testing.T) {
+	t.Run("writing a bad root PEM file should keep the previous anchors until a good one is written", func(t *testing.T) {
 		pki1, pki2 := test.GenPKI(t, test.PKIOptions{}), test.GenPKI(t, test.PKIOptions{})
-		//nolint:gocritic
-		roots := append(pki1.RootCertPEM, pki2.RootCertPEM...)
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
-		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
+		require.NoError(t, os.WriteFile(tmp, pki1.RootCertPEM, 0o600))
 
 		ta := From(Options{
 			Log:    logger.NewLogger("test"),
@@ -298,25 +296,57 @@ func TestFile_Run(t *testing.T) {
 
 		f.initFileWatchInterval = time.Millisecond
 
-		errCh := make(chan error)
+		errCh := make(chan error, 1)
+		ctx, cancel := context.WithCancel(t.Context())
 
 		go func() {
-			errCh <- f.Run(t.Context())
+			errCh <- f.Run(ctx)
 		}()
 
 		select {
 		case <-f.readyCh:
 		case <-time.After(time.Second):
-			assert.Fail(t, "expected to be ready in time")
+			require.Fail(t, "expected to be ready in time")
 		}
 
-		require.NoError(t, os.WriteFile(tmp, []byte("garbage data"), 0o600))
+		watchCh := make(chan []byte)
+		go ta.Watch(ctx, watchCh)
+
+		// What a reader sees part way through a write: no complete PEM block.
+		//nolint:gocritic
+		roots := append(pki1.RootCertPEM, pki2.RootCertPEM...)
+		require.NoError(t, os.WriteFile(tmp, roots[:len(pki1.RootCertPEM)/2], 0o600))
 
 		select {
 		case err := <-errCh:
-			require.Error(t, err)
+			require.Fail(t, "Run must keep watching after a failed reload", "Run returned: %v", err)
+		case <-time.After(reloadRetryDelay*reloadAttempts + time.Millisecond*300):
+		}
+
+		pem, err := ta.CurrentTrustAnchors(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, pki1.RootCertPEM, pem, "a failed reload must keep the previous anchors")
+
+		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
+
+		select {
+		case b := <-watchCh:
+			assert.Equal(t, roots, b)
+		case <-time.After(time.Second * 3):
+			require.Fail(t, "expected the watch to receive the new anchors")
+		}
+
+		pem, err = ta.CurrentTrustAnchors(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, roots, pem)
+
+		cancel()
+
+		select {
+		case err := <-errCh:
+			require.NoError(t, err)
 		case <-time.After(time.Second):
-			assert.Fail(t, "expected error to be returned from Run")
+			require.Fail(t, "expected Run to return")
 		}
 	})
 }
