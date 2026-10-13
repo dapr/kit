@@ -20,9 +20,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spiffe/go-spiffe/v2/bundle/jwtbundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	clocktesting "k8s.io/utils/clock/testing"
 
 	"github.com/dapr/kit/crypto/test"
 	"github.com/dapr/kit/logger"
@@ -282,12 +284,10 @@ func TestFile_Run(t *testing.T) {
 		assert.Equal(t, roots, b)
 	})
 
-	t.Run("writing a bad root PEM file should make Run return error", func(t *testing.T) {
+	t.Run("writing a bad root PEM file should keep the previous anchors until a good one is written", func(t *testing.T) {
 		pki1, pki2 := test.GenPKI(t, test.PKIOptions{}), test.GenPKI(t, test.PKIOptions{})
-		//nolint:gocritic
-		roots := append(pki1.RootCertPEM, pki2.RootCertPEM...)
 		tmp := filepath.Join(t.TempDir(), "ca.crt")
-		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
+		require.NoError(t, os.WriteFile(tmp, pki1.RootCertPEM, 0o600))
 
 		ta := From(Options{
 			Log:    logger.NewLogger("test"),
@@ -298,26 +298,117 @@ func TestFile_Run(t *testing.T) {
 
 		f.initFileWatchInterval = time.Millisecond
 
-		errCh := make(chan error)
+		errCh := make(chan error, 1)
+		ctx, cancel := context.WithCancel(t.Context())
 
 		go func() {
-			errCh <- f.Run(t.Context())
+			errCh <- f.Run(ctx)
 		}()
 
 		select {
 		case <-f.readyCh:
 		case <-time.After(time.Second):
-			assert.Fail(t, "expected to be ready in time")
+			require.Fail(t, "expected to be ready in time")
 		}
 
-		require.NoError(t, os.WriteFile(tmp, []byte("garbage data"), 0o600))
+		watchCh := make(chan []byte)
+		go ta.Watch(ctx, watchCh)
+
+		// What a reader sees part way through a write: no complete PEM block.
+		//nolint:gocritic
+		roots := append(pki1.RootCertPEM, pki2.RootCertPEM...)
+		require.NoError(t, os.WriteFile(tmp, roots[:len(pki1.RootCertPEM)/2], 0o600))
 
 		select {
 		case err := <-errCh:
-			require.Error(t, err)
-		case <-time.After(time.Second):
-			assert.Fail(t, "expected error to be returned from Run")
+			require.Fail(t, "Run must keep watching after a failed reload", "Run returned: %v", err)
+		case <-time.After(reloadRetryDelay*reloadAttempts + time.Millisecond*300):
 		}
+
+		pem, err := ta.CurrentTrustAnchors(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, pki1.RootCertPEM, pem, "a failed reload must keep the previous anchors")
+
+		require.NoError(t, os.WriteFile(tmp, roots, 0o600))
+
+		select {
+		case b := <-watchCh:
+			assert.Equal(t, roots, b)
+		case <-time.After(time.Second * 3):
+			require.Fail(t, "expected the watch to receive the new anchors")
+		}
+
+		pem, err = ta.CurrentTrustAnchors(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, roots, pem)
+
+		cancel()
+
+		select {
+		case err := <-errCh:
+			require.NoError(t, err)
+		case <-time.After(time.Second):
+			require.Fail(t, "expected Run to return")
+		}
+	})
+
+	t.Run("reload should succeed on a retry once a partly written file is complete", func(t *testing.T) {
+		pki1, pki2 := test.GenPKI(t, test.PKIOptions{}), test.GenPKI(t, test.PKIOptions{})
+		tmp := filepath.Join(t.TempDir(), "ca.crt")
+		require.NoError(t, os.WriteFile(tmp, pki1.RootCertPEM[:len(pki1.RootCertPEM)/2], 0o600))
+
+		f, ok := From(Options{Log: logger.NewLogger("test"), CAPath: tmp}).(*file)
+		require.True(t, ok)
+
+		clock := clocktesting.NewFakeClock(time.Now())
+		f.clock = clock
+
+		errCh := make(chan error, 1)
+
+		go func() { errCh <- f.reload(t.Context()) }()
+
+		// A waiter means the first attempt failed and the loop is waiting to
+		// retry. No watcher runs, so only that retry can load the new file.
+		require.Eventually(t, clock.HasWaiters, time.Second, time.Millisecond)
+		require.NoError(t, os.WriteFile(tmp, pki2.RootCertPEM, 0o600))
+		clock.Step(reloadRetryDelay)
+
+		select {
+		case err := <-errCh:
+			require.NoError(t, err)
+		case <-time.After(time.Second):
+			require.Fail(t, "expected reload to return")
+		}
+
+		assert.Equal(t, pki2.RootCertPEM, f.rootPEM)
+	})
+
+	t.Run("a reload with a malformed JWT bundle should keep both previous bundles", func(t *testing.T) {
+		pki1, pki2 := test.GenPKI(t, test.PKIOptions{}), test.GenPKI(t, test.PKIOptions{})
+		dir := t.TempDir()
+		caPath := filepath.Join(dir, "ca.crt")
+		jwksPath := filepath.Join(dir, "jwks.json")
+
+		jb := jwtbundle.New(spiffeid.TrustDomain{})
+		require.NoError(t, jb.AddJWTAuthority("key1", pki1.LeafPK.Public()))
+		jwks, err := jb.Marshal()
+		require.NoError(t, err)
+		require.NoError(t, os.WriteFile(caPath, pki1.RootCertPEM, 0o600))
+		require.NoError(t, os.WriteFile(jwksPath, jwks, 0o600))
+
+		f, ok := From(Options{Log: logger.NewLogger("test"), CAPath: caPath, JwksPath: &jwksPath}).(*file)
+		require.True(t, ok)
+		require.NoError(t, f.updateAnchors(t.Context()))
+		x509Before, jwtBefore := f.x509Bundle, f.jwtBundle
+		require.NotNil(t, jwtBefore)
+
+		require.NoError(t, os.WriteFile(caPath, pki2.RootCertPEM, 0o600))
+		require.NoError(t, os.WriteFile(jwksPath, []byte(`{"keys":`), 0o600))
+		require.Error(t, f.updateAnchors(t.Context()))
+
+		assert.Equal(t, pki1.RootCertPEM, f.rootPEM)
+		assert.Same(t, x509Before, f.x509Bundle)
+		assert.Same(t, jwtBefore, f.jwtBundle)
 	})
 }
 
