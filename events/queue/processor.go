@@ -165,6 +165,10 @@ func (p *Processor[K, T]) processLoop() {
 
 			return
 		}
+		// Read the item while it is still guaranteed to be queued: once the
+		// lock is released, a Dequeue can remove it and its owner may change
+		// or reuse it before this loop runs again.
+		scheduledTime = r.ScheduledTime()
 		p.lock.Unlock()
 
 		// Check if after obtaining the lock we have a stop or reset signals
@@ -181,13 +185,12 @@ func (p *Processor[K, T]) processLoop() {
 			// Nop, proceed
 		}
 
-		scheduledTime = r.ScheduledTime()
 		deadline = scheduledTime.Sub(p.clock.Now())
 
 		// If the deadline is less than 0.5ms away, execute it right away
 		// This is more efficient than creating a timer
 		if deadline < 500*time.Microsecond {
-			p.execute(r)
+			p.execute(r, scheduledTime)
 			continue
 		}
 
@@ -195,7 +198,7 @@ func (p *Processor[K, T]) processLoop() {
 		select {
 		// Wait for when it's time to execute the item
 		case <-t.C():
-			p.execute(r)
+			p.execute(r, scheduledTime)
 
 		// If we get a reset signal, restart the loop
 		case <-p.resetCh:
@@ -217,14 +220,15 @@ func (p *Processor[K, T]) processLoop() {
 }
 
 // Executes a item when it's time.
-func (p *Processor[K, T]) execute(r T) {
+func (p *Processor[K, T]) execute(r T, scheduledTime time.Time) {
 	// Pop the item now that we're ready to process it
 	// There's a small chance this is a different item than the one we peeked before
 	p.lock.Lock()
-	// For safety, let's peek at the first item before popping it and make sure it's the same object
-	// It's unlikely, but if it's a different object then restart the loop
+	// The front item must be the same object with the same scheduled time:
+	// an owner may Dequeue an item and Enqueue the same pointer with a later
+	// time, which must not fire at the old time. Otherwise restart the loop.
 	peek, ok := p.queue.Peek()
-	if !ok || peek != r {
+	if !ok || peek != r || !peek.ScheduledTime().Equal(scheduledTime) {
 		p.lock.Unlock()
 		return
 	}
