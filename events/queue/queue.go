@@ -22,6 +22,9 @@ import (
 type Queueable[T comparable] interface {
 	comparable
 	Key() T
+	// ScheduledTime is only called while the item is queued, under the
+	// processor's lock, so an owner may change or reuse an item once Dequeue
+	// for it has returned.
 	ScheduledTime() time.Time
 }
 
