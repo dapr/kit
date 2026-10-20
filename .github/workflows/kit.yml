@@ -54,6 +54,10 @@ jobs:
         with:
           version: ${{ env.GOLANGCI_LINT_VER }}
           skip-cache: true
+          # Verifying the config downloads its JSON schema from golangci-lint.run,
+          # which sometimes fails on push. Config changes land through PRs, so
+          # verifying there is enough.
+          verify: ${{ github.event_name == 'pull_request' }}
       - name: Run make go.mod check-diff
         if: matrix.target_arch != 'arm'
         run: make go.mod check-diff
