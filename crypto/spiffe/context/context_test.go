@@ -90,4 +90,8 @@ func TestWithSpiffeAddsMinterOnlyWhenConfigured(t *testing.T) {
 	})
 	_, ok = JWTMinterFrom(WithSpiffe(t.Context(), configured))
 	assert.True(t, ok)
+
+	outer := WithJWTMinter(t.Context(), &mockJWTMinter{})
+	_, ok = JWTMinterFrom(WithSpiffe(outer, spiffe.New(spiffe.Options{})))
+	assert.False(t, ok, "a minter from an outer context must not be visible past a SPIFFE without minting")
 }

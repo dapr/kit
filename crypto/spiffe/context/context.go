@@ -76,13 +76,12 @@ func JWTMinterFrom(ctx context.Context) (spiffe.JWTSVIDMinter, bool) {
 	return minter, ok
 }
 
-// WithSpiffe adds the X509 and JWT SVID sources to the context, and the JWT
-// SVID minter when minting is configured.
+// WithSpiffe adds the X509 and JWT SVID sources, and the JWT SVID minter, to
+// the context. When minting is not configured the minter is nil, which hides
+// any minter from an outer context.
 func WithSpiffe(ctx context.Context, spiffe *spiffe.SPIFFE) context.Context {
 	ctx = WithX509(ctx, spiffe.X509SVIDSource())
-	if minter := spiffe.JWTSVIDMinter(); minter != nil {
-		ctx = WithJWTMinter(ctx, minter)
-	}
+	ctx = WithJWTMinter(ctx, spiffe.JWTSVIDMinter())
 
 	return WithJWT(ctx, spiffe.JWTSVIDSource())
 }
