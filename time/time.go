@@ -188,6 +188,15 @@ func ParseISO8601Duration(from string) (years int, months int, days int, duratio
 		i++
 	}
 
+	// The duration must end with a designator and must not stop right after
+	// "P" or "T": trailing digits without a designator (e.g. "PT10"), or a
+	// "P" or "T" with no elements after it (e.g. "PT"), would otherwise be
+	// silently treated as zero.
+	if start != l || from[l-1] == 'P' || from[l-1] == 'T' {
+		err = errors.New("unsupported ISO8601 duration format: " + from)
+		return
+	}
+
 	return
 }
 
