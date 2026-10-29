@@ -394,9 +394,10 @@ func TestMintJWTSVID(t *testing.T) {
 
 	t.Run("rejects requests and tokens that do not match the workload", func(t *testing.T) {
 		for name, test := range map[string]struct {
-			token  func(audiences []string) string
-			params jwtsvid.Params
-			noX509 bool
+			token           func(audiences []string) string
+			params          jwtsvid.Params
+			noX509          bool
+			subjectMismatch bool
 		}{
 			"token without the requested audience": {
 				token:  func([]string) string { return mint(workloadID, []string{"wrong"}) },
@@ -407,11 +408,13 @@ func TestMintJWTSVID(t *testing.T) {
 				params: jwtsvid.Params{Audience: testAudience, ExtraAudiences: []string{"extra"}},
 			},
 			"token for another SPIFFE ID": {
-				token:  func(audiences []string) string { return mint(otherID, audiences) },
-				params: jwtsvid.Params{Audience: testAudience},
+				token:           func(audiences []string) string { return mint(otherID, audiences) },
+				params:          jwtsvid.Params{Audience: testAudience},
+				subjectMismatch: true,
 			},
 			"requested subject is not the workload": {
-				params: jwtsvid.Params{Audience: testAudience, Subject: otherID},
+				params:          jwtsvid.Params{Audience: testAudience, Subject: otherID},
+				subjectMismatch: true,
 			},
 			"no X.509 SVID": {
 				params: jwtsvid.Params{Audience: testAudience},
@@ -430,6 +433,11 @@ func TestMintJWTSVID(t *testing.T) {
 				svid, err := s.MintJWTSVID(t.Context(), test.params)
 				require.Error(t, err)
 				require.Nil(t, svid)
+
+				if test.subjectMismatch {
+					var subErr *subjectMismatchError
+					require.ErrorAs(t, err, &subErr)
+				}
 			})
 		}
 	})

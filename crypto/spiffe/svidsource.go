@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/spiffe/go-spiffe/v2/svid/jwtsvid"
 	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
 )
@@ -60,6 +61,17 @@ type audienceMismatchError struct {
 func (e *audienceMismatchError) Error() string {
 	return fmt.Sprintf("JWT SVID has different audiences than requested: expected %s, got %s",
 		strings.Join(e.expected, ", "), strings.Join(e.actual, ", "))
+}
+
+// subjectMismatchError is returned when a JWT SVID would be for a SPIFFE ID
+// other than the workload's own.
+type subjectMismatchError struct {
+	expected spiffeid.ID
+	actual   spiffeid.ID
+}
+
+func (e *subjectMismatchError) Error() string {
+	return fmt.Sprintf("JWT SVID subject %s is not the workload's SPIFFE ID %s", e.actual, e.expected)
 }
 
 // FetchJWTSVID returns the current JWT SVID.
@@ -121,7 +133,7 @@ func (s *svidSource) MintJWTSVID(ctx context.Context, params jwtsvid.Params) (*j
 	}
 
 	if !params.Subject.IsZero() && params.Subject != x509SVID.ID {
-		return nil, fmt.Errorf("cannot mint a JWT SVID for %s: the workload's SPIFFE ID is %s", params.Subject, x509SVID.ID)
+		return nil, &subjectMismatchError{expected: x509SVID.ID, actual: params.Subject}
 	}
 
 	audiences := append([]string{params.Audience}, params.ExtraAudiences...)
@@ -139,7 +151,7 @@ func (s *svidSource) MintJWTSVID(ctx context.Context, params jwtsvid.Params) (*j
 	}
 
 	if svid.ID != x509SVID.ID {
-		return nil, fmt.Errorf("minted JWT SVID is for %s, not the workload's SPIFFE ID %s", svid.ID, x509SVID.ID)
+		return nil, &subjectMismatchError{expected: x509SVID.ID, actual: svid.ID}
 	}
 
 	if !audiencesMatch(svid.Audience, audiences) {
