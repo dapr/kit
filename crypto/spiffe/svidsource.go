@@ -29,7 +29,8 @@ var (
 	errAudienceRequired    = errors.New("JWT audience is required")
 )
 
-// svidSource is an implementation of both go-spiffe x509svid.Source and jwtsvid.Source interfaces.
+// svidSource implements the go-spiffe x509svid.Source and jwtsvid.Source
+// interfaces, and JWTSVIDMinter.
 type svidSource struct {
 	spiffe *SPIFFE
 }
@@ -93,6 +94,56 @@ func (s *svidSource) FetchJWTSVID(ctx context.Context, params jwtsvid.Params) (*
 			expected: []string{params.Audience},
 			actual:   svid.Audience,
 		}
+	}
+
+	return svid, nil
+}
+
+// MintJWTSVID mints a new JWT SVID for the requested audiences from the SPIFFE
+// server. Implements JWTSVIDMinter.
+func (s *svidSource) MintJWTSVID(ctx context.Context, params jwtsvid.Params) (*jwtsvid.SVID, error) {
+	if params.Audience == "" {
+		return nil, errAudienceRequired
+	}
+
+	// The server authenticates the request with the current X.509 SVID.
+	err := s.spiffe.Ready(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	s.spiffe.lock.RLock()
+	x509SVID := s.spiffe.currentX509SVID
+	s.spiffe.lock.RUnlock()
+
+	if x509SVID == nil {
+		return nil, errNoX509SVIDAvailable
+	}
+
+	if !params.Subject.IsZero() && params.Subject != x509SVID.ID {
+		return nil, fmt.Errorf("cannot mint a JWT SVID for %s: the workload's SPIFFE ID is %s", params.Subject, x509SVID.ID)
+	}
+
+	audiences := append([]string{params.Audience}, params.ExtraAudiences...)
+
+	token, err := s.spiffe.requestJWTSVIDFn(ctx, audiences)
+	if err != nil {
+		return nil, err
+	}
+
+	// The token's signature is not verified: RequestJWTSVIDFn receives it from
+	// the issuer over an authenticated channel.
+	svid, err := jwtsvid.ParseInsecure(token, []string{params.Audience})
+	if err != nil {
+		return nil, err
+	}
+
+	if svid.ID != x509SVID.ID {
+		return nil, fmt.Errorf("minted JWT SVID is for %s, not the workload's SPIFFE ID %s", svid.ID, x509SVID.ID)
+	}
+
+	if !audiencesMatch(svid.Audience, audiences) {
+		return nil, &audienceMismatchError{expected: audiences, actual: svid.Audience}
 	}
 
 	return svid, nil

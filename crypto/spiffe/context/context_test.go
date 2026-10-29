@@ -21,6 +21,8 @@ import (
 	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/dapr/kit/crypto/spiffe"
 )
 
 type mockX509Source struct{}
@@ -30,6 +32,12 @@ func (m *mockX509Source) GetX509SVID() (*x509svid.SVID, error) {
 }
 
 type mockJWTSource struct{}
+
+type mockJWTMinter struct{}
+
+func (m *mockJWTMinter) MintJWTSVID(context.Context, jwtsvid.Params) (*jwtsvid.SVID, error) {
+	return nil, nil
+}
 
 func (m *mockJWTSource) FetchJWTSVID(context.Context, jwtsvid.Params) (*jwtsvid.SVID, error) {
 	return nil, nil
@@ -61,4 +69,25 @@ func TestWithFrom(t *testing.T) {
 	retrieved, ok := From(ctx)
 	assert.True(t, ok, "Failed to retrieve X509 source from context using legacy From")
 	assert.Equal(t, x509svid.Source(x509Source), retrieved, "Retrieved source does not match the original source using legacy From")
+}
+
+func TestWithJWTMinterFromJWTMinter(t *testing.T) {
+	_, ok := JWTMinterFrom(t.Context())
+	assert.False(t, ok)
+
+	minter := &mockJWTMinter{}
+	retrieved, ok := JWTMinterFrom(WithJWTMinter(t.Context(), minter))
+	assert.True(t, ok, "Failed to retrieve JWT minter from context")
+	assert.Equal(t, spiffe.JWTSVIDMinter(minter), retrieved)
+}
+
+func TestWithSpiffeAddsMinterOnlyWhenConfigured(t *testing.T) {
+	_, ok := JWTMinterFrom(WithSpiffe(t.Context(), spiffe.New(spiffe.Options{})))
+	assert.False(t, ok)
+
+	configured := spiffe.New(spiffe.Options{
+		RequestJWTSVIDFn: func(context.Context, []string) (string, error) { return "", nil },
+	})
+	_, ok = JWTMinterFrom(WithSpiffe(t.Context(), configured))
+	assert.True(t, ok)
 }
