@@ -87,7 +87,19 @@ type (
 	// RequestSVIDFn is the function type that requests SVIDs from a SPIFFE server,
 	// returning both X.509 certificates and a JWT token.
 	RequestSVIDFn func(context.Context, []byte) (*SVIDResponse, error)
+
+	// RequestJWTSVIDFn mints a new JWT SVID for the given audiences from a
+	// SPIFFE server. It must receive the token from the issuer over an
+	// authenticated channel, as the token's signature is not verified.
+	RequestJWTSVIDFn func(ctx context.Context, audiences []string) (string, error)
 )
+
+// JWTSVIDMinter mints a new JWT SVID on every call, for any audience. Use it
+// instead of a jwtsvid.Source when a token must not be reused, for example
+// when it is exchanged with a provider that rejects replayed tokens.
+type JWTSVIDMinter interface {
+	MintJWTSVID(ctx context.Context, params jwtsvid.Params) (*jwtsvid.SVID, error)
+}
 
 type Options struct {
 	Log           logger.Logger
@@ -104,6 +116,10 @@ type Options struct {
 	// KeyAlgorithm selects the algorithm used for the workload's private
 	// key. When nil, defaults to Ed25519.
 	KeyAlgorithm *KeyAlgorithm
+
+	// RequestJWTSVIDFn is used by the JWTSVIDMinter to mint JWT SVIDs on
+	// demand. When nil, JWTSVIDMinter returns nil.
+	RequestJWTSVIDFn RequestJWTSVIDFn
 }
 
 // SPIFFE is a readable/writeable store of SPIFFE SVID credentials.
@@ -114,7 +130,8 @@ type SPIFFE struct {
 	currentBaseJWTSVID   *jwtsvid.SVID
 	currentPerAudJWTSVID map[string]*jwtsvid.SVID
 
-	requestSVIDFn RequestSVIDFn
+	requestSVIDFn    RequestSVIDFn
+	requestJWTSVIDFn RequestJWTSVIDFn
 
 	dir          *dir.Dir
 	trustAnchors trustanchors.Interface
@@ -143,13 +160,14 @@ func New(opts Options) *SPIFFE {
 	}
 
 	return &SPIFFE{
-		requestSVIDFn: opts.RequestSVIDFn,
-		dir:           sdir,
-		trustAnchors:  opts.TrustAnchors,
-		keyAlgorithm:  keyAlg,
-		log:           opts.Log,
-		clock:         clock.RealClock{},
-		readyCh:       make(chan struct{}),
+		requestSVIDFn:    opts.RequestSVIDFn,
+		requestJWTSVIDFn: opts.RequestJWTSVIDFn,
+		dir:              sdir,
+		trustAnchors:     opts.TrustAnchors,
+		keyAlgorithm:     keyAlg,
+		log:              opts.Log,
+		clock:            clock.RealClock{},
+		readyCh:          make(chan struct{}),
 	}
 }
 
@@ -197,6 +215,16 @@ func (s *SPIFFE) X509SVIDSource() x509svid.Source {
 }
 
 func (s *SPIFFE) JWTSVIDSource() jwtsvid.Source {
+	return &svidSource{spiffe: s}
+}
+
+// JWTSVIDMinter returns a minter of JWT SVIDs for the workload, or nil if no
+// RequestJWTSVIDFn is configured.
+func (s *SPIFFE) JWTSVIDMinter() JWTSVIDMinter {
+	if s.requestJWTSVIDFn == nil {
+		return nil
+	}
+
 	return &svidSource{spiffe: s}
 }
 

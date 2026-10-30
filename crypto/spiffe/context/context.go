@@ -27,6 +27,7 @@ type ctxkey int
 const (
 	x509SvidKey ctxkey = iota
 	jwtSvidKey
+	jwtMinterKey
 )
 
 // Deprecated: use WithX509 instead.
@@ -64,8 +65,23 @@ func JWTFrom(ctx context.Context) (jwtsvid.Source, bool) {
 	return svid, ok
 }
 
-// WithSpiffe adds both X509 and JWT SVID sources to the context.
+// WithJWTMinter adds a JWT SVID minter to the context.
+func WithJWTMinter(ctx context.Context, minter spiffe.JWTSVIDMinter) context.Context {
+	return context.WithValue(ctx, jwtMinterKey, minter)
+}
+
+// JWTMinterFrom retrieves the JWT SVID minter from the context.
+func JWTMinterFrom(ctx context.Context) (spiffe.JWTSVIDMinter, bool) {
+	minter, ok := ctx.Value(jwtMinterKey).(spiffe.JWTSVIDMinter)
+	return minter, ok
+}
+
+// WithSpiffe adds the X509 and JWT SVID sources, and the JWT SVID minter, to
+// the context. When minting is not configured the minter is nil, which hides
+// any minter from an outer context.
 func WithSpiffe(ctx context.Context, spiffe *spiffe.SPIFFE) context.Context {
 	ctx = WithX509(ctx, spiffe.X509SVIDSource())
+	ctx = WithJWTMinter(ctx, spiffe.JWTSVIDMinter())
+
 	return WithJWT(ctx, spiffe.JWTSVIDSource())
 }

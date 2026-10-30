@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/spiffe/go-spiffe/v2/svid/jwtsvid"
 	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
 )
@@ -29,7 +30,8 @@ var (
 	errAudienceRequired    = errors.New("JWT audience is required")
 )
 
-// svidSource is an implementation of both go-spiffe x509svid.Source and jwtsvid.Source interfaces.
+// svidSource implements the go-spiffe x509svid.Source and jwtsvid.Source
+// interfaces, and JWTSVIDMinter.
 type svidSource struct {
 	spiffe *SPIFFE
 }
@@ -59,6 +61,17 @@ type audienceMismatchError struct {
 func (e *audienceMismatchError) Error() string {
 	return fmt.Sprintf("JWT SVID has different audiences than requested: expected %s, got %s",
 		strings.Join(e.expected, ", "), strings.Join(e.actual, ", "))
+}
+
+// subjectMismatchError is returned when a JWT SVID would be for a SPIFFE ID
+// other than the workload's own.
+type subjectMismatchError struct {
+	expected spiffeid.ID
+	actual   spiffeid.ID
+}
+
+func (e *subjectMismatchError) Error() string {
+	return fmt.Sprintf("JWT SVID subject %s is not the workload's SPIFFE ID %s", e.actual, e.expected)
 }
 
 // FetchJWTSVID returns the current JWT SVID.
@@ -93,6 +106,56 @@ func (s *svidSource) FetchJWTSVID(ctx context.Context, params jwtsvid.Params) (*
 			expected: []string{params.Audience},
 			actual:   svid.Audience,
 		}
+	}
+
+	return svid, nil
+}
+
+// MintJWTSVID mints a new JWT SVID for the requested audiences from the SPIFFE
+// server. Implements JWTSVIDMinter.
+func (s *svidSource) MintJWTSVID(ctx context.Context, params jwtsvid.Params) (*jwtsvid.SVID, error) {
+	if params.Audience == "" {
+		return nil, errAudienceRequired
+	}
+
+	// The server authenticates the request with the current X.509 SVID.
+	err := s.spiffe.Ready(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	s.spiffe.lock.RLock()
+	x509SVID := s.spiffe.currentX509SVID
+	s.spiffe.lock.RUnlock()
+
+	if x509SVID == nil {
+		return nil, errNoX509SVIDAvailable
+	}
+
+	if !params.Subject.IsZero() && params.Subject != x509SVID.ID {
+		return nil, &subjectMismatchError{expected: x509SVID.ID, actual: params.Subject}
+	}
+
+	audiences := append([]string{params.Audience}, params.ExtraAudiences...)
+
+	token, err := s.spiffe.requestJWTSVIDFn(ctx, audiences)
+	if err != nil {
+		return nil, err
+	}
+
+	// The token's signature is not verified: RequestJWTSVIDFn receives it from
+	// the issuer over an authenticated channel.
+	svid, err := jwtsvid.ParseInsecure(token, []string{params.Audience})
+	if err != nil {
+		return nil, err
+	}
+
+	if svid.ID != x509SVID.ID {
+		return nil, &subjectMismatchError{expected: x509SVID.ID, actual: svid.ID}
+	}
+
+	if !audiencesMatch(svid.Audience, audiences) {
+		return nil, &audienceMismatchError{expected: audiences, actual: svid.Audience}
 	}
 
 	return svid, nil

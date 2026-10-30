@@ -15,10 +15,17 @@ package spiffe
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"fmt"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/lestrrat-go/jwx/v2/jwa"
+	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/spiffe/go-spiffe/v2/svid/jwtsvid"
 	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
@@ -324,5 +331,125 @@ func TestFetchJWTSVID(t *testing.T) {
 		case <-time.After(100 * time.Millisecond):
 			t.Fatal("FetchJWTSVID should have completed after readyCh was closed")
 		}
+	})
+}
+
+func TestMintJWTSVID(t *testing.T) {
+	const testAudience = "https://api.example.com"
+
+	workloadID := spiffeid.RequireFromString("spiffe://example.org/ns/default/app")
+	otherID := spiffeid.RequireFromString("spiffe://example.org/ns/default/other")
+
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	var minted atomic.Int32
+
+	mint := func(sub spiffeid.ID, audiences []string) string {
+		tkn, berr := jwt.NewBuilder().
+			JwtID(fmt.Sprintf("jti-%d", minted.Add(1))).
+			Subject(sub.String()).
+			Audience(audiences).
+			IssuedAt(time.Now()).
+			Expiration(time.Now().Add(5 * time.Minute)).
+			Build()
+		require.NoError(t, berr)
+
+		signed, serr := jwt.Sign(tkn, jwt.WithKey(jwa.ES256, key))
+		require.NoError(t, serr)
+
+		return string(signed)
+	}
+
+	newSource := func(fn RequestJWTSVIDFn) *svidSource {
+		s := &svidSource{spiffe: &SPIFFE{
+			readyCh:          make(chan struct{}),
+			currentX509SVID:  &x509svid.SVID{ID: workloadID},
+			requestJWTSVIDFn: fn,
+		}}
+		close(s.spiffe.readyCh)
+
+		return s
+	}
+
+	t.Run("mints a new JWT SVID on every call", func(t *testing.T) {
+		var gotAudiences [][]string
+
+		s := newSource(func(_ context.Context, audiences []string) (string, error) {
+			gotAudiences = append(gotAudiences, audiences)
+
+			return mint(workloadID, audiences), nil
+		})
+
+		svid1, err := s.MintJWTSVID(t.Context(), jwtsvid.Params{Audience: testAudience})
+		require.NoError(t, err)
+		svid2, err := s.MintJWTSVID(t.Context(), jwtsvid.Params{Audience: testAudience, ExtraAudiences: []string{"extra"}, Subject: workloadID})
+		require.NoError(t, err)
+
+		require.Equal(t, [][]string{{testAudience}, {testAudience, "extra"}}, gotAudiences)
+		require.Equal(t, []string{testAudience}, svid1.Audience)
+		require.Equal(t, workloadID, svid1.ID)
+		require.NotEqual(t, svid1.Claims["jti"], svid2.Claims["jti"])
+	})
+
+	t.Run("rejects requests and tokens that do not match the workload", func(t *testing.T) {
+		for name, test := range map[string]struct {
+			token           func(audiences []string) string
+			params          jwtsvid.Params
+			noX509          bool
+			subjectMismatch bool
+		}{
+			"token without the requested audience": {
+				token:  func([]string) string { return mint(workloadID, []string{"wrong"}) },
+				params: jwtsvid.Params{Audience: testAudience},
+			},
+			"token without an extra audience": {
+				token:  func([]string) string { return mint(workloadID, []string{testAudience}) },
+				params: jwtsvid.Params{Audience: testAudience, ExtraAudiences: []string{"extra"}},
+			},
+			"token for another SPIFFE ID": {
+				token:           func(audiences []string) string { return mint(otherID, audiences) },
+				params:          jwtsvid.Params{Audience: testAudience},
+				subjectMismatch: true,
+			},
+			"requested subject is not the workload": {
+				params:          jwtsvid.Params{Audience: testAudience, Subject: otherID},
+				subjectMismatch: true,
+			},
+			"no X.509 SVID": {
+				params: jwtsvid.Params{Audience: testAudience},
+				noX509: true,
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				s := newSource(func(_ context.Context, audiences []string) (string, error) {
+					require.NotNil(t, test.token, "the request must be rejected before minting")
+					return test.token(audiences), nil
+				})
+				if test.noX509 {
+					s.spiffe.currentX509SVID = nil
+				}
+
+				svid, err := s.MintJWTSVID(t.Context(), test.params)
+				require.Error(t, err)
+				require.Nil(t, svid)
+
+				if test.subjectMismatch {
+					var subErr *subjectMismatchError
+					require.ErrorAs(t, err, &subErr)
+				}
+			})
+		}
+	})
+
+	t.Run("waits for the identity before minting", func(t *testing.T) {
+		s := newSource(nil)
+		s.spiffe.readyCh = make(chan struct{})
+
+		ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
+		defer cancel()
+
+		_, err := s.MintJWTSVID(ctx, jwtsvid.Params{Audience: testAudience})
+		require.ErrorIs(t, err, context.DeadlineExceeded)
 	})
 }
