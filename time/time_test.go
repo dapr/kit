@@ -173,6 +173,30 @@ func TestParseDuration(t *testing.T) {
 		require.Error(t, err)
 		_, _, _, _, _, err = ParseDuration("PTxS")
 		require.Error(t, err)
+
+		// Trailing digits without a designator
+		_, _, _, _, _, err = ParseDuration("P5")
+		require.Error(t, err)
+		_, _, _, _, _, err = ParseDuration("PT10")
+		require.Error(t, err)
+		_, _, _, _, _, err = ParseDuration("P1DT5")
+		require.Error(t, err)
+		_, _, _, _, _, err = ParseDuration("PT1H30")
+		require.Error(t, err)
+		_, _, _, _, _, err = ParseDuration("R5/PT10")
+		require.Error(t, err)
+
+		// Unknown trailing characters
+		_, _, _, _, _, err = ParseDuration("P1DX")
+		require.Error(t, err)
+
+		// No elements after "P" or "T"
+		_, _, _, _, _, err = ParseDuration("PT")
+		require.Error(t, err)
+		_, _, _, _, _, err = ParseDuration("P1DT")
+		require.Error(t, err)
+		_, _, _, _, _, err = ParseDuration("R5/P")
+		require.Error(t, err)
 	})
 }
 
