@@ -62,7 +62,8 @@ type JWKSCache struct {
 	lock    sync.RWMutex
 	client  *http.Client
 	running atomic.Bool
-	initCh  chan error
+	initCh  chan struct{}
+	initErr error
 }
 
 // NewJWKSCache creates a new JWKSCache object.
@@ -74,7 +75,7 @@ func NewJWKSCache(location string, logger logger.Logger) *JWKSCache {
 		requestTimeout:     defaultRequestTimeout,
 		minRefreshInterval: defaultMinRefreshInterval,
 
-		initCh: make(chan error, 1),
+		initCh: make(chan struct{}),
 	}
 }
 
@@ -90,16 +91,14 @@ func (c *JWKSCache) Start(ctx context.Context) error {
 	err := c.initCache(ctx)
 	if err != nil {
 		err = fmt.Errorf("failed to init cache: %w", err)
-		// Store the error in the initCh, then close it
-		c.initCh <- err
+	}
+	// Store the error, then close initCh so every WaitForCacheReady call returns it
+	c.initErr = err
+	close(c.initCh)
 
-		close(c.initCh)
-
+	if err != nil {
 		return err
 	}
-
-	// Close initCh
-	close(c.initCh)
 
 	// Block until context is canceled
 	<-ctx.Done()
@@ -142,8 +141,8 @@ func (c *JWKSCache) WaitForCacheReady(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case err := <-c.initCh:
-		return err
+	case <-c.initCh:
+		return c.initErr
 	}
 }
 
@@ -176,10 +175,14 @@ func (c *JWKSCache) initCache(ctx context.Context) error {
 	}
 
 	// Try decoding from JSON
-	c.jwks, err = jwk.Parse(locationJSON)
+	jwks, err := jwk.Parse(locationJSON)
 	if err != nil {
 		return errors.New("failed to parse property 'location': not a URL, path to local file, or JSON value (optionally base64-encoded)")
 	}
+
+	c.lock.Lock()
+	c.jwks = jwks
+	c.lock.Unlock()
 
 	return nil
 }
@@ -240,7 +243,9 @@ func (c *JWKSCache) initJWKSFromURL(ctx context.Context, url string) error {
 		return fmt.Errorf("failed to fetch JWKS: %w", err)
 	}
 
+	c.lock.Lock()
 	c.jwks = jwk.NewCachedSet(cache, url)
+	c.lock.Unlock()
 
 	return nil
 }
