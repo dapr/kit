@@ -157,6 +157,7 @@ func TestJWKSCache(t *testing.T) {
 		// Wait for initialization
 		err := cache.WaitForCacheReady(ctx)
 		require.NoError(t, err)
+		require.Equal(t, 1, cache.KeySet().Len())
 
 		// Canceling the context should make Start() return
 		cancel()
@@ -191,6 +192,10 @@ func TestJWKSCache(t *testing.T) {
 		err := cache.WaitForCacheReady(ctx)
 		require.Error(t, err)
 		require.ErrorContains(t, err, "failed to fetch JWKS")
+
+		// Every later call returns the same error
+		require.Equal(t, err, cache.WaitForCacheReady(ctx))
+		require.Nil(t, cache.KeySet())
 
 		// Canceling the context should make Start() return with the init error
 		cancel()
