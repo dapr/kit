@@ -101,6 +101,13 @@ func (mr *MultiReaderCloser) writeToWithBuffer(w io.Writer, buf []byte) (sum int
 			return sum, err
 		}
 
+		// Close the reader now that it's been fully read, matching the behavior
+		// of Read which closes each reader when it reaches EOF. This slice is
+		// cleared below, so Close() can no longer reach these readers afterwards.
+		if rc, ok := r.(io.Closer); ok {
+			_ = rc.Close()
+		}
+
 		mr.readers[i] = nil // permit early GC
 	}
 
