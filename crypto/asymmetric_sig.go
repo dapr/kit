@@ -21,8 +21,8 @@ import (
 	"crypto/rsa"
 	"errors"
 
-	"github.com/lestrrat-go/jwx/v2/jwa"
-	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwk"
 )
 
 // SupportedSignatureAlgorithms returns the list of supported signature algorithms.
@@ -59,7 +59,7 @@ func SignPrivateKey(digest []byte, algorithm string, key jwk.Key) (signature []b
 
 func signPrivateKeyRSAPKCS1v15(digest []byte, hash crypto.Hash, key jwk.Key) ([]byte, error) {
 	rsaKey := &rsa.PrivateKey{}
-	if key.Raw(rsaKey) != nil {
+	if jwk.Export(key, rsaKey) != nil {
 		return nil, ErrKeyTypeMismatch
 	}
 
@@ -68,7 +68,7 @@ func signPrivateKeyRSAPKCS1v15(digest []byte, hash crypto.Hash, key jwk.Key) ([]
 
 func signPrivateKeyRSAPSS(digest []byte, hash crypto.Hash, key jwk.Key) ([]byte, error) {
 	rsaKey := &rsa.PrivateKey{}
-	if key.Raw(rsaKey) != nil {
+	if jwk.Export(key, rsaKey) != nil {
 		return nil, ErrKeyTypeMismatch
 	}
 
@@ -77,7 +77,7 @@ func signPrivateKeyRSAPSS(digest []byte, hash crypto.Hash, key jwk.Key) ([]byte,
 
 func signPrivateKeyECDSA(digest []byte, key jwk.Key) ([]byte, error) {
 	ecdsaKey := &ecdsa.PrivateKey{}
-	if key.Raw(ecdsaKey) != nil {
+	if jwk.Export(key, ecdsaKey) != nil {
 		return nil, ErrKeyTypeMismatch
 	}
 
@@ -85,7 +85,7 @@ func signPrivateKeyECDSA(digest []byte, key jwk.Key) ([]byte, error) {
 }
 
 func signPrivateKeyEdDSA(message []byte, key jwk.Key) ([]byte, error) {
-	if key.KeyType() != jwa.OKP {
+	if key.KeyType() != jwa.OKP() {
 		return nil, ErrKeyTypeMismatch
 	}
 
@@ -94,10 +94,10 @@ func signPrivateKeyEdDSA(message []byte, key jwk.Key) ([]byte, error) {
 		return nil, ErrKeyTypeMismatch
 	}
 
-	switch okpKey.Crv() {
-	case jwa.Ed25519:
+	switch crv, _ := okpKey.Crv(); crv {
+	case jwa.Ed25519():
 		ed25519Key := &ed25519.PrivateKey{}
-		if okpKey.Raw(ed25519Key) != nil {
+		if jwk.Export(okpKey, ed25519Key) != nil {
 			return nil, ErrKeyTypeMismatch
 		}
 
@@ -137,7 +137,7 @@ func VerifyPublicKey(digest []byte, signature []byte, algorithm string, key jwk.
 
 func verifyPublicKeyRSAPKCS1v15(digest []byte, signature []byte, hash crypto.Hash, key jwk.Key) (bool, error) {
 	rsaKey := &rsa.PublicKey{}
-	if key.Raw(rsaKey) != nil {
+	if jwk.Export(key, rsaKey) != nil {
 		return false, ErrKeyTypeMismatch
 	}
 
@@ -155,7 +155,7 @@ func verifyPublicKeyRSAPKCS1v15(digest []byte, signature []byte, hash crypto.Has
 
 func verifyPublicKeyRSAPSS(digest []byte, signature []byte, hash crypto.Hash, key jwk.Key) (bool, error) {
 	rsaKey := &rsa.PublicKey{}
-	if key.Raw(rsaKey) != nil {
+	if jwk.Export(key, rsaKey) != nil {
 		return false, ErrKeyTypeMismatch
 	}
 
@@ -173,7 +173,7 @@ func verifyPublicKeyRSAPSS(digest []byte, signature []byte, hash crypto.Hash, ke
 
 func verifyPublicKeyECDSA(digest []byte, signature []byte, key jwk.Key) (bool, error) {
 	ecdsaKey := &ecdsa.PublicKey{}
-	if key.Raw(ecdsaKey) != nil {
+	if jwk.Export(key, ecdsaKey) != nil {
 		return false, ErrKeyTypeMismatch
 	}
 
@@ -181,7 +181,7 @@ func verifyPublicKeyECDSA(digest []byte, signature []byte, key jwk.Key) (bool, e
 }
 
 func verifyPublicKeyEdDSA(mesage []byte, signature []byte, key jwk.Key) (bool, error) {
-	if key.KeyType() != jwa.OKP {
+	if key.KeyType() != jwa.OKP() {
 		return false, ErrKeyTypeMismatch
 	}
 
@@ -190,10 +190,10 @@ func verifyPublicKeyEdDSA(mesage []byte, signature []byte, key jwk.Key) (bool, e
 		return false, ErrKeyTypeMismatch
 	}
 
-	switch okpKey.Crv() {
-	case jwa.Ed25519:
+	switch crv, _ := okpKey.Crv(); crv {
+	case jwa.Ed25519():
 		ed25519Key := ed25519.PublicKey{}
-		if okpKey.Raw(&ed25519Key) != nil {
+		if jwk.Export(okpKey, &ed25519Key) != nil {
 			return false, ErrKeyTypeMismatch
 		}
 

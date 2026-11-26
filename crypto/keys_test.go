@@ -21,8 +21,8 @@ import (
 	"io"
 	"testing"
 
-	"github.com/lestrrat-go/jwx/v2/jwa"
-	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/stretchr/testify/require"
 )
 
@@ -54,9 +54,9 @@ func TestSymmetricKeys(t *testing.T) {
 			t.Run("parse", func(t *testing.T) {
 				key, err = ParseKey(parse, contentType)
 				require.NoError(t, err)
-				require.Equal(t, jwa.OctetSeq, key.KeyType())
+				require.Equal(t, jwa.OctetSeq(), key.KeyType())
 
-				err = key.Raw(&exported)
+				err = jwk.Export(key, &exported)
 				require.NoError(t, err)
 				require.Equal(t, rawKey, exported)
 			})
@@ -95,7 +95,7 @@ func TestPrivateKeysRSA(t *testing.T) {
 			t.Run("parse", func(t *testing.T) {
 				key, err = ParseKey(parse, contentType)
 				require.NoError(t, err)
-				require.Equal(t, jwa.RSA, key.KeyType())
+				require.Equal(t, jwa.RSA(), key.KeyType())
 			})
 
 			t.Run("serialize", func(t *testing.T) {
@@ -133,7 +133,7 @@ func TestPublicKeysRSA(t *testing.T) {
 			t.Run("parse", func(t *testing.T) {
 				key, err = ParseKey(parse, contentType)
 				require.NoError(t, err)
-				require.Equal(t, jwa.RSA, key.KeyType())
+				require.Equal(t, jwa.RSA(), key.KeyType())
 			})
 
 			t.Run("serialize", func(t *testing.T) {
@@ -170,10 +170,11 @@ func TestPrivateKeysEd25519(t *testing.T) {
 			t.Run("parse", func(t *testing.T) {
 				key, err = ParseKey(parse, contentType)
 				require.NoError(t, err)
-				require.Equal(t, jwa.OKP, key.KeyType())
-				crv, ok := key.Get("crv")
-				require.True(t, ok)
-				require.Equal(t, jwa.Ed25519, crv)
+				require.Equal(t, jwa.OKP(), key.KeyType())
+
+				var crv jwa.EllipticCurveAlgorithm
+				require.NoError(t, key.Get("crv", &crv))
+				require.Equal(t, jwa.Ed25519(), crv)
 			})
 
 			t.Run("serialize", func(t *testing.T) {
@@ -209,10 +210,11 @@ func TestPublicKeysEd25519(t *testing.T) {
 			t.Run("parse", func(t *testing.T) {
 				key, err = ParseKey(parse, contentType)
 				require.NoError(t, err)
-				require.Equal(t, jwa.OKP, key.KeyType())
-				crv, ok := key.Get("crv")
-				require.True(t, ok)
-				require.Equal(t, jwa.Ed25519, crv)
+				require.Equal(t, jwa.OKP(), key.KeyType())
+
+				var crv jwa.EllipticCurveAlgorithm
+				require.NoError(t, key.Get("crv", &crv))
+				require.Equal(t, jwa.Ed25519(), crv)
 			})
 
 			t.Run("serialize", func(t *testing.T) {
@@ -247,10 +249,11 @@ func TestPrivateKeysP256(t *testing.T) {
 			t.Run("parse", func(t *testing.T) {
 				key, err = ParseKey(parse, contentType)
 				require.NoError(t, err)
-				require.Equal(t, jwa.EC, key.KeyType())
-				crv, ok := key.Get("crv")
-				require.True(t, ok)
-				require.Equal(t, jwa.P256, crv)
+				require.Equal(t, jwa.EC(), key.KeyType())
+
+				var crv jwa.EllipticCurveAlgorithm
+				require.NoError(t, key.Get("crv", &crv))
+				require.Equal(t, jwa.P256(), crv)
 			})
 
 			t.Run("serialize", func(t *testing.T) {
@@ -287,10 +290,11 @@ func TestPublicKeysP256(t *testing.T) {
 			t.Run("parse", func(t *testing.T) {
 				key, err = ParseKey(parse, contentType)
 				require.NoError(t, err)
-				require.Equal(t, jwa.EC, key.KeyType())
-				crv, ok := key.Get("crv")
-				require.True(t, ok)
-				require.Equal(t, jwa.P256, crv)
+				require.Equal(t, jwa.EC(), key.KeyType())
+
+				var crv jwa.EllipticCurveAlgorithm
+				require.NoError(t, key.Get("crv", &crv))
+				require.Equal(t, jwa.P256(), crv)
 			})
 
 			t.Run("serialize", func(t *testing.T) {

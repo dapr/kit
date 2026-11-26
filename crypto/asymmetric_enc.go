@@ -18,7 +18,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 
-	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwk"
 )
 
 // SupportedAsymmetricAlgorithms returns the list of supported asymmetric encryption algorithms.
@@ -57,7 +57,7 @@ func EncryptPublicKey(plaintext []byte, algorithm string, key jwk.Key, associate
 
 func encryptPublicKeyRSAPKCS1v15(plaintext []byte, key jwk.Key) ([]byte, error) {
 	rsaKey := &rsa.PublicKey{}
-	if key.Raw(rsaKey) != nil {
+	if jwk.Export(key, rsaKey) != nil {
 		return nil, ErrKeyTypeMismatch
 	}
 
@@ -66,7 +66,7 @@ func encryptPublicKeyRSAPKCS1v15(plaintext []byte, key jwk.Key) ([]byte, error) 
 
 func encryptPublicKeyRSAOAEP(plaintext []byte, key jwk.Key, hash crypto.Hash, label []byte) ([]byte, error) {
 	rsaKey := &rsa.PublicKey{}
-	if key.Raw(rsaKey) != nil {
+	if jwk.Export(key, rsaKey) != nil {
 		return nil, ErrKeyTypeMismatch
 	}
 
@@ -93,7 +93,7 @@ func DecryptPrivateKey(ciphertext []byte, algorithm string, key jwk.Key, associa
 
 func decryptPrivateKeyRSAPKCS1v15(ciphertext []byte, key jwk.Key) ([]byte, error) {
 	rsaKey := &rsa.PrivateKey{}
-	if key.Raw(rsaKey) != nil {
+	if jwk.Export(key, rsaKey) != nil {
 		return nil, ErrKeyTypeMismatch
 	}
 
@@ -102,7 +102,7 @@ func decryptPrivateKeyRSAPKCS1v15(ciphertext []byte, key jwk.Key) ([]byte, error
 
 func decryptPrivateKeyRSAOAEP(ciphertext []byte, key jwk.Key, hash crypto.Hash, label []byte) ([]byte, error) {
 	rsaKey := &rsa.PrivateKey{}
-	if key.Raw(rsaKey) != nil {
+	if jwk.Export(key, rsaKey) != nil {
 		return nil, ErrKeyTypeMismatch
 	}
 

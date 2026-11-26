@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -141,6 +142,88 @@ func TestJWKSCache(t *testing.T) {
 		require.NotNil(t, key)
 	})
 
+	t.Run("init from URL fetches the JWKS once", func(t *testing.T) {
+		var requests atomic.Int32
+
+		// Create a custom HTTP client with a RoundTripper that doesn't require starting a TCP listener
+		client := &http.Client{
+			Transport: roundTripFn(func(r *http.Request) *http.Response {
+				requests.Add(1)
+
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Header: http.Header{
+						"content-type": []string{"application/json"},
+					},
+					Body: io.NopCloser(strings.NewReader(testJWKS1)),
+				}
+			}),
+		}
+
+		cache := NewJWKSCache("http://localhost/jwks.json", log)
+		cache.SetHTTPClient(client)
+
+		ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+		defer cancel()
+
+		err := cache.initCache(ctx)
+		require.NoError(t, err)
+		require.Equal(t, 1, cache.KeySet().Len())
+
+		// A background fetch racing the initial one would be issued within milliseconds of init.
+		// The next scheduled refresh is minRefreshInterval (10m) away, so nothing else should be fetched.
+		assert.Never(t, func() bool {
+			return requests.Load() > 1
+		}, time.Second, 50*time.Millisecond)
+		assert.Equal(t, int32(1), requests.Load())
+	})
+
+	t.Run("init from URL picks up rotated keys", func(t *testing.T) {
+		var rotated atomic.Bool
+
+		// Create a custom HTTP client with a RoundTripper that doesn't require starting a TCP listener
+		// It serves one key until the test rotates them, then two
+		client := &http.Client{
+			Transport: roundTripFn(func(r *http.Request) *http.Response {
+				body := testJWKS1
+
+				if rotated.Load() {
+					body = testJWKS2
+				}
+
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Header: http.Header{
+						"content-type": []string{"application/json"},
+					},
+					Body: io.NopCloser(strings.NewReader(body)),
+				}
+			}),
+		}
+
+		cache := NewJWKSCache("http://localhost/jwks.json", log)
+		cache.SetHTTPClient(client)
+		// The refresher schedules in whole seconds, so this is the shortest interval worth setting
+		cache.SetMinRefreshInterval(time.Second)
+
+		err := cache.initCache(t.Context())
+		require.NoError(t, err)
+
+		// Keep the set from before the rotation: the background refresh should update it in place
+		set := cache.KeySet()
+		require.Equal(t, 1, set.Len())
+
+		rotated.Store(true)
+
+		assert.Eventually(t, func() bool {
+			return set.Len() == 2
+		}, 10*time.Second, 50*time.Millisecond)
+
+		key, ok := set.LookupKeyID("testkey")
+		require.True(t, ok)
+		require.NotNil(t, key)
+	})
+
 	t.Run("start and wait for init", func(t *testing.T) {
 		cache := NewJWKSCache(testJWKS1, log)
 
@@ -200,6 +283,38 @@ func TestJWKSCache(t *testing.T) {
 		// Canceling the context should make Start() return with the init error
 		cancel()
 		require.Equal(t, err, <-errCh)
+	})
+
+	t.Run("start and init fails stops refreshing", func(t *testing.T) {
+		var requests atomic.Int32
+
+		// Create a custom HTTP client with a RoundTripper that doesn't require starting a TCP listener
+		client := &http.Client{
+			Transport: roundTripFn(func(r *http.Request) *http.Response {
+				requests.Add(1)
+
+				// Return an error
+				return &http.Response{
+					StatusCode: http.StatusInternalServerError,
+				}
+			}),
+		}
+
+		cache := NewJWKSCache("https://localhost/jwks.json", log)
+		cache.SetHTTPClient(client)
+		// A failed fetch is retried after the minimum refresh interval, so a refresher left running would retry quickly
+		cache.SetMinRefreshInterval(time.Second)
+
+		// Start returns as soon as init fails, while t.Context() stays alive until the test ends.
+		// Only the cleanup in init can stop the refresher here.
+		err := cache.Start(t.Context())
+		require.ErrorContains(t, err, "failed to fetch JWKS")
+		require.Equal(t, int32(1), requests.Load())
+
+		// The refresher schedules in whole seconds: a leaked one would retry within about 3s
+		assert.Never(t, func() bool {
+			return requests.Load() > 1
+		}, 4*time.Second, 100*time.Millisecond)
 	})
 
 	t.Run("start and init times out", func(t *testing.T) {

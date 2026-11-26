@@ -23,7 +23,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwk"
 )
 
 // SerializeKey serializes a jwk.Key in the appropriate format so they can be wrapped.
@@ -31,7 +31,7 @@ import (
 func SerializeKey(key jwk.Key) ([]byte, error) {
 	var rawKey any
 
-	err := key.Raw(&rawKey)
+	err := jwk.Export(key, &rawKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract raw key: %w", err)
 	}
@@ -85,15 +85,15 @@ func parseSymmetricKey(raw []byte) (jwk.Key, error) {
 
 	n, err := base64.RawStdEncoding.Decode(dst, trimmedRaw)
 	if err == nil {
-		return jwk.FromRaw(dst[:n])
+		return jwk.Import(dst[:n])
 	}
 
 	// Try parsing as base64-url
 	n, err = base64.RawURLEncoding.Decode(dst, trimmedRaw)
 	if err == nil {
-		return jwk.FromRaw(dst[:n])
+		return jwk.Import(dst[:n])
 	}
 
 	// Treat the byte slice as the raw, symmetric key
-	return jwk.FromRaw(raw)
+	return jwk.Import(raw)
 }
