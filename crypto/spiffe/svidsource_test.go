@@ -24,8 +24,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lestrrat-go/jwx/v2/jwa"
-	"github.com/lestrrat-go/jwx/v2/jwt"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwt"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/spiffe/go-spiffe/v2/svid/jwtsvid"
 	"github.com/spiffe/go-spiffe/v2/svid/x509svid"
@@ -355,7 +355,7 @@ func TestMintJWTSVID(t *testing.T) {
 			Build()
 		require.NoError(t, berr)
 
-		signed, serr := jwt.Sign(tkn, jwt.WithKey(jwa.ES256, key))
+		signed, serr := jwt.Sign(tkn, jwt.WithKey(jwa.ES256(), key))
 		require.NoError(t, serr)
 
 		return string(signed)

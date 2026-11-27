@@ -34,8 +34,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/lestrrat-go/httprc"
-	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/lestrrat-go/httprc/v3"
+	"github.com/lestrrat-go/httprc/v3/errsink"
+	"github.com/lestrrat-go/jwx/v3/jwk"
 
 	"github.com/dapr/kit/crypto/pem"
 	"github.com/dapr/kit/fswatcher"
@@ -188,13 +189,6 @@ func (c *JWKSCache) initCache(ctx context.Context) error {
 }
 
 func (c *JWKSCache) initJWKSFromURL(ctx context.Context, url string) error {
-	// Create the JWKS cache
-	cache := jwk.NewCache(ctx,
-		jwk.WithErrSink(httprc.ErrSinkFunc(func(err error) {
-			c.logger.Warnf("Error while refreshing JWKS cache: %v", err)
-		})),
-	)
-
 	// We also need to create a custom HTTP client (if we don't have one already) because otherwise there's no timeout.
 	if c.client == nil {
 		tlsConfig := &tls.Config{
@@ -224,28 +218,65 @@ func (c *JWKSCache) initJWKSFromURL(ctx context.Context, url string) error {
 		}
 	}
 
-	// Register the cache
-	err := cache.Register(url,
-		jwk.WithMinRefreshInterval(c.minRefreshInterval),
-		jwk.WithHTTPClient(c.client),
+	// Build the resource ourselves rather than through jwk.Cache, whose Register schedules an immediate background fetch
+	// that would race the Refresh call below. Pushing the first scheduled fetch out leaves the first fetch to Refresh,
+	// which returns its error instead of letting a failing endpoint show up only as a timeout.
+	resource, err := httprc.NewResource[jwk.Set](url, jwk.Transformer{},
+		httprc.WithMinInterval(c.minRefreshInterval),
+		httprc.WithHTTPClient(c.client),
 	)
+	if err != nil {
+		return fmt.Errorf("failed to create JWKS resource: %w", err)
+	}
+
+	// A non-positive interval would schedule the background fetch right away; the controller replaces it with its default
+	firstScheduled := c.minRefreshInterval
+	if firstScheduled <= 0 {
+		firstScheduled = httprc.DefaultMinInterval
+	}
+
+	resource.SetNext(time.Now().Add(firstScheduled))
+
+	// Start the refresher; it refreshes in the background until ctx is canceled.
+	// If init fails, stop it right away so it doesn't keep fetching (and logging) for a cache nobody can use.
+	ctrlCtx, ctrlCancel := context.WithCancel(ctx)
+
+	var initDone bool
+
+	defer func() {
+		if !initDone {
+			ctrlCancel()
+		}
+	}()
+
+	ctrl, err := httprc.NewClient(
+		httprc.WithErrorSink(errsink.NewFunc(func(_ context.Context, err error) {
+			c.logger.Warnf("Error while refreshing JWKS cache: %v", err)
+		})),
+	).Start(ctrlCtx)
+	if err != nil {
+		return fmt.Errorf("failed to start JWKS cache: %w", err)
+	}
+
+	err = ctrl.Add(ctx, resource, httprc.WithWaitReady(false))
 	if err != nil {
 		return fmt.Errorf("failed to register JWKS cache: %w", err)
 	}
 
 	// Fetch the JWKS right away to start, so we can check it's valid and populate the cache
 	refreshCtx, refreshCancel := context.WithTimeout(ctx, c.requestTimeout)
-	_, err = cache.Refresh(refreshCtx, url)
+	defer refreshCancel()
 
-	refreshCancel()
-
+	err = ctrl.Refresh(refreshCtx, url)
 	if err != nil {
 		return fmt.Errorf("failed to fetch JWKS: %w", err)
 	}
 
 	c.lock.Lock()
-	c.jwks = jwk.NewCachedSet(cache, url)
+	c.jwks = jwk.NewCachedSet(resource)
 	c.lock.Unlock()
+
+	initDone = true
 
 	return nil
 }

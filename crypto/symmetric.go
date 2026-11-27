@@ -18,8 +18,8 @@ import (
 	"crypto/cipher"
 	"errors"
 
-	"github.com/lestrrat-go/jwx/v2/jwa"
-	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwa"
+	"github.com/lestrrat-go/jwx/v3/jwk"
 	"golang.org/x/crypto/chacha20poly1305"
 
 	"github.com/dapr/kit/crypto/aescbcaead"
@@ -44,7 +44,7 @@ func SupportedSymmetricAlgorithms() []string {
 // Note that "associatedData" is ignored if the cipher does not support labels/AAD.
 func EncryptSymmetric(plaintext []byte, algorithm string, key jwk.Key, nonce []byte, associatedData []byte) (ciphertext []byte, tag []byte, err error) {
 	var keyBytes []byte
-	if key.KeyType() != jwa.OctetSeq || key.Raw(&keyBytes) != nil {
+	if key.KeyType() != jwa.OctetSeq() || jwk.Export(key, &keyBytes) != nil {
 		return nil, nil, ErrKeyTypeMismatch
 	}
 
@@ -76,7 +76,7 @@ func EncryptSymmetric(plaintext []byte, algorithm string, key jwk.Key, nonce []b
 // Note that "associatedData" is ignored if the cipher does not support labels/AAD.
 func DecryptSymmetric(ciphertext []byte, algorithm string, key jwk.Key, nonce []byte, tag []byte, associatedData []byte) (plaintext []byte, err error) {
 	var keyBytes []byte
-	if key.KeyType() != jwa.OctetSeq || key.Raw(&keyBytes) != nil {
+	if key.KeyType() != jwa.OctetSeq() || jwk.Export(key, &keyBytes) != nil {
 		return nil, ErrKeyTypeMismatch
 	}
 
