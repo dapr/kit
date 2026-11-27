@@ -731,6 +731,11 @@ func TestStopAndWait(t *testing.T) {
 		cron.AddFunc("* * * * * *", func() { <-funcClock.After(OneSecond * 2) })
 		cron.AddFunc("* * * * * *", func() {})
 
+		// Wait for the run loop to take in the jobs added after Start: Entries goes through the loop, which only gets
+		// back to it once it has replaced its timer. Otherwise HasWaiters can still see the old timer, and the step
+		// below fires a timer the loop then discards, so the jobs never run.
+		cron.Entries()
+
 		assert.Eventually(t, clock.HasWaiters, OneSecond, 10*time.Millisecond)
 		assert.False(t, funcClock.HasWaiters())
 		clock.Step(OneSecond)
@@ -767,6 +772,9 @@ func TestStopAndWait(t *testing.T) {
 		cron.AddFunc("* * * * * *", func() { <-funcClock.After(OneSecond * 2) })
 		cron.Start()
 		cron.AddFunc("* * * * * *", func() {})
+
+		// Wait for the run loop to take in the job added after Start (see the test above)
+		cron.Entries()
 
 		assert.Eventually(t, clock.HasWaiters, OneSecond, 10*time.Millisecond)
 		assert.False(t, funcClock.HasWaiters())
