@@ -140,6 +140,10 @@ func TestParseScheduleErrors(t *testing.T) {
 	tests := []struct{ expr, err string }{
 		{"* 5 j * * *", "failed to parse int from"},
 		{"@every Xm", "failed to parse duration"},
+		{"@every 0s", "duration must be positive"},
+		{"@every 0", "duration must be positive"},
+		{"@every -1s", "duration must be positive"},
+		{"@every -1ns", "duration must be positive"},
 		{"@unrecognized", "unrecognized descriptor"},
 		{"* * * *", "expected 5 to 6 fields"},
 		{"", "empty spec string"},

@@ -493,6 +493,12 @@ func parseDescriptor(descriptor string, loc *time.Location) (Schedule, error) {
 			return nil, fmt.Errorf("failed to parse duration %s: %s", descriptor, err)
 		}
 
+		// A zero or negative interval would make Next return a time that is not
+		// after the one it was given, so the schedule would fire continuously.
+		if duration <= 0 {
+			return nil, fmt.Errorf("duration must be positive: %s", descriptor)
+		}
+
 		return Every(duration), nil
 	}
 
